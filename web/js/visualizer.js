@@ -828,7 +828,7 @@ class CosmicVisualizer {
             }
             ctx.stroke();
 
-            // Dense, overlapping, irregularly spaced paperclip texture field with fully randomized vibrant colors
+            // Dense, overlapping, irregularly spaced paperclip texture field with stable deterministic colors & positions (no inter-frame flickering)
             const palette = [
                 '#00f0ff', // Cyan
                 '#ffe600', // Gold/Yellow
@@ -845,44 +845,50 @@ class CosmicVisualizer {
             ];
             const stepX = 6.0;
             const stepY = 5.0;
+            const numCols = Math.floor((w - 6) / stepX);
 
-            for (let fx = 3; fx < w - 2; fx += stepX) {
-                const colIdx = Math.floor((fx / w) * this.numColumns);
+            for (let c = 0; c < numCols; ++c) {
+                const fx = 3 + c * stepX;
+                const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((fx / w) * this.numColumns)));
                 const moundH = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
                 if (moundH > 1.2) {
                     const topY = floorY - moundH;
+                    const maxRows = Math.ceil(moundH / stepY);
 
-                    for (let fy = topY + 2.5; fy < floorY; fy += stepY) {
-                        const seed = Math.floor((fx * 73 + fy * 37) % 10000);
+                    // Anchor vertically to floorY so seeds and coordinates never oscillate or change between frames
+                    for (let r = 0; r < maxRows; ++r) {
+                        const fy = floorY - 2.5 - (r * stepY);
+                        if (fy < topY) break;
 
-                        // Organic irregular jitter on X and Y so clips are tangled and not on a grid
-                        const jitterX = (((seed * 19) % 100) / 100 - 0.5) * 6.5;
-                        const jitterY = (((seed * 31) % 100) / 100 - 0.5) * 4.5;
-                        const sway = Math.sin(time * 1.8 + (seed % 12)) * 1.2;
+                        // 100% deterministic spatial hash based on fixed grid coordinates
+                        const seed = (c * 997 + r * 1013) % 50000;
 
-                        const px = fx + jitterX + sway;
+                        // Organic irregular static offset
+                        const jitterX = (((seed * 19) % 100) / 100 - 0.5) * 5.5;
+                        const jitterY = (((seed * 31) % 100) / 100 - 0.5) * 3.5;
+                        const px = fx + jitterX;
                         const py = fy + jitterY;
 
-                        // Full 360° irregular rotation angles for tangled look
-                        const rot = (((seed * 137) % 628) / 100) + Math.sin(time * 0.9 + seed) * 0.2;
+                        // Static 360° irregular rotation angles for tangled look
+                        const rot = ((seed * 137) % 628) / 100;
                         const size = 3.6 + (((seed * 17) % 100) / 35.0); // 3.6 to 6.4 px
 
-                        // Fully randomized vibrant color per paperclip
+                        // Static randomized vibrant color per paperclip
                         const color = palette[(seed * 53 + 19) % palette.length];
 
                         this.drawTinyPaperclip(ctx, px, py, size, rot, color);
 
-                        // Tangled overlapping cluster clips with varied randomized colors
-                        if (seed % 4 === 0 && py + 3 < floorY) {
-                            const clusterRot = rot + 1.2 + (((seed * 7) % 100) / 50);
+                        // Tangled overlapping cluster clips with stable randomized colors
+                        if (seed % 4 === 0 && py - 2 > topY) {
+                            const clusterRot = (rot + 1.25) % (Math.PI * 2);
                             const clusterColor = palette[(seed * 89 + 41) % palette.length];
-                            this.drawTinyPaperclip(ctx, px + 2.5, py + 1.5, size * 0.9, clusterRot, clusterColor);
+                            this.drawTinyPaperclip(ctx, px + 2.0, py - 1.5, size * 0.9, clusterRot, clusterColor);
                         }
                     }
                 }
             }
 
-            // Jutting Paperclips on Slopes & Mountain Crest with randomized colors
+            // Jutting Paperclips on Slopes & Mountain Crest with stable randomized colors
             for (let i = 1; i < this.numColumns - 1; i += 2) {
                 const moundH = Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
                 if (moundH > 2.0) {
@@ -891,7 +897,7 @@ class CosmicVisualizer {
                     const leftH = Math.max(0, this.pileHeights[i - 1] + this.waveOffsets[i - 1]);
                     const rightH = Math.max(0, this.pileHeights[i + 1] + this.waveOffsets[i + 1]);
                     const slopeAngle = Math.atan2(leftH - rightH, colWidth * 2);
-                    const rot = slopeAngle + Math.sin(i * 1.5 + time) * 0.25;
+                    const rot = slopeAngle + (((i * 97) % 100) / 100 - 0.5) * 0.4;
 
                     const color = palette[(i * 37 + 11) % palette.length];
                     this.drawTinyPaperclip(ctx, x, y - 2, 5.5, rot, color);
