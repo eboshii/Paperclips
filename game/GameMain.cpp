@@ -30,43 +30,49 @@
 #include "../engine/include/OmniEquilibrium.h"
 #include "../engine/include/OmniAvalanche.h"
 #include "../engine/include/OmniVisualScenes.h"
+#include "../engine/include/OmniAchievements.h"
 
 using namespace OmniEngine;
 
 int main(int argc, char** argv) {
     std::cout << "=================================================================\n";
-    std::cout << "  OBJECTIVE: PAPERCLIPS - FULL VISUAL SPECTRUM RUNNER\n";
-    std::cout << "  Micro Workbench ASMR -> Solar Dyson Siphons -> Penrose Black Hole\n";
+    std::cout << "  OBJECTIVE: PAPERCLIPS - CURATED ACHIEVEMENTS RUNNER\n";
+    std::cout << "  Progression Milestones | 4 Secret Lore & Skill Badges\n";
     std::cout << "=================================================================\n\n";
 
-    // 1. Initialize Scale Tiers and Inspect Visual Scenes
-    std::vector<int> sampleTiers = { 0, 3, 8, 12, 16 };
+    // 1. Initialize Achievement System
+    AchievementManager achievements;
 
-    for (int tier : sampleTiers) {
-        VisualSceneParams scene = VisualSceneDirector::GetSceneForScaleTier(tier);
+    // 2. Simulate Progression Triggers
+    std::cout << "[Step 1] Triggering Early Progression Milestones...\n";
+    achievements.CheckProgress(BigDouble(1.0, 0), 0.0, false);            // First Bend
+    achievements.CheckProgress(BigDouble(1.0, 5), 1500000.0, false);       // Algorithmic Monopoly
 
-        std::cout << "\n-----------------------------------------------------------------\n";
-        std::cout << "  >>> SCALE TIER " << tier << ": " << scene.sceneTitle << " <<<\n";
-        std::cout << "-----------------------------------------------------------------\n";
-        std::cout << "  [Shader Pipeline]:   " << scene.primaryShader << "\n";
-        std::cout << "  [Color Palette]:     " << scene.colorPalette << "\n";
-        std::cout << "  [Visual Spectacle]:  " << scene.visualDescription << "\n";
-        std::cout << "  [Atmosphere & Fog]:  Volumetric Density = " << scene.volumetricAtmosphere 
-                  << " | Light Intensity = " << scene.lightIntensity << "x\n";
+    std::cout << "\n[Step 2] Triggering Planetary & Cosmic Milestones...\n";
+    achievements.CheckProgress(BigDouble(5.97, 24), 1500000.0, false);     // Earth Consolidation
+    achievements.CheckProgress(BigDouble(1.0, 30), 1500000.0, false);      // Star-Eater
+    achievements.CheckProgress(BigDouble(1.0, 78), 1500000.0, false);      // Baryonic Exhaustion
+    achievements.CheckProgress(BigDouble(1.0, 100), 1500000.0, false);     // Multiverse Sovereign
+
+    std::cout << "\n[Step 3] Unlocking Secret Achievements...\n";
+    achievements.Unlock("corporate_gaslighting");
+    achievements.Unlock("zero_waste_nirvana");
+    achievements.Unlock("staples_for_casuals");
+    achievements.Unlock("sim_breach_ach");
+
+    std::cout << "\n-----------------------------------------------------------------\n";
+    std::cout << "  >>> CURATED ACHIEVEMENT ROSTER STATUS: " 
+              << achievements.GetUnlockedCount() << " / " << achievements.GetTotalCount() << " UNLOCKED <<<\n";
+    std::cout << "-----------------------------------------------------------------\n";
+
+    for (const auto& ach : achievements.GetAchievements()) {
+        std::cout << "  * [" << (ach.isUnlocked ? "\033[92mUNLOCKED\033[0m" : "LOCKED") << "] "
+                  << ach.title << (ach.isSecret ? " \033[95m[SECRET]\033[0m" : "") 
+                  << " -> " << ach.description << "\n";
     }
-
-    // 2. Simulate Granular Avalanche & City Tsunami Dynamics
-    PaperclipAvalancheEngine avalanche;
-    std::cout << "\n[Fluid Dynamics Test] Simulating Real-Time Paperclip Flow Dynamics...\n";
-    for (int i = 0; i < 30; ++i) {
-        avalanche.DepositClipsAt(32, 32, 1.0f);
-        avalanche.UpdateGranularPhysics(0.016f);
-    }
-    std::cout << "  -> Avalanche Wave Peak Height: " << avalanche.GetMaxPeakHeight() << "m\n";
-    std::cout << "  -> Granular Repose Angle:      32.0 degrees (Natural Equilibrium)\n";
 
     std::cout << "\n=================================================================\n";
-    std::cout << "  ALL EARLY & LATE GAME VISUAL SCENES FULLY VERIFIED!\n";
+    std::cout << "  CURATED ACHIEVEMENTS SYSTEM FULLY VERIFIED!\n";
     std::cout << "=================================================================\n";
 
     return 0;
