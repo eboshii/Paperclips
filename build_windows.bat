@@ -9,7 +9,7 @@ echo.
 :: 1. Check for MSVC (cl.exe in Developer Command Prompt / VS 2022)
 where cl >nul 2>nul
 if %errorlevel% equ 0 (
-    echo [FOUND] MSVC Compiler (cl.exe). Compiling 3D OpenGL build...
+    echo [FOUND] MSVC Compiler (cl.exe). Compiling 3D OpenGL build with in-window font...
     cl /std:c++20 /O2 /utf-8 /Iengine/include ^
        engine/src/OmniAudio.cpp ^
        engine/src/OmniCameraRig.cpp ^
@@ -20,6 +20,7 @@ if %errorlevel% equ 0 (
        engine/src/OmniResearchTree.cpp ^
        engine/src/OmniHeadlines.cpp ^
        engine/src/OmniGLWindow.cpp ^
+       engine/src/OmniFont.cpp ^
        game/GameMain.cpp ^
        opengl32.lib gdi32.lib user32.lib ^
        /Fe:ObjectivePaperclips.exe
@@ -40,7 +41,7 @@ if %errorlevel% equ 0 (
 :: 2. Check for MinGW-w64 (g++.exe)
 where g++ >nul 2>nul
 if %errorlevel% equ 0 (
-    echo [FOUND] MinGW-w64 G++ Compiler. Compiling 3D OpenGL build...
+    echo [FOUND] MinGW-w64 G++ Compiler. Compiling 3D OpenGL build with in-window font...
     g++ -std=c++20 -O2 -Iengine/include ^
         engine/src/OmniAudio.cpp ^
         engine/src/OmniCameraRig.cpp ^
@@ -51,6 +52,7 @@ if %errorlevel% equ 0 (
         engine/src/OmniResearchTree.cpp ^
         engine/src/OmniHeadlines.cpp ^
         engine/src/OmniGLWindow.cpp ^
+        engine/src/OmniFont.cpp ^
         game/GameMain.cpp ^
         -lopengl32 -lgdi32 -luser32 ^
         -o ObjectivePaperclips.exe

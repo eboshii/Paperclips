@@ -1,12 +1,13 @@
 #include "../include/OmniGLWindow.h"
+#include "../include/OmniFont.h"
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 
 #ifdef _WIN32
 #include <windows.h>
 #include <GL/gl.h>
 
-// Global window callback for Windows message pump
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     OmniEngine::OmniGLWindow* pWin = (OmniEngine::OmniGLWindow*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
@@ -18,7 +19,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;
-        case WM_KEYDOWN:
+        case WM_MOUSEWHEEL:
             // Handled via message pump
             break;
     }
@@ -47,9 +48,7 @@ bool OmniGLWindow::Initialize() {
     wc.lpszClassName = "ObjectivePaperclipsGLWindowClass";
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 
-    if (!RegisterClassExA(&wc)) {
-        // Class might already be registered
-    }
+    RegisterClassExA(&wc);
 
     HWND hwnd = CreateWindowExA(
         0, "ObjectivePaperclipsGLWindowClass",
@@ -105,7 +104,6 @@ bool OmniGLWindow::Initialize() {
     std::cout << "[SUCCESS] 3D OpenGL Window Initialized (" << m_width << "x" << m_height << ")\n";
     return true;
 #else
-    // Headless / Linux simulated window mode
     m_isOpen = true;
     return true;
 #endif
@@ -116,6 +114,7 @@ bool OmniGLWindow::ProcessMessages() {
     MSG msg;
     m_input.mouseLeftClicked = false;
     m_input.lastKeyPressed = 0;
+    m_input.mouseScrollDelta = 0.0f;
 
     while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {
@@ -138,6 +137,9 @@ bool OmniGLWindow::ProcessMessages() {
             m_input.mouseDeltaY = newY - m_input.mouseY;
             m_input.mouseX = newX;
             m_input.mouseY = newY;
+        } else if (msg.message == WM_MOUSEWHEEL) {
+            short delta = GET_WHEEL_DELTA_WPARAM(msg.wParam);
+            m_input.mouseScrollDelta = (float)delta / 120.0f;
         } else if (msg.message == WM_CHAR) {
             m_input.lastKeyPressed = (char)msg.wParam;
         }
@@ -188,12 +190,18 @@ void OmniGLWindow::BeginFrame(float r, float g, float b) {
 #endif
 }
 
-void OmniGLWindow::SetCamera3D(float camDistance, float camPitchDeg, float camYawDeg) {
+void OmniGLWindow::UpdateCameraInterpolation(float targetDistance, float targetPitchDeg, float targetYawDeg, float dt) {
+    float lerpSpeed = 8.0f * dt;
+    m_curDistance += (targetDistance - m_curDistance) * std::min(1.0f, lerpSpeed);
+    m_curPitch += (targetPitchDeg - m_curPitch) * std::min(1.0f, lerpSpeed);
+    m_curYaw += (targetYawDeg - m_curYaw) * std::min(1.0f, lerpSpeed);
+}
+
+void OmniGLWindow::ApplyCamera3D() {
 #ifdef _WIN32
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
-    // Perspective Projection Matrix
     float aspect = (float)m_width / (float)m_height;
     float fov = 45.0f * 3.14159265f / 180.0f;
     float nearZ = 0.1f;
@@ -207,12 +215,9 @@ void OmniGLWindow::SetCamera3D(float camDistance, float camPitchDeg, float camYa
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    // Camera Orbit Transform
-    glTranslatef(0.0f, -0.5f, -camDistance);
-    glRotatef(camPitchDeg, 1.0f, 0.0f, 0.0f);
-    glRotatef(camYawDeg, 0.0f, 1.0f, 0.0f);
-#else
-    (void)camDistance; (void)camPitchDeg; (void)camYawDeg;
+    glTranslatef(0.0f, -0.5f, -m_curDistance);
+    glRotatef(m_curPitch, 1.0f, 0.0f, 0.0f);
+    glRotatef(m_curYaw, 0.0f, 1.0f, 0.0f);
 #endif
 }
 
@@ -240,7 +245,6 @@ void OmniGLWindow::DrawMesh3D(const std::vector<RenderVertex3D>& mesh, float pos
 void OmniGLWindow::DrawPaperclipMound(float pileClipsCount) {
     if (pileClipsCount <= 0.0f) return;
 
-    // Scale pile radius and height with paperclips
     float baseRadius = 0.5f + std::min(4.0f, std::log10(pileClipsCount + 1.0f) * 0.6f);
     float baseHeight = 0.2f + std::min(2.5f, std::log10(pileClipsCount + 1.0f) * 0.4f);
 
@@ -253,7 +257,7 @@ void OmniGLWindow::BeginHUD2D() {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, m_width, m_height, 0, -1, 1); // 2D Pixel coordinates (Top-Left origin)
+    glOrtho(0, m_width, m_height, 0, -1, 1);
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -277,6 +281,14 @@ void OmniGLWindow::DrawHUDQuad(float x, float y, float w, float h, float r, floa
     glEnd();
 #else
     (void)x; (void)y; (void)w; (void)h; (void)r; (void)g; (void)b; (void)a;
+#endif
+}
+
+void OmniGLWindow::DrawHUDText(float x, float y, const std::string& text, float scale, float r, float g, float b, float a) {
+#ifdef _WIN32
+    OmniFont::DrawString2D(x, y, text, scale, r, g, b, a, true);
+#else
+    (void)x; (void)y; (void)text; (void)scale; (void)r; (void)g; (void)b; (void)a;
 #endif
 }
 

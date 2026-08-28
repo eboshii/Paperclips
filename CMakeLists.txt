@@ -19,6 +19,7 @@ set(SOURCES
     engine/src/OmniResearchTree.cpp
     engine/src/OmniHeadlines.cpp
     engine/src/OmniGLWindow.cpp
+    engine/src/OmniFont.cpp
     game/GameMain.cpp
 )
 

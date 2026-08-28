@@ -5,6 +5,8 @@
 #include <cstdint>
 #include "OmniMeshBuilder.h"
 #include "OmniMath.h"
+#include "OmniFont.h"
+#include "OmniParticles.h"
 
 namespace OmniEngine {
 
@@ -15,6 +17,7 @@ struct WindowInputEvents {
     float mouseY = 0.0f;
     float mouseDeltaX = 0.0f;
     float mouseDeltaY = 0.0f;
+    float mouseScrollDelta = 0.0f;
     char lastKeyPressed = 0;
 };
 
@@ -40,14 +43,19 @@ public:
 
     // 3D Scene Rendering
     void BeginFrame(float r = 0.05f, float g = 0.06f, float b = 0.08f);
-    void SetCamera3D(float camDistance, float camPitchDeg, float camYawDeg);
+    void UpdateCameraInterpolation(float targetDistance, float targetPitchDeg, float targetYawDeg, float dt);
+    void ApplyCamera3D();
     void DrawMesh3D(const std::vector<RenderVertex3D>& mesh, float posX, float posY, float posZ, float rotDeg, float scale = 1.0f);
     void DrawPaperclipMound(float pileClipsCount);
     
     // 2D Graphical HUD Overlay
     void BeginHUD2D();
     void DrawHUDQuad(float x, float y, float w, float h, float r, float g, float b, float a);
+    void DrawHUDText(float x, float y, const std::string& text, float scale = 1.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f);
     void EndHUD2D();
+
+    float GetCameraDistance() const { return m_curDistance; }
+    void SetCameraDistance(float d) { m_curDistance = d; m_targetDistance = d; }
 
 private:
     std::string m_title;
@@ -56,6 +64,14 @@ private:
     bool m_isOpen = false;
 
     WindowInputEvents m_input;
+
+    // Smooth Camera Interpolation State
+    float m_curDistance = 5.5f;
+    float m_targetDistance = 5.5f;
+    float m_curPitch = 25.0f;
+    float m_targetPitch = 25.0f;
+    float m_curYaw = -20.0f;
+    float m_targetYaw = -20.0f;
 
 #ifdef _WIN32
     void* m_hwnd = nullptr;
