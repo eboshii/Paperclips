@@ -18,46 +18,21 @@ set(SOURCES
     engine/src/OmniSpatialGrid.cpp
     engine/src/OmniResearchTree.cpp
     engine/src/OmniHeadlines.cpp
+    engine/src/OmniGLWindow.cpp
     game/GameMain.cpp
 )
 
-# Header Files (for Visual Studio Solution Explorer visibility)
-set(HEADERS
-    engine/include/OmniMath.h
-    engine/include/OmniAudio.h
-    engine/include/OmniCameraRig.h
-    engine/include/OmniDialogueTerminal.h
-    engine/include/OmniUI.h
-    engine/include/OmniPrestige.h
-    engine/include/OmniStreamer.h
-    engine/include/OmniFlywheel.h
-    engine/include/OmniEquivalency.h
-    engine/include/OmniMilestoneBuyer.h
-    engine/include/OmniLogistics.h
-    engine/include/OmniOfflineTimeWarp.h
-    engine/include/OmniAutobuyer.h
-    engine/include/OmniMegaprojects.h
-    engine/include/OmniOfflineSummary.h
-    engine/include/OmniEcoMode.h
-    engine/include/OmniSpatialGrid.h
-    engine/include/OmniOdometer.h
-    engine/include/OmniSliders.h
-    engine/include/OmniVoxelStorage.h
-    engine/include/OmniEquilibrium.h
-    engine/include/OmniAvalanche.h
-    engine/include/OmniVisualScenes.h
-    engine/include/OmniAchievements.h
-    engine/include/OmniResearchTree.h
-    engine/include/OmniHeadlines.h
-    engine/include/OmniHeroClicker.h
-)
-
 # Main Executable Target
-add_executable(ObjectivePaperclips ${SOURCES} ${HEADERS})
+add_executable(ObjectivePaperclips ${SOURCES})
 
-# Compiler-Specific Optimization Flags
-if(MSVC)
-    target_compile_options(ObjectivePaperclips PRIVATE /W4 /O2 /permissive- /utf-8)
+# Platform-Specific Libraries
+if(WIN32)
+    target_link_libraries(ObjectivePaperclips PRIVATE opengl32 gdi32 user32)
+    if(MSVC)
+        target_compile_options(ObjectivePaperclips PRIVATE /W4 /O2 /permissive- /utf-8)
+    else()
+        target_compile_options(ObjectivePaperclips PRIVATE -Wall -Wextra -O2)
+    endif()
 else()
     target_compile_options(ObjectivePaperclips PRIVATE -Wall -Wextra -O2)
 endif()

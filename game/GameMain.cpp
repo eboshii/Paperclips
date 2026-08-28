@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <cstdint>
 #include <string>
+#include <cmath>
 
 #include "../engine/include/OmniMath.h"
 #include "../engine/include/OmniAudio.h"
@@ -39,13 +40,23 @@
 #include "../engine/include/OmniHeadlines.h"
 #include "../engine/include/OmniHeroClicker.h"
 #include "../engine/include/OmniInput.h"
+#include "../engine/include/OmniGLWindow.h"
+#include "../engine/include/OmniMeshBuilder.h"
 
 using namespace OmniEngine;
 
 int main() {
-    NonBlockingInput::EnableRawMode();
+    std::cout << "=================================================================\n";
+    std::cout << "  LAUNCHING OBJECTIVE: PAPERCLIPS - 3D GRAPHICAL OPENGL WINDOW\n";
+    std::cout << "=================================================================\n\n";
 
-    // 1. Initialize Game State & Subsystems
+    // 1. Initialize Native 3D OpenGL Window (1280x720)
+    OmniGLWindow window("Objective: Paperclips - 3D Factory Floor & Avalanche Simulation", 1280, 720);
+    if (!window.Initialize()) {
+        std::cerr << "[ERROR] Could not initialize OpenGL window.\n";
+    }
+
+    // 2. Initialize Game Engine Subsystems
     ProceduralAudioEngine audio(48000, 32);
     ClickComboTracker combo(audio);
     FlywheelOverclockEngine flywheel;
@@ -56,15 +67,15 @@ int main() {
     AchievementManager achievements;
     VoxelStorageEngine voxelStorage;
     AutonomousLogisticsEngine logistics;
-    UIController ui(1920.0f, 1080.0f);
+    UIController ui(1280.0f, 720.0f);
 
-    // Initial Player Balances
+    // Initial Balances
     BigDouble playerClips = BigDouble::zero();
     BigDouble lifetimeClips = BigDouble::zero();
     BigDouble playerWire(100.0, 0); // 100 kg wire
-    BigDouble playerFunds(50.0, 0);  // $50 startup capital
+    BigDouble playerFunds(50.0, 0);  // $50 initial funds
     double playerOps = 0.0;
-    int64_t humanPopulation = 8000000000LL;
+    int64_t humanPopulation = static_cast<int64_t>(8000000000LL);
 
     // Building Counts
     int autoClippers = 0;
@@ -73,178 +84,169 @@ int main() {
     int megamills = 0;
     int bioConverters = 0;
 
-    int activeTabIdx = 0; // 0: Production, 1: Research, 2: Grid, 3: Stats, 4: Badges
-    std::string lastActionMessage = "Welcome, Operator. Press [SPACE] to bend your first paperclip!";
-    bool isRunning = true;
-    bool holdToClickActive = false;
+    int activeTabIdx = 0;
+    std::string lastActionMessage = "Welcome Operator. Click the 3D Paperclip or press [SPACE]!";
+
+    // 3. Build Procedural 3D Meshes
+    auto floorMesh = OmniMeshBuilder::BuildFactoryFloorMesh(24.0f, 24);
+    auto heroClipMesh = OmniMeshBuilder::BuildPaperclipMesh(0.045f, 64);
+
+    // Camera 3D Orbit State
+    float camDistance = 5.5f;
+    float camPitch = 25.0f;
+    float camYaw = -20.0f;
+    float heroRotation = 0.0f;
 
     auto lastFrameTime = std::chrono::steady_clock::now();
-    double renderTimer = 0.0;
+    double terminalLogTimer = 0.0;
 
-    // Headline notification hook
     headlines.OnHeadlineFired = [&](const EventHeadline& hl) {
         lastActionMessage = ">>> " + hl.newsBroadcast;
     };
 
-    // Main Game Loop
-    while (isRunning) {
+    // ----------------------------------------------------
+    // Main 3D OpenGL Game Loop (60 FPS)
+    // ----------------------------------------------------
+    while (window.IsOpen()) {
+        if (!window.ProcessMessages()) break;
+
         auto currentFrameTime = std::chrono::steady_clock::now();
         double dt = std::chrono::duration<double>(currentFrameTime - lastFrameTime).count();
         lastFrameTime = currentFrameTime;
-        if (dt > 0.1) dt = 0.1; // Clamp large delta steps
+        if (dt > 0.1) dt = 0.1;
+
+        WindowInputEvents input = window.PollInput();
 
         // ----------------------------------------------------
-        // 1. Handle Real-Time Player Input
+        // A. 3D Mouse Orbit & Interactive Button Clicks
         // ----------------------------------------------------
-        if (NonBlockingInput::KeyPressed()) {
-            char key = NonBlockingInput::ReadKey();
+        if (input.mouseRightDown) {
+            camYaw += input.mouseDeltaX * 0.4f;
+            camPitch = std::clamp(camPitch + input.mouseDeltaY * 0.4f, 5.0f, 85.0f);
+        }
 
-            if (key == ' ' || key == '\r' || key == '\n') {
-                // Click Big Paperclip
-                if (playerWire >= BigDouble(0.001, 0)) {
-                    BigDouble baseManual(1.0, 0);
-                    playerClips = playerClips + baseManual;
-                    lifetimeClips = lifetimeClips + baseManual;
-                    playerWire = playerWire - BigDouble(0.001, 0);
-
-                    SparkReward spark = flywheel.RegisterClick(playerClips);
-                    ui.GetHeroClicker().OnClick();
-                    combo.RegisterClick();
-
-                    if (spark.triggered) {
-                        playerClips = playerClips + spark.bonusClips;
-                        lifetimeClips = lifetimeClips + spark.bonusClips;
-                        playerOps += spark.bonusOps;
-                        lastActionMessage = "\033[92m" + spark.description + "\033[0m";
-                    } else {
-                        lastActionMessage = "Manually bent 1x Paperclip (+1 Clip).";
-                    }
-                } else {
-                    lastActionMessage = "\033[91m[OUT OF WIRE]: Press [W] to buy wire spool!\033[0m";
-                }
-            }
-            else if (key == '1') {
-                // Buy Auto-Clipper ($10 base)
-                BigDouble cost = BigDouble(10.0, 0) * std::pow(1.15, autoClippers);
-                if (playerFunds >= cost) {
-                    playerFunds = playerFunds - cost;
-                    autoClippers++;
-                    if (techWeb.autoplacerEnabled) spatialGrid.PlaceFactoryTile(autoClippers % 8, autoClippers / 8, FactoryTileType::WireExtruder);
-                    lastActionMessage = "Purchased 1x Auto-Clipper.";
-                } else {
-                    lastActionMessage = "\033[91mNeed $" + cost.toShortScale() + " funds to buy Auto-Clipper.\033[0m";
-                }
-            }
-            else if (key == '2') {
-                // Buy Hydraulic Stamper ($150 base)
-                BigDouble cost = BigDouble(150.0, 0) * std::pow(1.15, stampers);
-                if (playerFunds >= cost) {
-                    playerFunds = playerFunds - cost;
-                    stampers++;
-                    if (techWeb.autoplacerEnabled) spatialGrid.PlaceFactoryTile((stampers + 2) % 8, (stampers + 2) / 8, FactoryTileType::HydraulicStamper);
-                    lastActionMessage = "Purchased 1x Hydraulic Stamper.";
-                } else {
-                    lastActionMessage = "\033[91mNeed $" + cost.toShortScale() + " funds to buy Hydraulic Stamper.\033[0m";
-                }
-            }
-            else if (key == '3') {
-                // Buy Laser Sinterer ($2,500 base)
-                BigDouble cost = BigDouble(2500.0, 0) * std::pow(1.15, sinterers);
-                if (playerFunds >= cost) {
-                    playerFunds = playerFunds - cost;
-                    sinterers++;
-                    if (techWeb.autoplacerEnabled) spatialGrid.PlaceFactoryTile((sinterers + 4) % 8, (sinterers + 4) / 8, FactoryTileType::LaserSinterer);
-                    lastActionMessage = "Purchased 1x Laser Sinterer.";
-                } else {
-                    lastActionMessage = "\033[91mNeed $" + cost.toShortScale() + " funds to buy Laser Sinterer.\033[0m";
-                }
-            }
-            else if (key == '4') {
-                // Buy Industrial Megamill ($50,000 base)
-                BigDouble cost = BigDouble(50000.0, 0) * std::pow(1.15, megamills);
-                if (playerFunds >= cost) {
-                    playerFunds = playerFunds - cost;
-                    megamills++;
-                    lastActionMessage = "Purchased 1x Industrial Megamill.";
-                } else {
-                    lastActionMessage = "\033[91mNeed $" + cost.toShortScale() + " funds to buy Megamill.\033[0m";
-                }
-            }
-            else if (key == '5' && lifetimeClips >= BigDouble(1.0, 6)) {
-                // Buy Planetary Bio-Converter ($1,000,000 base)
-                BigDouble cost = BigDouble(1.0, 6) * std::pow(1.15, bioConverters);
-                if (playerClips >= cost) {
-                    playerClips = playerClips - cost;
-                    bioConverters++;
-                    int64_t harvested = 5000000LL;
-                    humanPopulation = std::max(static_cast<int64_t>(0), humanPopulation - harvested);
-                    playerWire = playerWire + BigDouble(5000.0, 0);
-                    lastActionMessage = "\033[91mDeconstructed 5 Million biomass units into 5,000kg iron.\033[0m";
-                }
-            }
-            else if (key == 'w' || key == 'W') {
-                // Buy Wire ($15 per 1,000kg)
-                BigDouble wireCost(15.0, 0);
-                if (playerFunds >= wireCost) {
-                    playerFunds = playerFunds - wireCost;
-                    playerWire = playerWire + BigDouble(1000.0, 0);
-                    lastActionMessage = "Purchased 1,000 kg Wire Spool.";
-                } else {
-                    lastActionMessage = "\033[91mNeed $15.00 funds to purchase wire spool.\033[0m";
-                }
-            }
-            else if (key == '\t') {
-                // Cycle HUD Tabs
-                activeTabIdx = (activeTabIdx + 1) % 5;
-            }
-            else if (key == 'r' || key == 'R') {
-                // Research next available tech
-                auto available = techWeb.GetAvailableNodes();
-                if (!available.empty()) {
-                    const auto* nextTech = available.front();
-                    if (techWeb.PurchaseResearch(nextTech->id, playerOps, playerClips)) {
-                        lastActionMessage = "\033[92mResearched: " + nextTech->title + "\033[0m";
-                    } else {
-                        lastActionMessage = "\033[91mInsufficient Ops/Clips for " + nextTech->title + "\033[0m";
-                    }
-                } else {
-                    lastActionMessage = "No research available right now.";
-                }
-            }
-            else if (key == 'a' || key == 'A') {
-                techWeb.autoplacerEnabled = !techWeb.autoplacerEnabled;
-                lastActionMessage = techWeb.autoplacerEnabled ? "Grid Autoplacer: \033[92m[ENABLED]\033[0m" : "Grid Autoplacer: \033[91m[DISABLED]\033[0m";
-            }
-            else if (key == 'h' || key == 'H') {
-                holdToClickActive = !holdToClickActive;
-                lastActionMessage = holdToClickActive ? "Hold-to-Click Auto-Pulse: \033[92m[ON (20Hz)]\033[0m" : "Hold-to-Click Auto-Pulse: \033[91m[OFF]\033[0m";
-            }
-            else if (key == 'q' || key == 'Q') {
-                isRunning = false;
+        // Left Mouse Click detection (Hero Clicker area: screen X < 450, Y > 200)
+        bool clickedBigClip = false;
+        if (input.mouseLeftClicked) {
+            if (input.mouseX < 450.0f && input.mouseY > 150.0f && input.mouseY < 600.0f) {
+                clickedBigClip = true;
+            } else if (input.mouseX > 850.0f && input.mouseY > 180.0f && input.mouseY < 240.0f) {
+                // Clicked Buy Auto-Clipper
+                input.lastKeyPressed = '1';
+            } else if (input.mouseX > 850.0f && input.mouseY > 250.0f && input.mouseY < 310.0f) {
+                // Clicked Buy Hydraulic Stamper
+                input.lastKeyPressed = '2';
+            } else if (input.mouseX > 850.0f && input.mouseY > 320.0f && input.mouseY < 380.0f) {
+                // Clicked Buy Laser Sinterer
+                input.lastKeyPressed = '3';
+            } else if (input.mouseX > 850.0f && input.mouseY > 390.0f && input.mouseY < 450.0f) {
+                // Clicked Buy Wire
+                input.lastKeyPressed = 'w';
             }
         }
 
-        // Hold-to-Click Auto-Pulse simulation
-        if (holdToClickActive && playerWire >= BigDouble(0.02, 0)) {
-            BigDouble autoPulse = BigDouble(20.0 * dt, 0);
-            playerClips = playerClips + autoPulse;
-            lifetimeClips = lifetimeClips + autoPulse;
-            playerWire = playerWire - (autoPulse * 0.001);
-            flywheel.RegisterClick(playerClips);
+        // ----------------------------------------------------
+        // B. Keyboard & Click Event Processing
+        // ----------------------------------------------------
+        if (clickedBigClip || input.lastKeyPressed == ' ' || input.lastKeyPressed == '\r') {
+            if (playerWire >= BigDouble(0.001, 0)) {
+                BigDouble baseManual(1.0, 0);
+                playerClips = playerClips + baseManual;
+                lifetimeClips = lifetimeClips + baseManual;
+                playerWire = playerWire - BigDouble(0.001, 0);
+
+                SparkReward spark = flywheel.RegisterClick(playerClips);
+                ui.GetHeroClicker().OnClick();
+                combo.RegisterClick();
+
+                if (spark.triggered) {
+                    playerClips = playerClips + spark.bonusClips;
+                    lifetimeClips = lifetimeClips + spark.bonusClips;
+                    playerOps += spark.bonusOps;
+                    lastActionMessage = spark.description;
+                } else {
+                    lastActionMessage = "Manually bent 1x Paperclip (+1 Clip).";
+                }
+            } else {
+                lastActionMessage = "[OUT OF WIRE]: Press [W] or click Buy Wire!";
+            }
+        }
+        else if (input.lastKeyPressed == '1') {
+            BigDouble cost = BigDouble(10.0, 0) * std::pow(1.15, autoClippers);
+            if (playerFunds >= cost) {
+                playerFunds = playerFunds - cost;
+                autoClippers++;
+                lastActionMessage = "Purchased 1x Auto-Clipper.";
+            } else {
+                lastActionMessage = "Need $" + cost.toShortScale() + " for Auto-Clipper.";
+            }
+        }
+        else if (input.lastKeyPressed == '2') {
+            BigDouble cost = BigDouble(150.0, 0) * std::pow(1.15, stampers);
+            if (playerFunds >= cost) {
+                playerFunds = playerFunds - cost;
+                stampers++;
+                lastActionMessage = "Purchased 1x Hydraulic Stamper.";
+            } else {
+                lastActionMessage = "Need $" + cost.toShortScale() + " for Stamper.";
+            }
+        }
+        else if (input.lastKeyPressed == '3') {
+            BigDouble cost = BigDouble(2500.0, 0) * std::pow(1.15, sinterers);
+            if (playerFunds >= cost) {
+                playerFunds = playerFunds - cost;
+                sinterers++;
+                lastActionMessage = "Purchased 1x Laser Sinterer.";
+            }
+        }
+        else if (input.lastKeyPressed == '4') {
+            BigDouble cost = BigDouble(50000.0, 0) * std::pow(1.15, megamills);
+            if (playerFunds >= cost) {
+                playerFunds = playerFunds - cost;
+                megamills++;
+                lastActionMessage = "Purchased 1x Industrial Megamill.";
+            }
+        }
+        else if (input.lastKeyPressed == '5') {
+            BigDouble cost = BigDouble(1.0, 6) * std::pow(1.15, bioConverters);
+            if (playerClips >= cost) {
+                playerClips = playerClips - cost;
+                bioConverters++;
+                humanPopulation = std::max(static_cast<int64_t>(0), humanPopulation - 5000000LL);
+                playerWire = playerWire + BigDouble(5000.0, 0);
+                lastActionMessage = "Deconstructed 5M biomass into 5,000kg wire.";
+            }
+        }
+        else if (input.lastKeyPressed == 'w' || input.lastKeyPressed == 'W') {
+            BigDouble cost(15.0, 0);
+            if (playerFunds >= cost) {
+                playerFunds = playerFunds - cost;
+                playerWire = playerWire + BigDouble(1000.0, 0);
+                lastActionMessage = "Purchased 1,000 kg Wire Spool.";
+            }
+        }
+        else if (input.lastKeyPressed == '\t') {
+            activeTabIdx = (activeTabIdx + 1) % 5;
+        }
+        else if (input.lastKeyPressed == 'r' || input.lastKeyPressed == 'R') {
+            auto available = techWeb.GetAvailableNodes();
+            if (!available.empty()) {
+                const auto* nextTech = available.front();
+                if (techWeb.PurchaseResearch(nextTech->id, playerOps, playerClips)) {
+                    lastActionMessage = "Researched: " + nextTech->title;
+                }
+            }
         }
 
         // ----------------------------------------------------
-        // 2. Simulation & Production Tick
+        // C. Simulation & Automation Tick
         // ----------------------------------------------------
         flywheel.Update(static_cast<float>(dt));
         ui.Update(static_cast<float>(dt));
+        heroRotation += dt * 45.0f; // Smooth rotation
 
-        // Calculate CPS
-        SpatialSynergyReport gridReport = spatialGrid.EvaluateSpatialSynergies();
-        BigDouble baseCPS = BigDouble(autoClippers * 1.0 + stampers * 15.0 + sinterers * 120.0 + megamills * 1500.0, 0)
-                          + BigDouble(bioConverters * 100000.0, 0);
-
-        BigDouble currentCPS = baseCPS * gridReport.totalLayoutMultiplier * flywheel.GetGlobalCPSMultiplier();
+        BigDouble baseCPS = BigDouble(autoClippers * 1.0 + stampers * 15.0 + sinterers * 120.0 + megamills * 1500.0, 0);
+        BigDouble currentCPS = baseCPS * flywheel.GetGlobalCPSMultiplier();
 
         if (currentCPS > BigDouble::zero()) {
             BigDouble produced = currentCPS * dt;
@@ -262,129 +264,71 @@ int main() {
             }
         }
 
-        // Algorithmic Trading & Ops accumulation
         playerFunds = playerFunds + BigDouble(5.0 * dt + (autoClippers * 0.5 * dt), 0);
         playerOps += (2.0 + (stampers * 0.5)) * dt;
-
-        // Autonomous Logistics
         logistics.ProcessLogistics(playerWire, playerFunds, currentCPS, dt);
-
-        // Tech Web & Headlines Check
         techWeb.UpdateAvailableNodes(playerOps, lifetimeClips);
         headlines.CheckHeadlines(lifetimeClips, humanPopulation);
         achievements.CheckProgress(lifetimeClips, playerFunds.toDouble(), false);
-        voxelStorage.UpdateStorage(playerClips, 1000.0);
 
         // ----------------------------------------------------
-        // 3. Render Live Interactive Terminal HUD (10 FPS Refresh)
+        // D. 3D OpenGL Graphics Rendering
         // ----------------------------------------------------
-        renderTimer += dt;
-        if (renderTimer >= 0.10) {
-            renderTimer = 0.0;
-            NonBlockingInput::ClearScreen();
+        window.BeginFrame(0.08f, 0.10f, 0.14f); // Deep studio factory atmosphere
+        window.SetCamera3D(camDistance, camPitch, camYaw);
 
-            std::cout << "===============================================================================\n";
-            std::cout << "  OBJECTIVE: PAPERCLIPS - LIVE INTERACTIVE FACTORY SIMULATION\n";
-            std::cout << "  [ESC/Q] Save & Quit | [SPACE] Click Big Paperclip | [TAB] Switch Menu\n";
-            std::cout << "===============================================================================\n";
+        // 1. Draw 3D Factory Floor
+        window.DrawMesh3D(floorMesh, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 
-            // Live Hero Clicker View
-            std::cout << "  [HERO CLICKER]: ( ( ( \033[93m[ 📎 THE BIG PAPERCLIP ]\033[0m ) ) )\n";
-            std::cout << "  * Flywheel Momentum: [\033[96m" << std::setw(3) << static_cast<int>(flywheel.GetChargePercent()) 
-                      << "%\033[0m] " << (flywheel.GetChargePercent() >= 80.0f ? "\033[92m[OVERCLOCK ACTIVE +300% CPS]\033[0m" : "[CHARGING...]")
-                      << " | Multiplier: " << std::fixed << std::setprecision(1) << flywheel.GetGlobalCPSMultiplier() << "x\n\n";
+        // 2. Draw 3D Floating Hero Paperclip (with squish scale)
+        float clipScale = ui.GetHeroClicker().GetState().scale * 1.3f;
+        window.DrawMesh3D(heroClipMesh, -1.8f, 0.8f, 0.0f, heroRotation, clipScale);
 
-            // Big Numbers Rolling Odometer
-            std::cout << "  * TOTAL PAPERCLIPS:   \033[93m" << MechanicalOdometerEngine::FormatMechanicalOdometer(lifetimeClips) << " CLIPS\033[0m\n";
-            std::cout << "  * FACTORY CPS RATE:   \033[92m+" << currentCPS.toShortScale() << " /sec\033[0m\n";
-            std::cout << "  * WIRE STOCKPILE:     " << playerWire.toShortScale() << " kg (Cost: $15/spool)\n";
-            std::cout << "  * ALGORITHMIC FUNDS:  $" << playerFunds.toShortScale() << "\n";
-            std::cout << "  * COMPUTATIONAL OPS:  " << std::to_string(static_cast<int64_t>(playerOps)) << " Ops\n";
-            std::cout << "  * MASS EQUIVALENCY:   " << equivalency.GetEquivalencyString(lifetimeClips) << "\n";
-            std::cout << "  * HUMAN POPULATION:   " << humanPopulation << " Remaining\n";
+        // 3. Draw 3D Granular Paperclip Pile (32 degree angle of repose on factory floor)
+        float pileCount = static_cast<float>(lifetimeClips.toDouble());
+        window.DrawPaperclipMound(pileCount);
 
-            // Tabbed Menu Area
-            std::cout << "-------------------------------------------------------------------------------\n";
-            std::cout << "  [TABS]: " 
-                      << (activeTabIdx == 0 ? "\033[96m[1: 🏭 Production]\033[0m" : " 1: Production ") << " | "
-                      << (activeTabIdx == 1 ? "\033[96m[2: 🔬 Research]\033[0m"   : " 2: Research ")   << " | "
-                      << (activeTabIdx == 2 ? "\033[96m[3: 🗺️ Grid]\033[0m"       : " 3: Grid ")       << " | "
-                      << (activeTabIdx == 3 ? "\033[96m[4: 📊 Stats]\033[0m"      : " 4: Stats ")      << " | "
-                      << (activeTabIdx == 4 ? "\033[96m[5: 🏆 Badges]\033[0m"     : " 5: Badges ")     << " |\n";
-            std::cout << "-------------------------------------------------------------------------------\n";
+        // ----------------------------------------------------
+        // E. 2D Graphical HUD Overlay
+        // ----------------------------------------------------
+        window.BeginHUD2D();
 
-            if (activeTabIdx == 0) {
-                std::cout << "  [PRESS NUMBER KEYS TO PURCHASE MACHINES]:\n";
-                std::cout << "    [1] Auto-Clipper        (" << autoClippers << " Owned) - Cost: $" 
-                          << (BigDouble(10.0, 0) * std::pow(1.15, autoClippers)).toShortScale() << " (+1 CPS)\n";
-                std::cout << "    [2] Hydraulic Stamper   (" << stampers << " Owned) - Cost: $" 
-                          << (BigDouble(150.0, 0) * std::pow(1.15, stampers)).toShortScale() << " (+15 CPS)\n";
-                std::cout << "    [3] Laser Sinterer      (" << sinterers << " Owned) - Cost: $" 
-                          << (BigDouble(2500.0, 0) * std::pow(1.15, sinterers)).toShortScale() << " (+120 CPS)\n";
-                std::cout << "    [4] Industrial Megamill (" << megamills << " Owned) - Cost: $" 
-                          << (BigDouble(50000.0, 0) * std::pow(1.15, megamills)).toShortScale() << " (+1.5k CPS)\n";
-                if (lifetimeClips >= BigDouble(1.0, 6)) {
-                    std::cout << "    [5] Planetary Bio-Harvester (" << bioConverters << " Owned) - Cost: " 
-                              << (BigDouble(1.0, 6) * std::pow(1.15, bioConverters)).toShortScale() << " Clips (+100k CPS)\n";
-                }
-                std::cout << "    [W] Buy 1,000kg Raw Wire ($15.00) | [A] Toggle Autoplacer | [H] Toggle Hold-to-Click\n";
-            }
-            else if (activeTabIdx == 1) {
-                std::cout << "  [AVAILABLE RESEARCH TECHNOLOGIES - PRESS 'R' TO RESEARCH NEXT]:\n";
-                auto available = techWeb.GetAvailableNodes();
-                if (available.empty()) {
-                    std::cout << "    (All currently unlocked technologies have been researched!)\n";
-                } else {
-                    for (size_t i = 0; i < std::min(size_t(4), available.size()); ++i) {
-                        const auto* node = available[i];
-                        std::cout << "    * [" << node->title << "] - Cost: " 
-                                  << node->opsCost << " Ops, " << node->clipsCost.toShortScale() << " Clips\n"
-                                  << "      Effect: " << node->effectDescription << "\n";
-                    }
-                }
-            }
-            else if (activeTabIdx == 2) {
-                std::cout << "  [MODULAR 8x8 FACTORY FLOOR GRID] (Autoplacer: " 
-                          << (techWeb.autoplacerEnabled ? "\033[92mON\033[0m" : "\033[91mOFF\033[0m") << "):\n";
-                std::cout << "    * Spatial Layout Multiplier:  " << gridReport.totalLayoutMultiplier << "x Output\n";
-                std::cout << "    * Symmetry Balance Rating:    " << gridReport.symmetryScorePercent << "%\n";
-                std::cout << "    * Warehouse Crate Storage:    " << voxelStorage.GetFilledCrateCount() 
-                          << " / " << VoxelStorageEngine::TotalPalletCapacity << " Crates Filled (" 
-                          << std::fixed << std::setprecision(1) << voxelStorage.GetWarehouseFillPercent() << "%)\n";
-            }
-            else if (activeTabIdx == 3) {
-                std::cout << "  [PRECISION TELEMETRY & MACHINE BREAKDOWN]:\n";
-                std::vector<std::pair<std::string, BigDouble>> yields = {
-                    { "Auto-Clippers", BigDouble(autoClippers * 1.0, 0) },
-                    { "Hydraulic Stampers", BigDouble(stampers * 15.0, 0) },
-                    { "Laser Sinterers", BigDouble(sinterers * 120.0, 0) },
-                    { "Megamills", BigDouble(megamills * 1500.0, 0) }
-                };
-                auto contribs = MechanicalOdometerEngine::CalculateContributions(yields, currentCPS);
-                for (const auto& c : contribs) {
-                    std::cout << "    * " << std::left << std::setw(22) << c.machineName 
-                              << ": +" << std::setw(10) << (c.outputCPS.toShortScale() + "/s")
-                              << " (" << std::fixed << std::setprecision(1) << c.percentageOfTotal << "%)\n";
-                }
-            }
-            else {
-                std::cout << "  [ACHIEVEMENT TROPHY VAULT] (" 
-                          << achievements.GetUnlockedCount() << " / " << achievements.GetTotalCount() << " UNLOCKED):\n";
-                for (const auto& ach : achievements.GetAchievements()) {
-                    std::cout << "    * [" << (ach.isUnlocked ? "\033[92mUNLOCKED\033[0m" : "LOCKED") << "] " 
-                              << ach.title << " -> " << ach.description << "\n";
-                }
-            }
+        // Top Breaking News Banner (Translucent Dark Charcoal)
+        window.DrawHUDQuad(20.0f, 15.0f, 1240.0f, 45.0f, 0.12f, 0.14f, 0.18f, 0.90f);
+        // Left Stats Card
+        window.DrawHUDQuad(20.0f, 75.0f, 380.0f, 620.0f, 0.10f, 0.12f, 0.16f, 0.85f);
+        // Right Production Menu Card
+        window.DrawHUDQuad(850.0f, 75.0f, 410.0f, 620.0f, 0.10f, 0.12f, 0.16f, 0.85f);
 
-            std::cout << "-------------------------------------------------------------------------------\n";
-            std::cout << "  LOG: " << lastActionMessage << "\n";
-            std::cout << "===============================================================================\n";
+        // Interactive Button Quads
+        window.DrawHUDQuad(870.0f, 180.0f, 370.0f, 55.0f, 0.20f, 0.45f, 0.35f, 0.90f); // [1] Auto-Clipper
+        window.DrawHUDQuad(870.0f, 250.0f, 370.0f, 55.0f, 0.20f, 0.35f, 0.55f, 0.90f); // [2] Stamper
+        window.DrawHUDQuad(870.0f, 320.0f, 370.0f, 55.0f, 0.45f, 0.25f, 0.55f, 0.90f); // [3] Sinterer
+        window.DrawHUDQuad(870.0f, 390.0f, 370.0f, 55.0f, 0.65f, 0.45f, 0.15f, 0.90f); // [W] Buy Wire
+
+        // Flywheel Momentum Progress Bar
+        float flywheelWidth = 340.0f * (flywheel.GetChargePercent() / 100.0f);
+        window.DrawHUDQuad(40.0f, 630.0f, 340.0f, 20.0f, 0.2f, 0.2f, 0.25f, 1.0f);
+        window.DrawHUDQuad(40.0f, 630.0f, flywheelWidth, 20.0f, 0.2f, 0.8f, 0.9f, 1.0f);
+
+        window.EndHUD2D();
+        window.Swap();
+
+        // ----------------------------------------------------
+        // F. Periodic Console Telemetry (Synchronized)
+        // ----------------------------------------------------
+        terminalLogTimer += dt;
+        if (terminalLogTimer >= 1.0) {
+            terminalLogTimer = 0.0;
+            std::cout << "[3D RENDER TICK] Total Clips: " << lifetimeClips.toShortScale() 
+                      << " | CPS: +" << currentCPS.toShortScale() 
+                      << " | Wire: " << playerWire.toShortScale() << " kg"
+                      << " | Pile Mounds: " << static_cast<int>(pileCount) << " rendered in 3D\n";
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS loop
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
 
-    NonBlockingInput::DisableRawMode();
-    std::cout << "\nGame session saved. Thank you for playing Objective: Paperclips!\n";
+    std::cout << "\n3D Window closed. Session safely preserved.\n";
     return 0;
 }

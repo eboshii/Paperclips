@@ -2,14 +2,14 @@
 setlocal enabledelayedexpansion
 
 echo =================================================================
-echo   OBJECTIVE: PAPERCLIPS - WINDOWS 11 1-CLICK BUILD & RUN SCRIPT
+echo   OBJECTIVE: PAPERCLIPS - 3D GRAPHICAL OPENGL BUILD SCRIPT
 echo =================================================================
 echo.
 
 :: 1. Check for MSVC (cl.exe in Developer Command Prompt / VS 2022)
 where cl >nul 2>nul
 if %errorlevel% equ 0 (
-    echo [FOUND] MSVC Compiler (cl.exe). Compiling with C++20 /O2 optimization...
+    echo [FOUND] MSVC Compiler (cl.exe). Compiling 3D OpenGL build...
     cl /std:c++20 /O2 /utf-8 /Iengine/include ^
        engine/src/OmniAudio.cpp ^
        engine/src/OmniCameraRig.cpp ^
@@ -19,13 +19,15 @@ if %errorlevel% equ 0 (
        engine/src/OmniSpatialGrid.cpp ^
        engine/src/OmniResearchTree.cpp ^
        engine/src/OmniHeadlines.cpp ^
+       engine/src/OmniGLWindow.cpp ^
        game/GameMain.cpp ^
+       opengl32.lib gdi32.lib user32.lib ^
        /Fe:ObjectivePaperclips.exe
 
     if %errorlevel% equ 0 (
         echo.
         echo [SUCCESS] Build succeeded: ObjectivePaperclips.exe
-        echo [RUNNING] Launching game...
+        echo [RUNNING] Launching 3D OpenGL Game Window...
         echo.
         ObjectivePaperclips.exe
         goto :done
@@ -38,7 +40,7 @@ if %errorlevel% equ 0 (
 :: 2. Check for MinGW-w64 (g++.exe)
 where g++ >nul 2>nul
 if %errorlevel% equ 0 (
-    echo [FOUND] MinGW-w64 G++ Compiler. Compiling with C++20 -O2...
+    echo [FOUND] MinGW-w64 G++ Compiler. Compiling 3D OpenGL build...
     g++ -std=c++20 -O2 -Iengine/include ^
         engine/src/OmniAudio.cpp ^
         engine/src/OmniCameraRig.cpp ^
@@ -48,13 +50,15 @@ if %errorlevel% equ 0 (
         engine/src/OmniSpatialGrid.cpp ^
         engine/src/OmniResearchTree.cpp ^
         engine/src/OmniHeadlines.cpp ^
+        engine/src/OmniGLWindow.cpp ^
         game/GameMain.cpp ^
+        -lopengl32 -lgdi32 -luser32 ^
         -o ObjectivePaperclips.exe
 
     if %errorlevel% equ 0 (
         echo.
         echo [SUCCESS] Build succeeded: ObjectivePaperclips.exe
-        echo [RUNNING] Launching game...
+        echo [RUNNING] Launching 3D OpenGL Game Window...
         echo.
         ObjectivePaperclips.exe
         goto :done
