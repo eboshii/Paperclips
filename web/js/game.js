@@ -357,132 +357,136 @@ class GameEngine {
     }
 
     gameLoop(timestamp) {
-        const dt = Math.min(0.1, (timestamp - this.lastTickTime) / 1000.0);
-        this.lastTickTime = timestamp;
+        try {
+            const dt = Math.min(0.1, (timestamp - this.lastTickTime) / 1000.0);
+            this.lastTickTime = timestamp;
 
-        // Check Wire Unlock Threshold: City-level production capacity (50,000 clips)
-        if (!this.isWireUnlocked && this.lifetimeClips.gte(new BigDouble(50000, 0))) {
-            this.isWireUnlocked = true;
-            this.dialogue.addLog("DR. VANCE", "Arthur, we've exhausted all local scrap metal in the district! We need to start ordering and managing industrial high-tensile wire supply!");
-            this.renderResources();
-        }
-
-        // 1. Hold-to-Click Handler
-        if (this.isMouseDown && this.techTree.holdToClickEnabled) {
-            this.holdClickTimer += dt;
-            if (this.holdClickTimer >= 0.05) { // 20Hz
-                this.holdClickTimer = 0;
-                this.handleManualClick(null);
+            // Check Wire Unlock Threshold: City-level production capacity (50,000 clips)
+            if (!this.isWireUnlocked && this.lifetimeClips.gte(new BigDouble(50000, 0))) {
+                this.isWireUnlocked = true;
+                this.dialogue.addLog("DR. VANCE", "Arthur, we've exhausted all local scrap metal in the district! We need to start ordering and managing industrial high-tensile wire supply!");
+                this.renderResources();
             }
-        }
 
-        // 2. Flywheel Momentum Decay
-        if (this.flywheelCharge > 0) {
-            this.flywheelCharge = Math.max(0, this.flywheelCharge - this.flywheelDecayRate * dt);
-        }
+            // 1. Hold-to-Click Handler
+            if (this.isMouseDown && this.techTree.holdToClickEnabled) {
+                this.holdClickTimer += dt;
+                if (this.holdClickTimer >= 0.05) { // 20Hz
+                    this.holdClickTimer = 0;
+                    this.handleManualClick(null);
+                }
+            }
 
-        // 3. Automated Economic Simulation (Whole Integer Paperclips)
-        const currentCPS = this.calculateTotalCPS();
-        if (currentCPS.gt(BigDouble.zero())) {
-            const clipsProduced = currentCPS.mul(dt);
+            // 2. Flywheel Momentum Decay
+            if (this.flywheelCharge > 0) {
+                this.flywheelCharge = Math.max(0, this.flywheelCharge - this.flywheelDecayRate * dt);
+            }
 
-            if (clipsProduced.exponent >= 5) {
-                // High volume production (100k+ / tick): add directly and spawn streams
-                if (!this.isWireUnlocked) {
-                    this.clips = this.clips.add(clipsProduced);
-                    this.lifetimeClips = this.lifetimeClips.add(clipsProduced);
-                } else {
-                    const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
-                    const wireNeeded = clipsProduced.mul(wirePerClip);
-                    if (this.wire.gte(wireNeeded)) {
+            // 3. Automated Economic Simulation (Whole Integer Paperclips)
+            const currentCPS = this.calculateTotalCPS();
+            if (currentCPS.gt(BigDouble.zero())) {
+                const clipsProduced = currentCPS.mul(dt);
+
+                if (clipsProduced.exponent >= 5) {
+                    // High volume production (100k+ / tick): add directly and spawn streams
+                    if (!this.isWireUnlocked) {
                         this.clips = this.clips.add(clipsProduced);
                         this.lifetimeClips = this.lifetimeClips.add(clipsProduced);
-                        this.wire = this.wire.sub(wireNeeded);
-                    } else if (this.wire.gt(BigDouble.zero())) {
-                        const actualClips = this.wire.div(wirePerClip);
-                        this.clips = this.clips.add(actualClips);
-                        this.lifetimeClips = this.lifetimeClips.add(actualClips);
-                        this.wire = BigDouble.zero();
-                    }
-                }
-                if (this.visualizer) this.visualizer.spawnPaperclips(15, null, totalCPS);
-            } else {
-                // Low / medium volume: accumulate sub-integers to grant strictly whole paperclips
-                this.fractionalClips += clipsProduced.toDouble();
-                if (this.fractionalClips >= 1.0) {
-                    const wholeClipsToAdd = Math.floor(this.fractionalClips);
-                    this.fractionalClips -= wholeClipsToAdd;
-
-                    if (!this.isWireUnlocked) {
-                        const wholeBD = BigDouble.fromNumber(wholeClipsToAdd);
-                        this.clips = this.clips.add(wholeBD);
-                        this.lifetimeClips = this.lifetimeClips.add(wholeBD);
-                        if (this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd, null, totalCPS);
                     } else {
                         const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
-                        const wireNeeded = new BigDouble(wirePerClip * wholeClipsToAdd, 0);
-
+                        const wireNeeded = clipsProduced.mul(wirePerClip);
                         if (this.wire.gte(wireNeeded)) {
+                            this.clips = this.clips.add(clipsProduced);
+                            this.lifetimeClips = this.lifetimeClips.add(clipsProduced);
+                            this.wire = this.wire.sub(wireNeeded);
+                        } else if (this.wire.gt(BigDouble.zero())) {
+                            const actualClips = this.wire.div(wirePerClip);
+                            this.clips = this.clips.add(actualClips);
+                            this.lifetimeClips = this.lifetimeClips.add(actualClips);
+                            this.wire = BigDouble.zero();
+                        }
+                    }
+                    if (this.visualizer) this.visualizer.spawnPaperclips(15, null, currentCPS);
+                } else {
+                    // Low / medium volume: accumulate sub-integers to grant strictly whole paperclips
+                    this.fractionalClips += clipsProduced.toDouble();
+                    if (this.fractionalClips >= 1.0) {
+                        const wholeClipsToAdd = Math.floor(this.fractionalClips);
+                        this.fractionalClips -= wholeClipsToAdd;
+
+                        if (!this.isWireUnlocked) {
                             const wholeBD = BigDouble.fromNumber(wholeClipsToAdd);
                             this.clips = this.clips.add(wholeBD);
                             this.lifetimeClips = this.lifetimeClips.add(wholeBD);
-                            this.wire = this.wire.sub(wireNeeded);
-                            if (this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd, null, totalCPS);
-                        } else if (this.wire.gt(BigDouble.zero())) {
-                            const actualClips = Math.floor(this.wire.toDouble() / wirePerClip);
-                            if (actualClips > 0) {
-                                const wholeBD = BigDouble.fromNumber(actualClips);
+                            if (this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd, null, currentCPS);
+                        } else {
+                            const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
+                            const wireNeeded = new BigDouble(wirePerClip * wholeClipsToAdd, 0);
+
+                            if (this.wire.gte(wireNeeded)) {
+                                const wholeBD = BigDouble.fromNumber(wholeClipsToAdd);
                                 this.clips = this.clips.add(wholeBD);
                                 this.lifetimeClips = this.lifetimeClips.add(wholeBD);
-                                if (this.visualizer) this.visualizer.spawnPaperclips(actualClips, null, totalCPS);
+                                this.wire = this.wire.sub(wireNeeded);
+                                if (this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd, null, currentCPS);
+                            } else if (this.wire.gt(BigDouble.zero())) {
+                                const actualClips = Math.floor(this.wire.toDouble() / wirePerClip);
+                                if (actualClips > 0) {
+                                    const wholeBD = BigDouble.fromNumber(actualClips);
+                                    this.clips = this.clips.add(wholeBD);
+                                    this.lifetimeClips = this.lifetimeClips.add(wholeBD);
+                                    if (this.visualizer) this.visualizer.spawnPaperclips(actualClips, null, currentCPS);
+                                }
+                                this.wire = BigDouble.zero();
                             }
-                            this.wire = BigDouble.zero();
                         }
                     }
                 }
             }
-        }
 
-        // 4. Auto-Supply Logistics (if unlocked and wire active)
-        if (this.isWireUnlocked && this.techTree.smartWireLogisticsUnlocked && this.techTree.smartWireActive) {
-            if (this.wire.lt(new BigDouble(500, 0)) && this.clips.gte(new BigDouble(250, 0))) {
-                this.buyWire();
+            // 4. Auto-Supply Logistics (if unlocked and wire active)
+            if (this.isWireUnlocked && this.techTree.smartWireLogisticsUnlocked && this.techTree.smartWireActive) {
+                if (this.wire.lt(new BigDouble(500, 0)) && this.clips.gte(new BigDouble(250, 0))) {
+                    this.buyWire();
+                }
             }
-        }
 
-        // 5. Passive Computing Ops Generation
-        const stamperCount = this.buildings.getBuilding('hydraulic_stamper')?.count || 0;
-        const opsRate = (0.8 + (stamperCount * 0.4)) * this.prestige.getOpsBoostMultiplier();
-        this.ops = Math.min(this.maxOps, this.ops + (opsRate * dt));
+            // 5. Passive Computing Ops Generation
+            const stamperCount = this.buildings.getBuilding('hydraulic_stamper')?.count || 0;
+            const opsRate = (0.8 + (stamperCount * 0.4)) * this.prestige.getOpsBoostMultiplier();
+            this.ops = Math.min(this.maxOps, this.ops + (opsRate * dt));
 
-        // 6. Subsystem Updates
-        this.techTree.updateAvailability(this.ops, this.lifetimeClips);
-        this.techTree.processQueue(this);
-        this.dialogue.checkMilestones(this);
-        this.news.update(dt, this);
-        this.achievements.checkProgress(this);
+            // 6. Subsystem Updates
+            this.techTree.updateAvailability(this.ops, this.lifetimeClips);
+            this.techTree.processQueue(this);
+            this.dialogue.checkMilestones(this);
+            this.news.update(dt, this);
+            this.achievements.checkProgress(this);
 
-        if (this.visualizer) {
-            this.visualizer.update(dt, this);
-            this.visualizer.render(this);
-        }
+            if (this.visualizer) {
+                this.visualizer.update(dt, this);
+                this.visualizer.render(this);
+            }
 
-        // 7. UI Rendering
-        this.renderOdometer(currentCPS);
-        this.renderResources();
-        this.renderNews();
+            // 7. UI Rendering
+            this.renderOdometer(currentCPS);
+            this.renderResources();
+            this.renderNews();
 
-        if (this.activeTab === 'store') {
-            this.updateStoreRealtime();
-        } else if (this.activeTab === 'tech') {
-            this.updateTechRealtime();
-        }
+            if (this.activeTab === 'store') {
+                this.updateStoreRealtime();
+            } else if (this.activeTab === 'tech') {
+                this.updateTechRealtime();
+            }
 
-        // 8. Auto-Save Tick
-        const now = Date.now();
-        if (now - this.lastSaveTime >= this.saveInterval) {
-            this.saveGame();
-            this.lastSaveTime = now;
+            // 8. Auto-Save Tick
+            const now = Date.now();
+            if (now - this.lastSaveTime >= this.saveInterval) {
+                this.saveGame();
+                this.lastSaveTime = now;
+            }
+        } catch (err) {
+            console.error("GameLoop frame error:", err);
         }
 
         requestAnimationFrame((t) => this.gameLoop(t));
@@ -576,15 +580,20 @@ class GameEngine {
         container.innerHTML = this.buildings.buildings.map(b => {
             const purchase = b.getCost(this.buyMultiplier, this.clips);
             const canAfford = this.clips.gte(purchase.totalCost);
-            const costFormatted = `${purchase.totalCost.toWholeScale()} Clips`;
+            const costFormatted = `${purchase.totalCost.toWholeScale()}`;
             const rateFormatted = `+${b.baseCPS.toShortScale(1)} CPS`;
 
             return `
                 <div class="building-card ${canAfford ? 'affordable' : 'locked'}" onclick="game.buyBuilding('${b.id}')">
                     <div class="building-icon">${b.icon}</div>
                     <div class="building-details">
-                        <div class="building-name">${b.name}</div>
-                        <div class="building-cost">${costFormatted} <span class="building-rate">| ${rateFormatted}</span></div>
+                        <div class="building-header-row">
+                            <span class="building-name">${b.name}</span>
+                            <span class="building-rate">${rateFormatted}</span>
+                        </div>
+                        <div class="building-cost-pill">
+                            <span class="building-cost-amount">📎 ${costFormatted}</span>
+                        </div>
                     </div>
                     <div class="building-count">${b.count}</div>
                 </div>
@@ -613,16 +622,15 @@ class GameEngine {
                 card.classList.toggle('locked', !canAfford);
             }
 
-            const costEl = card.querySelector('.building-cost');
+            const costAmountEl = card.querySelector('.building-cost-amount');
             const countEl = card.querySelector('.building-count');
             if (countEl && countEl.textContent !== String(b.count)) {
                 countEl.textContent = b.count;
             }
-            if (costEl && (this.buyMultiplier === 'max' || card.dataset.cost !== purchase.totalCost.toWholeScale())) {
+            if (costAmountEl && (this.buyMultiplier === 'max' || card.dataset.cost !== purchase.totalCost.toWholeScale())) {
                 card.dataset.cost = purchase.totalCost.toWholeScale();
-                const costFormatted = `${purchase.totalCost.toWholeScale()} Clips`;
-                const rateFormatted = `+${b.baseCPS.toShortScale(1)} CPS`;
-                costEl.innerHTML = `${costFormatted} <span class="building-rate">| ${rateFormatted}</span>`;
+                const costFormatted = `${purchase.totalCost.toWholeScale()}`;
+                costAmountEl.textContent = `📎 ${costFormatted}`;
             }
         });
     }
@@ -665,7 +673,7 @@ class GameEngine {
         container.innerHTML = `
             <div class="single-upgrade-shelf" style="padding:10px 12px;">
                 <div class="shelf-label" style="font-size:10px; margin-bottom:8px;">🔬 NEXT RESEARCH OBJECTIVE</div>
-                <div class="next-upgrade-card" style="padding:10px 12px; gap:8px;">
+                <div class="next-upgrade-card" style="padding:10px 12px; gap:10px;">
                     <div class="upgrade-top-row" style="gap:10px;">
                         <div class="upgrade-icon-box" style="width:44px; height:44px; font-size:24px;">${nextNode.icon}</div>
                         <div class="upgrade-header-info">
@@ -676,10 +684,10 @@ class GameEngine {
                     <div class="upgrade-effect" style="font-size:14px; color:#ffffff; background:#190c33; padding:10px; border-radius:8px; border:2px solid var(--border-ink); line-height:1.35;">
                         ${nextNode.effectDescription}
                     </div>
-                    <div style="font-family:var(--font-cartoon); font-size:16px; font-weight:800; color:var(--neon-yellow); text-shadow:1px 1px 0 var(--border-ink);">
-                        Cost: ⚡ ${nextNode.opsCost} Ops &nbsp;|&nbsp; 📎 ${nextNode.clipsCost.toWholeScale()} Clips
+                    <div class="building-cost-pill" style="width:100%; justify-content:center; padding:8px 12px; border-width:3px;">
+                        <span class="building-cost-amount" style="font-size:20px;">⚡ ${nextNode.opsCost} Ops &nbsp;|&nbsp; 📎 ${nextNode.clipsCost.toWholeScale()}</span>
                     </div>
-                    <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:10px 14px; font-size:15px;" onclick="game.buyTech('${nextNode.id}')">
+                    <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:12px 16px; font-size:16px; font-weight:800;" onclick="game.buyTech('${nextNode.id}')">
                         <span>${canAfford ? '💡 RESEARCH NOW' : '🔒 NEED MORE OPS / CLIPS'}</span>
                         <span>⚡ ${nextNode.opsCost} Ops</span>
                     </button>

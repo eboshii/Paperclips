@@ -833,8 +833,8 @@ class CosmicVisualizer {
             ctx.stroke();
 
             // Rich, dense paperclip texture throughout the entire depth of the fluid
-            const stepX = 7;
-            const stepY = 6;
+            const stepX = 9;
+            const stepY = 8;
             const colors = ['#00f0ff', '#ffe600', '#ffffff', '#7fe0ff', '#ff66aa'];
 
             for (let fx = 4; fx < w - 3; fx += stepX) {
