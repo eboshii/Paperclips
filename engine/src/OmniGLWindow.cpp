@@ -296,12 +296,46 @@ void OmniGLWindow::DrawHUDQuad(float x, float y, float w, float h, float r, floa
 #endif
 }
 
-void OmniGLWindow::DrawHUDText(float x, float y, const std::string& text, float scale, float r, float g, float b, float a) {
+void OmniGLWindow::DrawHUDBorder(float x, float y, float w, float h, float thickness, float r, float g, float b, float a) {
 #ifdef _WIN32
-    OmniFont::DrawString2D(x, y, text, scale, r, g, b, a, true);
+    // Top
+    DrawHUDQuad(x, y, w, thickness, r, g, b, a);
+    // Bottom
+    DrawHUDQuad(x, y + h - thickness, w, thickness, r, g, b, a);
+    // Left
+    DrawHUDQuad(x, y + thickness, thickness, h - 2.0f * thickness, r, g, b, a);
+    // Right
+    DrawHUDQuad(x + w - thickness, y + thickness, thickness, h - 2.0f * thickness, r, g, b, a);
 #else
-    (void)x; (void)y; (void)text; (void)scale; (void)r; (void)g; (void)b; (void)a;
+    (void)x; (void)y; (void)w; (void)h; (void)thickness; (void)r; (void)g; (void)b; (void)a;
 #endif
+}
+
+void OmniGLWindow::DrawHUDCard(float x, float y, float w, float h, float bgR, float bgG, float bgB, float bgA, float borderR, float borderG, float borderB, float borderA) {
+#ifdef _WIN32
+    DrawHUDQuad(x, y, w, h, bgR, bgG, bgB, bgA);
+    DrawHUDBorder(x, y, w, h, 1.0f, borderR, borderG, borderB, borderA);
+#else
+    (void)x; (void)y; (void)w; (void)h; (void)bgR; (void)bgG; (void)bgB; (void)bgA; (void)borderR; (void)borderG; (void)borderB; (void)borderA;
+#endif
+}
+
+void OmniGLWindow::DrawHUDText(float x, float y, const std::string& text, float scale, float r, float g, float b, float a, bool dropShadow) {
+#ifdef _WIN32
+    OmniFont::DrawString2D(x, y, text, scale, r, g, b, a, dropShadow);
+#else
+    (void)x; (void)y; (void)text; (void)scale; (void)r; (void)g; (void)b; (void)a; (void)dropShadow;
+#endif
+}
+
+void OmniGLWindow::DrawHUDTextCentered(float centerX, float y, const std::string& text, float scale, float r, float g, float b, float a, bool dropShadow) {
+    float w = OmniFont::GetTextWidth(text, scale);
+    DrawHUDText(centerX - w * 0.5f, y, text, scale, r, g, b, a, dropShadow);
+}
+
+void OmniGLWindow::DrawHUDTextRight(float rightX, float y, const std::string& text, float scale, float r, float g, float b, float a, bool dropShadow) {
+    float w = OmniFont::GetTextWidth(text, scale);
+    DrawHUDText(rightX - w, y, text, scale, r, g, b, a, dropShadow);
 }
 
 void OmniGLWindow::EndHUD2D() {

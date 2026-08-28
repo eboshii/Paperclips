@@ -22,6 +22,22 @@ namespace OmniEngine {
 /// </summary>
 class OmniFont {
 public:
+    static float GetTextWidth(const std::string& text, float scale = 1.0f) {
+        if (text.empty()) return 0.0f;
+        float maxLen = 0.0f;
+        float curLen = 0.0f;
+        for (char c : text) {
+            if (c == '\n') {
+                if (curLen > maxLen) maxLen = curLen;
+                curLen = 0.0f;
+            } else {
+                curLen += 1.0f;
+            }
+        }
+        if (curLen > maxLen) maxLen = curLen;
+        return maxLen * 9.0f * scale;
+    }
+
     static void DrawString2D(float x, float y, const std::string& text, float scale = 1.0f, 
                              float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f, 
                              bool dropShadow = true) 
@@ -29,7 +45,7 @@ public:
 #ifdef _WIN32
         if (dropShadow) {
             // Draw dark drop shadow
-            RenderGlyphString(x + 2.0f * scale, y + 2.0f * scale, text, scale, 0.0f, 0.0f, 0.0f, a * 0.7f);
+            RenderGlyphString(x + 1.5f * scale, y + 1.5f * scale, text, scale, 0.0f, 0.0f, 0.0f, a * 0.8f);
         }
         RenderGlyphString(x, y, text, scale, r, g, b, a);
 #else

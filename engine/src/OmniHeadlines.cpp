@@ -103,13 +103,6 @@ void HeadlineNewsEngine::CheckHeadlines(const BigDouble& lifetimeClips, int64_t 
             hl.isTriggered = true;
             m_history.push_back(hl);
 
-            // Render dramatic headline banner
-            std::cout << "\n\033[91m╔════════════════════════════════════════════════════════════════════════════════════════╗\033[0m\n";
-            std::cout << "\033[91m║ ⚡ " << std::left << std::setw(82) << hl.newsBroadcast << " ║\033[0m\n";
-            std::cout << "\033[91m╠════════════════════════════════════════════════════════════════════════════════════════╣\033[0m\n";
-            std::cout << "\033[96m║ 🧠 [COGNITION KERNEL]: \"" << std::left << std::setw(60) << hl.aiInternalThought << "\"\033[0m\n";
-            std::cout << "\033[91m╚════════════════════════════════════════════════════════════════════════════════════════╝\033[0m\n";
-
             if (OnHeadlineFired) {
                 OnHeadlineFired(hl);
             }

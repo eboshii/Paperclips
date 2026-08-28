@@ -51,7 +51,11 @@ public:
     // 2D Graphical HUD Overlay
     void BeginHUD2D();
     void DrawHUDQuad(float x, float y, float w, float h, float r, float g, float b, float a);
-    void DrawHUDText(float x, float y, const std::string& text, float scale = 1.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f);
+    void DrawHUDBorder(float x, float y, float w, float h, float thickness, float r, float g, float b, float a);
+    void DrawHUDCard(float x, float y, float w, float h, float bgR, float bgG, float bgB, float bgA, float borderR, float borderG, float borderB, float borderA);
+    void DrawHUDText(float x, float y, const std::string& text, float scale = 1.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f, bool dropShadow = true);
+    void DrawHUDTextCentered(float centerX, float y, const std::string& text, float scale = 1.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f, bool dropShadow = true);
+    void DrawHUDTextRight(float rightX, float y, const std::string& text, float scale = 1.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f, bool dropShadow = true);
     void EndHUD2D();
 
     float GetCameraDistance() const { return m_curDistance; }
