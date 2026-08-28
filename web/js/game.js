@@ -405,7 +405,7 @@ class GameEngine {
                         this.wire = BigDouble.zero();
                     }
                 }
-                if (this.visualizer) this.visualizer.spawnPaperclips(15);
+                if (this.visualizer) this.visualizer.spawnPaperclips(15, null, totalCPS);
             } else {
                 // Low / medium volume: accumulate sub-integers to grant strictly whole paperclips
                 this.fractionalClips += clipsProduced.toDouble();
@@ -417,7 +417,7 @@ class GameEngine {
                         const wholeBD = BigDouble.fromNumber(wholeClipsToAdd);
                         this.clips = this.clips.add(wholeBD);
                         this.lifetimeClips = this.lifetimeClips.add(wholeBD);
-                        if (this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd);
+                        if (this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd, null, totalCPS);
                     } else {
                         const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
                         const wireNeeded = new BigDouble(wirePerClip * wholeClipsToAdd, 0);
@@ -427,14 +427,14 @@ class GameEngine {
                             this.clips = this.clips.add(wholeBD);
                             this.lifetimeClips = this.lifetimeClips.add(wholeBD);
                             this.wire = this.wire.sub(wireNeeded);
-                            if (this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd);
+                            if (this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd, null, totalCPS);
                         } else if (this.wire.gt(BigDouble.zero())) {
                             const actualClips = Math.floor(this.wire.toDouble() / wirePerClip);
                             if (actualClips > 0) {
                                 const wholeBD = BigDouble.fromNumber(actualClips);
                                 this.clips = this.clips.add(wholeBD);
                                 this.lifetimeClips = this.lifetimeClips.add(wholeBD);
-                                if (this.visualizer) this.visualizer.spawnPaperclips(actualClips);
+                                if (this.visualizer) this.visualizer.spawnPaperclips(actualClips, null, totalCPS);
                             }
                             this.wire = BigDouble.zero();
                         }
@@ -663,23 +663,23 @@ class GameEngine {
 
         const canAfford = this.techTree.canAfford(nextNode.id, this.ops, this.clips);
         container.innerHTML = `
-            <div class="single-upgrade-shelf" style="padding:14px;">
-                <div class="shelf-label" style="font-size:10px; margin-bottom:12px;">🔬 NEXT RESEARCH OBJECTIVE</div>
-                <div class="next-upgrade-card" style="padding:14px; gap:12px;">
-                    <div class="upgrade-top-row" style="gap:12px;">
-                        <div class="upgrade-icon-box" style="width:48px; height:48px; font-size:26px;">${nextNode.icon}</div>
+            <div class="single-upgrade-shelf" style="padding:10px 12px;">
+                <div class="shelf-label" style="font-size:10px; margin-bottom:8px;">🔬 NEXT RESEARCH OBJECTIVE</div>
+                <div class="next-upgrade-card" style="padding:10px 12px; gap:8px;">
+                    <div class="upgrade-top-row" style="gap:10px;">
+                        <div class="upgrade-icon-box" style="width:44px; height:44px; font-size:24px;">${nextNode.icon}</div>
                         <div class="upgrade-header-info">
-                            <div class="upgrade-title" style="font-size:18px;">${nextNode.title}</div>
-                            <div class="upgrade-discipline" style="font-size:10px; margin-top:3px;">${nextNode.discipline}</div>
+                            <div class="upgrade-title" style="font-size:17px;">${nextNode.title}</div>
+                            <div class="upgrade-discipline" style="font-size:9px; margin-top:2px;">${nextNode.discipline}</div>
                         </div>
                     </div>
-                    <div class="upgrade-effect" style="font-size:14px; color:#ffffff; background:#190c33; padding:12px; border-radius:8px; border:2px solid var(--border-ink); line-height:1.4;">
+                    <div class="upgrade-effect" style="font-size:14px; color:#ffffff; background:#190c33; padding:10px; border-radius:8px; border:2px solid var(--border-ink); line-height:1.35;">
                         ${nextNode.effectDescription}
                     </div>
-                    <div style="font-family:var(--font-cartoon); font-size:14px; font-weight:700; color:var(--neon-yellow);">
+                    <div style="font-family:var(--font-cartoon); font-size:16px; font-weight:800; color:var(--neon-yellow); text-shadow:1px 1px 0 var(--border-ink);">
                         Cost: ⚡ ${nextNode.opsCost} Ops &nbsp;|&nbsp; 📎 ${nextNode.clipsCost.toWholeScale()} Clips
                     </div>
-                    <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:12px 16px; font-size:15px;" onclick="game.buyTech('${nextNode.id}')">
+                    <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:10px 14px; font-size:15px;" onclick="game.buyTech('${nextNode.id}')">
                         <span>${canAfford ? '💡 RESEARCH NOW' : '🔒 NEED MORE OPS / CLIPS'}</span>
                         <span>⚡ ${nextNode.opsCost} Ops</span>
                     </button>

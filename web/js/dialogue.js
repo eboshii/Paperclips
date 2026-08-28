@@ -173,18 +173,11 @@ class DialogueDirector {
             });
         }
 
-        const bubble = document.getElementById('dialogue-bubble');
-        if (bubble) {
-            bubble.addEventListener('click', (e) => {
+        const closeBtn = document.getElementById('dialogue-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.advanceDialogue();
-            });
-        }
-
-        const backdrop = document.getElementById('story-backdrop');
-        if (backdrop) {
-            backdrop.addEventListener('click', () => {
-                this.advanceDialogue();
+                this.dismissCurrent();
             });
         }
     }
@@ -258,12 +251,12 @@ class DialogueDirector {
 
     showBubble(sender, text) {
         if (typeof document === 'undefined') return;
-        const backdrop = document.getElementById('story-backdrop');
+        const bubble = document.getElementById('dialogue-bubble');
         const avatarEl = document.getElementById('dialogue-avatar');
         const senderEl = document.getElementById('dialogue-sender');
         const textEl = document.getElementById('dialogue-text');
 
-        if (!avatarEl || !senderEl || !textEl) return;
+        if (!bubble || !avatarEl || !senderEl || !textEl) return;
 
         // Pick cartoon avatar
         let avatar = "💬";
@@ -278,7 +271,7 @@ class DialogueDirector {
         if (avatarEl) avatarEl.textContent = avatar;
         senderEl.textContent = sender;
         textEl.textContent = text;
-        if (backdrop) backdrop.style.display = 'flex';
+        bubble.style.display = 'flex';
 
         this.updateNextButton();
     }
@@ -296,8 +289,8 @@ class DialogueDirector {
 
     hideBubble() {
         if (typeof document === 'undefined') return;
-        const backdrop = document.getElementById('story-backdrop');
-        if (backdrop) backdrop.style.display = 'none';
+        const bubble = document.getElementById('dialogue-bubble');
+        if (bubble) bubble.style.display = 'none';
     }
 
     checkMilestones(state) {

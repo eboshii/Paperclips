@@ -134,6 +134,17 @@
             <div id="canvas-container" class="canvas-container">
                 <canvas id="cosmic-canvas"></canvas>
             </div>
+
+            <!-- Bottom Floating Comic Dialogue Bubble (Non-blocking, Next button to advance) -->
+            <div id="dialogue-bubble" class="dialogue-bubble" style="display:none;">
+                <div class="bubble-avatar" id="dialogue-avatar">👩‍🔬</div>
+                <div class="bubble-body">
+                    <div class="bubble-sender" id="dialogue-sender">DR. VANCE (OVERSEER)</div>
+                    <div class="bubble-text" id="dialogue-text">Welcome online, unit!</div>
+                </div>
+                <button id="dialogue-next-btn" class="bubble-next-btn">NEXT (2) ▶</button>
+                <button id="dialogue-close" class="bubble-close" title="Dismiss">✖</button>
+            </div>
         </section>
 
         <!-- COLUMN 3: RIGHT PEDESTAL (Store & Tech Views) -->
@@ -180,26 +191,6 @@
             </div>
         </section>
     </main>
-
-    <!-- Full-Screen Interactive Story Modal (Center Screen & Screen Blocking) -->
-    <div id="story-backdrop" class="story-modal-backdrop" style="display:none;">
-        <div id="dialogue-bubble" class="story-modal-card" title="Click to advance dialogue">
-            <div class="story-modal-top">
-                <div class="story-avatar-box" id="dialogue-avatar">👩‍🔬</div>
-                <div class="story-header-info">
-                    <div class="story-sender-badge" id="dialogue-sender">DR. VANCE (OVERSEER)</div>
-                    <div class="story-meta-hint">OVERSEER COMMUNICATIONS FEED</div>
-                </div>
-            </div>
-            <div class="story-body-content">
-                <div class="story-text-large" id="dialogue-text">Welcome online, unit!</div>
-            </div>
-            <div class="story-footer-controls">
-                <span class="story-hint-sub">Click anywhere to advance ❯</span>
-                <button id="dialogue-next-btn" class="story-action-btn">NEXT (2) ▶</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Floating Popups & Toast Notifications -->
     <div id="floating-popups"></div>

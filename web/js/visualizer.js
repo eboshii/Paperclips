@@ -1,7 +1,8 @@
 /**
  * visualizer.js - Vibrant Cartoon Pixel Art Cosmic Visualizer
  * Features:
- * - Stable, mass-conserving paperclip fluid & granular mound slumping (spills & flows from impact point)
+ * - Thick, sticky, viscous fluid & steep granular paperclip mound simulation
+ * - Central drop clustering at start, smoothly expanding across screen at higher CPS
  * - Fluid suction & drain effect out the bottom of the screen on purchases
  * - Tiny falling paperclips with tumbling, bouncing, and slope-sliding physics
  * - Jutting paperclip texture poking out along the dynamic fluid terrain
@@ -40,7 +41,7 @@ class CosmicVisualizer {
         this.settledClips = [];
         this.drainingClips = [];
         this.maxFallingClips = 120;
-        this.maxSettledClips = 80;
+        this.maxSettledClips = 90;
         this.maxDrainingClips = 80;
 
         // Dynamic Fluid & Granular Slumping Pile Simulation
@@ -113,13 +114,23 @@ class CosmicVisualizer {
             this.emitClickSparks(this.pixelCanvas.width / 2, this.pixelCanvas.height / 2, 12);
         }
         // Spawn paperclip falling directly from the center/hero
-        this.spawnPaperclips(1, this.pixelCanvas.width / 2);
+        this.spawnPaperclips(1, this.pixelCanvas.width / 2, 0);
     }
 
-    spawnPaperclips(count = 1, preferredX = null) {
+    spawnPaperclips(count = 1, preferredX = null, cps = 0) {
         const pw = this.pixelCanvas.width || 200;
+        const centerX = pw / 2;
         const colors = ['#ffffff', '#00f0ff', '#d0e8ff', '#ffe600', '#7fe0ff'];
         const spawnCount = Math.min(count, 16); // Particle limit per frame for smooth 60fps
+
+        // Calculate drop spread based on current production rate:
+        // Early game / low CPS: tightly clustered around center (±15px) so a tall pile forms in the middle
+        // As rate gets higher (e.g. > 35 CPS): spreads smoothly across the whole screen!
+        const cpsNum = (typeof cps === 'object' && cps !== null) ? cps.toDouble() : (Number(cps) || 0);
+        const spreadFactor = Math.min(1.0, cpsNum / 35.0);
+        const minSpread = 15.0; // Tight cluster at start
+        const maxSpread = (pw - 24) / 2;
+        const currentSpread = minSpread + spreadFactor * (maxSpread - minSpread);
 
         for (let i = 0; i < spawnCount; ++i) {
             if (this.fallingClips.length >= this.maxFallingClips) {
@@ -128,14 +139,14 @@ class CosmicVisualizer {
 
             let x;
             if (preferredX !== null && count <= 3) {
-                x = preferredX + (Math.random() - 0.5) * 30;
+                x = preferredX + (Math.random() - 0.5) * (12 + spreadFactor * 24);
             } else {
-                x = Math.random() * (pw - 24) + 12;
+                x = centerX + (Math.random() - 0.5) * (currentSpread * 2);
             }
             x = Math.max(6, Math.min(pw - 6, x));
 
-            const vx = (Math.random() - 0.5) * 1.5;
-            const vy = 0.8 + Math.random() * 2.0;
+            const vx = (Math.random() - 0.5) * 1.2;
+            const vy = 0.9 + Math.random() * 2.2;
             const rot = Math.random() * Math.PI * 2;
             const vRot = (Math.random() - 0.5) * 0.35;
             const color = colors[Math.floor(Math.random() * colors.length)];
@@ -159,10 +170,10 @@ class CosmicVisualizer {
         if (count > 15) {
             const feedPoints = Math.min(count, 8);
             for (let k = 0; k < feedPoints; ++k) {
-                const targetX = Math.random() * pw;
+                const targetX = centerX + (Math.random() - 0.5) * (currentSpread * 2);
                 const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((targetX / pw) * this.numColumns)));
-                this.pileHeights[colIdx] = Math.min(60, this.pileHeights[colIdx] + 0.3);
-                this.waveVelocities[colIdx] += 0.25;
+                this.pileHeights[colIdx] = Math.min(pw * 0.55, this.pileHeights[colIdx] + 0.35);
+                this.waveVelocities[colIdx] += 0.15;
             }
         }
     }
@@ -278,14 +289,14 @@ class CosmicVisualizer {
 
         const pw = this.pixelCanvas.width || 200;
         const ph = this.pixelCanvas.height || 150;
-        const maxAllowedPile = ph * 0.40; // Max mound height (up to 40% of screen)
+        const maxAllowedPile = ph * 0.55; // Tall peak capacity (up to 55% of screen)
 
         // 1. UPDATE FALLING PAPERCLIPS & IMPACT ON PILES
         for (let i = this.fallingClips.length - 1; i >= 0; --i) {
             const p = this.fallingClips[i];
 
             if (!p.settled) {
-                p.vy += 0.26; // Gravity
+                p.vy += 0.28; // Gravity
                 p.x += p.vx;
                 p.y += p.vy;
                 p.rot += p.vRot;
@@ -303,8 +314,8 @@ class CosmicVisualizer {
                     p.y = surfaceY;
 
                     // Deposit paperclip mass into the mound at this specific drop point!
-                    this.pileHeights[colIdx] = Math.min(maxAllowedPile, this.pileHeights[colIdx] + 0.25);
-                    this.waveVelocities[colIdx] += Math.min(2.0, p.vy * 0.3);
+                    this.pileHeights[colIdx] = Math.min(maxAllowedPile, this.pileHeights[colIdx] + 0.45);
+                    this.waveVelocities[colIdx] += Math.min(1.5, p.vy * 0.2);
 
                     // Calculate local slope to slide down the mound!
                     const leftH = colIdx > 0 ? this.pileHeights[colIdx - 1] : currentMoundHeight;
@@ -313,9 +324,9 @@ class CosmicVisualizer {
 
                     p.bounces++;
                     if (p.bounces < 2 && Math.abs(p.vy) > 1.2) {
-                        p.vy = -p.vy * 0.25;
-                        p.vx = (p.vx * 0.5) + (slope * 0.2); // Slide down the slope!
-                        p.vRot *= 0.5;
+                        p.vy = -p.vy * 0.20;
+                        p.vx = (p.vx * 0.4) + (slope * 0.22); // Slide down the slope!
+                        p.vRot *= 0.4;
                     } else {
                         // Settle on the slope
                         p.settled = true;
@@ -349,9 +360,9 @@ class CosmicVisualizer {
             }
         }
 
-        // 3. STABLE MASS-CONSERVED GRANULAR SLUMPING (Spills outward from impact point)
-        const angleOfRepose = 0.6; // Max natural slope before spill
-        const flowRate = 0.12; // Viscous transfer speed
+        // 3. STICKY / THICK GRANULAR SLUMPING (High angle of repose allows steep central pyramid!)
+        const angleOfRepose = 1.25; // Steeper angle of repose for sticky paperclip mound
+        const flowRate = 0.05; // Viscous, heavy flow transfer speed
 
         for (let pass = 0; pass < 2; ++pass) {
             for (let i = 0; i < this.numColumns - 1; ++i) {
@@ -359,11 +370,11 @@ class CosmicVisualizer {
                 if (Math.abs(diff) > angleOfRepose) {
                     const excess = (Math.abs(diff) - angleOfRepose) * flowRate;
                     if (diff > 0) {
-                        const actualFlow = Math.min(excess, this.pileHeights[i] * 0.5);
+                        const actualFlow = Math.min(excess, this.pileHeights[i] * 0.4);
                         this.pileHeights[i] -= actualFlow;
                         this.pileHeights[i + 1] += actualFlow;
                     } else {
-                        const actualFlow = Math.min(excess, this.pileHeights[i + 1] * 0.5);
+                        const actualFlow = Math.min(excess, this.pileHeights[i + 1] * 0.4);
                         this.pileHeights[i + 1] -= actualFlow;
                         this.pileHeights[i] += actualFlow;
                     }
@@ -371,10 +382,10 @@ class CosmicVisualizer {
             }
         }
 
-        // 4. UNCONDITIONALLY STABLE WAVE PROPAGATION & DAMPING
-        const springK = 0.035;
-        const damping = 0.06;
-        const spread = 0.20;
+        // 4. HEAVILY DAMPED VISCOUS WAVE PROPAGATION
+        const springK = 0.05;
+        const damping = 0.10;
+        const spread = 0.12;
 
         for (let i = 0; i < this.numColumns; ++i) {
             this.waveVelocities[i] += (-springK * this.waveOffsets[i]) - (damping * this.waveVelocities[i]);
@@ -776,12 +787,12 @@ class CosmicVisualizer {
         const colWidth = w / (this.numColumns - 1);
         const time = this.cosmicRotation;
 
-        // If a fluid mound has formed, draw fluid mass
+        // If a fluid mound has formed, draw thick viscous mass
         if (maxPile > 0.5) {
             const fluidGrad = ctx.createLinearGradient(0, h - maxPile, 0, h);
-            fluidGrad.addColorStop(0, '#223252');
-            fluidGrad.addColorStop(0.4, '#17223b');
-            fluidGrad.addColorStop(1, '#0b101c');
+            fluidGrad.addColorStop(0, '#26385c');
+            fluidGrad.addColorStop(0.3, '#1a2742');
+            fluidGrad.addColorStop(1, '#0c1221');
 
             ctx.fillStyle = fluidGrad;
             ctx.beginPath();
@@ -809,7 +820,7 @@ class CosmicVisualizer {
             ctx.fill();
 
             // Cyan Wave Edge Glow
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.75)';
             ctx.lineWidth = 1.5;
             ctx.beginPath();
             for (let i = 0; i < this.numColumns; ++i) {
@@ -821,32 +832,52 @@ class CosmicVisualizer {
             }
             ctx.stroke();
 
-            // Dense Cross-Hatch Texture inside mounds
-            ctx.strokeStyle = 'rgba(130, 200, 255, 0.28)';
-            ctx.lineWidth = 1;
-            for (let fx = 8; fx < w - 6; fx += 14) {
+            // Rich, dense paperclip texture throughout the entire depth of the fluid
+            const stepX = 7;
+            const stepY = 6;
+            const colors = ['#00f0ff', '#ffe600', '#ffffff', '#7fe0ff', '#ff66aa'];
+
+            for (let fx = 4; fx < w - 3; fx += stepX) {
                 const colIdx = Math.floor((fx / w) * this.numColumns);
                 const moundH = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
-                if (moundH > 6) {
+                if (moundH > 1.5) {
                     const topY = h - moundH;
-                    const fy = topY + 4 + (Math.sin(fx * 0.8 + time) * 3 + 3);
-                    this.drawTinyPaperclip(ctx, fx, fy, 4, Math.sin(fx + time) * 1.2, 'rgba(0, 240, 255, 0.35)');
+
+                    for (let fy = topY + 3; fy < h; fy += stepY) {
+                        const seed = (fx * 47 + fy * 23);
+                        const sway = Math.sin(time * 1.5 + (seed % 10)) * 1.0;
+                        const rot = ((seed % 628) / 100) + Math.sin(time + seed) * 0.15;
+                        const size = 3.5 + ((seed % 30) / 15);
+
+                        // Colors and opacity: brighter near surface, rich depth underneath
+                        const depthRatio = (fy - topY) / Math.max(1, moundH);
+                        let color;
+                        if (depthRatio < 0.25) {
+                            color = colors[seed % colors.length];
+                        } else if (depthRatio < 0.65) {
+                            color = (seed % 2 === 0) ? 'rgba(0, 240, 255, 0.65)' : 'rgba(255, 230, 0, 0.6)';
+                        } else {
+                            color = (seed % 3 === 0) ? 'rgba(120, 200, 255, 0.45)' : 'rgba(0, 240, 255, 0.35)';
+                        }
+
+                        this.drawTinyPaperclip(ctx, fx + sway, fy, size, rot, color);
+                    }
                 }
             }
 
-            // Jutting Paperclips on Slopes & Crests
+            // Jutting Paperclips on Slopes & Mountain Crest
             for (let i = 1; i < this.numColumns - 1; i += 2) {
                 const moundH = Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
-                if (moundH > 2.5) {
+                if (moundH > 2.0) {
                     const x = i * colWidth;
                     const y = h - moundH;
                     const leftH = Math.max(0, this.pileHeights[i - 1] + this.waveOffsets[i - 1]);
                     const rightH = Math.max(0, this.pileHeights[i + 1] + this.waveOffsets[i + 1]);
                     const slopeAngle = Math.atan2(leftH - rightH, colWidth * 2);
-                    const rot = slopeAngle + Math.sin(i * 1.5 + time) * 0.3;
+                    const rot = slopeAngle + Math.sin(i * 1.5 + time) * 0.25;
 
-                    const colors = ['#ffffff', '#00f0ff', '#ffe600', '#7fe0ff', '#ffffff'];
-                    const color = colors[i % colors.length];
+                    const crestColors = ['#ffffff', '#00f0ff', '#ffe600', '#7fe0ff', '#ffffff'];
+                    const color = crestColors[i % crestColors.length];
                     this.drawTinyPaperclip(ctx, x, y - 2, 5.5, rot, color);
                 }
             }
