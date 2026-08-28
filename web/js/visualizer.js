@@ -317,7 +317,7 @@ class CosmicVisualizer {
                 else if (p.x > pw - 4) { p.x = pw - 4; p.vx = -Math.abs(p.vx) * 0.7; }
 
                 const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((p.x / pw) * this.numColumns)));
-                const currentMoundHeight = Math.max(0, Math.min(inventoryCapacity, this.pileHeights[colIdx] + this.waveOffsets[colIdx]));
+                const currentMoundHeight = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
                 const surfaceY = floorY - currentMoundHeight;
 
                 // Collision with floor or fluid mound surface!
@@ -325,15 +325,15 @@ class CosmicVisualizer {
                     p.y = surfaceY;
 
                     // Deposit paperclip mass into the mound at this specific drop point if inventory allows
-                    if (currentMoundHeight < inventoryCapacity) {
+                    if (this.pileHeights[colIdx] < inventoryCapacity) {
                         this.pileHeights[colIdx] = Math.min(inventoryCapacity, this.pileHeights[colIdx] + 0.45);
                     }
                     this.waveVelocities[colIdx] += Math.min(1.5, p.vy * 0.2);
                     this.internalFlowVelocity = Math.min(2.0, this.internalFlowVelocity + 0.08);
 
                     // Calculate local slope to slide down the mound!
-                    const leftH = colIdx > 0 ? this.pileHeights[colIdx - 1] : currentMoundHeight;
-                    const rightH = colIdx < this.numColumns - 1 ? this.pileHeights[colIdx + 1] : currentMoundHeight;
+                    const leftH = colIdx > 0 ? (this.pileHeights[colIdx - 1] + this.waveOffsets[colIdx - 1]) : currentMoundHeight;
+                    const rightH = colIdx < this.numColumns - 1 ? (this.pileHeights[colIdx + 1] + this.waveOffsets[colIdx + 1]) : currentMoundHeight;
                     const slope = (leftH - rightH); // positive = slopes down to the right
 
                     p.bounces++;
@@ -428,7 +428,7 @@ class CosmicVisualizer {
                 continue;
             }
             if (s.colIdx !== undefined) {
-                const moundH = Math.max(0, Math.min(inventoryCapacity, this.pileHeights[s.colIdx] + this.waveOffsets[s.colIdx]));
+                const moundH = Math.max(0, this.pileHeights[s.colIdx] + this.waveOffsets[s.colIdx]);
                 s.y = floorY - moundH;
             }
         }

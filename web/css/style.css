@@ -139,12 +139,26 @@ body {
 }
 
 .hdr-btn.btn-danger {
-    color: #ff5577;
+    background: #ff2a55;
+    color: #ffffff;
 }
 
-.hdr-btn.btn-danger:hover {
-    background: #4a1525;
-    color: #ff7799;
+.btn-danger:hover {
+    background: #ff0033;
+    color: #ffffff;
+}
+
+.btn-dev {
+    background: #a855f7;
+    color: #ffffff;
+    border-color: var(--border-ink);
+    text-shadow: 1px 1px 0 #000;
+}
+
+.btn-dev:hover {
+    background: #c084fc;
+    color: #ffe600;
+    box-shadow: 0 4px 0 var(--border-ink), 0 0 10px rgba(168, 85, 247, 0.6);
 }
 
 .volume-control {

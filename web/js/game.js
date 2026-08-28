@@ -261,6 +261,31 @@ class GameEngine {
         }, 1000);
     }
 
+    addDevClips() {
+        const bonus = new BigDouble(1.0, 6); // +1,000,000 Clips
+        this.clips = this.clips.add(bonus);
+        this.lifetimeClips = this.lifetimeClips.add(bonus);
+
+        if (this.isWireUnlocked) {
+            this.wire = this.wire.add(new BigDouble(50000.0, 0));
+        }
+        this.ops = Math.min(this.maxOps, this.ops + 2500);
+
+        this.audio.playSparkSound();
+        const spawnX = window.innerWidth / 2;
+        const spawnY = window.innerHeight / 2;
+        this.spawnFloatingText(spawnX, spawnY, "+1,000,000 CLIPS!", "gold-popup");
+
+        if (this.visualizer) {
+            this.visualizer.spawnPaperclips(16, this.visualizer.pixelCanvas.width / 2, 60);
+        }
+
+        this.renderStore();
+        this.renderTechTree();
+        this.renderResources();
+        this.renderNews();
+    }
+
     buyWire() {
         if (!this.isWireUnlocked) return;
 
