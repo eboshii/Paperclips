@@ -828,8 +828,21 @@ class CosmicVisualizer {
             }
             ctx.stroke();
 
-            // Dense, overlapping, irregularly spaced paperclip texture field
-            const colors = ['#00f0ff', '#ffe600', '#ffffff', '#7fe0ff', '#ff66aa', '#38bdf8'];
+            // Dense, overlapping, irregularly spaced paperclip texture field with fully randomized vibrant colors
+            const palette = [
+                '#00f0ff', // Cyan
+                '#ffe600', // Gold/Yellow
+                '#ffffff', // Silver/White
+                '#ff2a85', // Neon Pink
+                '#00ff88', // Emerald/Green
+                '#ff7700', // Bright Orange
+                '#a855f7', // Electric Purple
+                '#38bdf8', // Sky Blue
+                '#ff4d6d', // Coral Red
+                '#a3e635', // Lime
+                '#fb7185', // Rose
+                '#34d399'  // Mint
+            ];
             const stepX = 6.0;
             const stepY = 5.0;
 
@@ -854,30 +867,22 @@ class CosmicVisualizer {
                         const rot = (((seed * 137) % 628) / 100) + Math.sin(time * 0.9 + seed) * 0.2;
                         const size = 3.6 + (((seed * 17) % 100) / 35.0); // 3.6 to 6.4 px
 
-                        // Depth coloring & opacity for 3D interlocking illusion
-                        const depthRatio = (py - topY) / Math.max(1, moundH);
-                        let color;
-                        if (depthRatio < 0.22) {
-                            color = colors[seed % colors.length];
-                        } else if (depthRatio < 0.60) {
-                            color = (seed % 2 === 0) ? 'rgba(0, 240, 255, 0.70)' : 'rgba(255, 230, 0, 0.65)';
-                        } else {
-                            color = (seed % 3 === 0) ? 'rgba(120, 200, 255, 0.50)' : 'rgba(0, 240, 255, 0.38)';
-                        }
+                        // Fully randomized vibrant color per paperclip
+                        const color = palette[(seed * 53 + 19) % palette.length];
 
                         this.drawTinyPaperclip(ctx, px, py, size, rot, color);
 
-                        // Tangled overlapping cluster clips at varied intersections
+                        // Tangled overlapping cluster clips with varied randomized colors
                         if (seed % 4 === 0 && py + 3 < floorY) {
                             const clusterRot = rot + 1.2 + (((seed * 7) % 100) / 50);
-                            const clusterColor = colors[(seed + 2) % colors.length];
+                            const clusterColor = palette[(seed * 89 + 41) % palette.length];
                             this.drawTinyPaperclip(ctx, px + 2.5, py + 1.5, size * 0.9, clusterRot, clusterColor);
                         }
                     }
                 }
             }
 
-            // Jutting Paperclips on Slopes & Mountain Crest
+            // Jutting Paperclips on Slopes & Mountain Crest with randomized colors
             for (let i = 1; i < this.numColumns - 1; i += 2) {
                 const moundH = Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
                 if (moundH > 2.0) {
@@ -888,8 +893,7 @@ class CosmicVisualizer {
                     const slopeAngle = Math.atan2(leftH - rightH, colWidth * 2);
                     const rot = slopeAngle + Math.sin(i * 1.5 + time) * 0.25;
 
-                    const crestColors = ['#ffffff', '#00f0ff', '#ffe600', '#7fe0ff', '#ffffff'];
-                    const color = crestColors[i % crestColors.length];
+                    const color = palette[(i * 37 + 11) % palette.length];
                     this.drawTinyPaperclip(ctx, x, y - 2, 5.5, rot, color);
                 }
             }
