@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <cstdint>
 #include "OmniMath.h"
 
 namespace OmniEngine {
@@ -21,10 +22,11 @@ public:
         // Calculate expected wire burn rate
         BigDouble burnRatePerSec = cps * 0.001; // 1g per clip
         BigDouble wireNeeded = burnRatePerSec * deltaTime;
+        double effectiveBuffer = std::max(targetBufferKg, wireNeeded.toDouble());
 
         // If wire is below target buffer, auto-purchase using available trading funds
-        if (wireKg < targetBufferKg && fundsUsd > BigDouble::zero()) {
-            BigDouble deficitKg = BigDouble(targetBufferKg, 0) - wireKg;
+        if (wireKg < effectiveBuffer && fundsUsd > BigDouble::zero()) {
+            BigDouble deficitKg = BigDouble(effectiveBuffer, 0) - wireKg;
             BigDouble purchaseCost = deficitKg * wirePricePerKg;
 
             if (fundsUsd >= purchaseCost) {

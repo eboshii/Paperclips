@@ -297,7 +297,7 @@ void ResearchTreeEngine::UpdateAvailableNodes(double currentOps, const BigDouble
             }
         }
 
-        if (prereqsMet && lifetimeClips >= (node.clipsCost * 0.15)) {
+        if (prereqsMet && (lifetimeClips >= (node.clipsCost * 0.15) || currentOps >= (node.opsCost * 0.50))) {
             node.isUnlocked = true;
         }
     }

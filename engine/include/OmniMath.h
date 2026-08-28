@@ -1,17 +1,18 @@
 #pragma once
 #include <iostream>
-#include <cmath>
 #include <string>
-#include <sstream>
+#include <cmath>
+#include <algorithm>
 #include <iomanip>
+#include <cstdint>
 #include <vector>
+#include <limits>
 
 namespace OmniEngine {
 
 /// <summary>
-/// High-performance C++ BigDouble struct (Mantissa * 10^Exponent).
-/// Solves 64-bit IEEE 754 double precision limits at 1.79e308.
-/// Supports calculations up to 10^(INT64_MAX).
+/// BigDouble: Arbitrary large floating point number support for Idle/Clicker math.
+/// Stored as mantissa * 10^exponent. Supports numbers up to 10^(INT64_MAX).
 /// </summary>
 struct BigDouble {
     double mantissa;
@@ -21,17 +22,18 @@ struct BigDouble {
     BigDouble(double m, int64_t e = 0) : mantissa(m), exponent(e) { normalize(); }
 
     void normalize() {
-        if (mantissa == 0.0 || std::isnan(mantissa) || std::isinf(mantissa)) {
-            mantissa = 0.0;
+        if (mantissa == 0.0) {
             exponent = 0;
             return;
         }
-
         double absM = std::abs(mantissa);
-        if (absM >= 10.0 || absM < 1.0) {
+        if (absM < 1.0 || absM >= 10.0) {
             int64_t shift = static_cast<int64_t>(std::floor(std::log10(absM)));
             mantissa /= std::pow(10.0, shift);
             exponent += shift;
+        }
+        if (mantissa == 0.0) {
+            exponent = 0;
         }
     }
 
@@ -68,20 +70,21 @@ struct BigDouble {
     }
 
     BigDouble operator/(const BigDouble& other) const {
-        if (other.mantissa == 0.0) return zero();
+        if (other.mantissa == 0.0) throw std::runtime_error("Division by zero in BigDouble");
         if (mantissa == 0.0) return zero();
         return BigDouble(mantissa / other.mantissa, exponent - other.exponent);
     }
 
     BigDouble operator/(double scalar) const {
-        if (scalar == 0.0) return zero();
+        if (scalar == 0.0) throw std::runtime_error("Division by zero in BigDouble");
         return BigDouble(mantissa / scalar, exponent);
     }
 
     bool operator<(const BigDouble& other) const {
         if (mantissa == 0.0 && other.mantissa == 0.0) return false;
         if (mantissa <= 0.0 && other.mantissa > 0.0) return true;
-        if (mantissa > 0.0 && other.mantissa <= 0.0) return false;
+        if (mantissa >= 0.0 && other.mantissa < 0.0) return false;
+
         if (exponent != other.exponent) {
             return (mantissa > 0.0) ? (exponent < other.exponent) : (exponent > other.exponent);
         }
@@ -96,52 +99,55 @@ struct BigDouble {
     }
     bool operator!=(const BigDouble& other) const { return !(*this == other); }
 
+    // Math functions
     double log10() const {
         if (mantissa <= 0.0) return -std::numeric_limits<double>::infinity();
         return std::log10(mantissa) + static_cast<double>(exponent);
     }
 
-    BigDouble pow(double power) const {
+    BigDouble pow(double p) const {
         if (mantissa == 0.0) return zero();
-        if (power == 0.0) return one();
-        if (power == 1.0) return *this;
-
-        double l10 = log10() * power;
+        if (p == 0.0) return one();
+        double l10 = log10() * p;
         int64_t newExp = static_cast<int64_t>(std::floor(l10));
         double newM = std::pow(10.0, l10 - static_cast<double>(newExp));
         return BigDouble(newM, newExp);
     }
 
     double toDouble() const {
+        if (mantissa == 0.0) return 0.0;
         if (exponent > 308) return std::numeric_limits<double>::infinity();
         if (exponent < -308) return 0.0;
         return mantissa * std::pow(10.0, exponent);
     }
 
-    std::string toShortScale(int decimals = 2) const {
+    // Formatting
+    std::string toShortScale(int precision = 2) const {
         if (mantissa == 0.0) return "0";
 
-        static const std::vector<std::string> prefixes = {
-            "", "Thousand", "Million", "Billion", "Trillion", "Quadrillion", "Quintillion",
-            "Sextillion", "Septillion", "Octillion", "Nonillion", "Decillion"
+        static const std::vector<std::string> suffixes = {
+            "", " Thousand", " Million", " Billion", " Trillion", " Quadrillion",
+            " Quintillion", " Sextillion", " Septillion", " Octillion", " Nonillion",
+            " Decillion", " Undecillion", " Duodecillion", " Tredecillion"
         };
 
         if (exponent < 3) {
             std::ostringstream ss;
-            ss << std::fixed << std::setprecision(decimals == 0 ? 0 : decimals) << toDouble();
+            ss << std::fixed << std::setprecision(precision) << toDouble();
             return ss.str();
         }
 
         size_t idx = static_cast<size_t>(exponent / 3);
-        if (idx < prefixes.size()) {
+        if (idx < suffixes.size()) {
             double scaled = mantissa * std::pow(10.0, exponent % 3);
             std::ostringstream ss;
-            ss << std::fixed << std::setprecision(decimals) << scaled << " " << prefixes[idx];
+            ss << std::fixed << std::setprecision(precision) << scaled << suffixes[idx];
             return ss.str();
         }
 
+        // Fallback to Scientific Notation for astronomical numbers
         std::ostringstream ss;
-        ss << std::fixed << std::setprecision(decimals) << mantissa << "e" << exponent;
+        ss << std::fixed << std::setprecision(precision) << mantissa << "e" << exponent;
         return ss.str();
     }
 };

@@ -1,4 +1,5 @@
 #include "../include/OmniUI.h"
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 

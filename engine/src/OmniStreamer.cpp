@@ -30,6 +30,7 @@ void StreamerSuite::StartTwitchPoll(const std::string& title, const std::vector<
 }
 
 void StreamerSuite::RegisterChatVote(const std::string& chatterUsername, const std::string& voteCommand) {
+    (void)chatterUsername;
     if (!m_activePoll.isActive) return;
 
     for (auto& opt : m_activePoll.options) {

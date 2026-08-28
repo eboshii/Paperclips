@@ -37,7 +37,7 @@
 
 using namespace OmniEngine;
 
-int main(int argc, char** argv) {
+int main() {
     std::cout << "=================================================================\n";
     std::cout << "  OBJECTIVE: PAPERCLIPS - ACCESSIBLE HERO CLICKER & HUD RUNNER\n";
     std::cout << "  Big Paperclip Physics | Tabbed Navigation | Accessible Controls\n";

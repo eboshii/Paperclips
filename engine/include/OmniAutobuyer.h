@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <functional>
@@ -31,6 +32,7 @@ public:
     }
 
     void ProcessAutobuyers(BigDouble& inOutClips, const std::function<bool(const std::string&, int)>& purchaseCallback) {
+        (void)inOutClips;
         for (auto& rule : rules) {
             if (!rule.isEnabled) continue;
 
