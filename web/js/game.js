@@ -458,7 +458,7 @@ class GameEngine {
         // 6. Subsystem Updates
         this.techTree.updateAvailability(this.ops, this.lifetimeClips);
         this.techTree.processQueue(this);
-        this.dialogue.checkMilestones(this.lifetimeClips);
+        this.dialogue.checkMilestones(this);
         this.news.update(dt, this);
         this.achievements.checkProgress(this);
 
