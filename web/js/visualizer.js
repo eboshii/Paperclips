@@ -1,8 +1,9 @@
 /**
  * visualizer.js - Vibrant Cartoon Pixel Art Cosmic Visualizer
  * Features:
- * - Tiny falling paperclips with tumbling physics
- * - Dynamic fluid paperclip ocean with wave physics and jutting paperclip surface texture
+ * - Dynamic paperclip spilling & fluid flow simulation (mounds spill & flow from drop point)
+ * - Tiny falling paperclips with tumbling, bouncing, and slope-sliding physics
+ * - Jutting paperclip texture poking out along the dynamic fluid terrain
  * - Internal pixelation buffer pass for crisp retro pixel art
  * - 5 Cosmic scale tiers (Factory, Earth, Dyson, Galaxy, Multiverse)
  */
@@ -36,14 +37,13 @@ class CosmicVisualizer {
         // Falling Paperclips Simulation
         this.fallingClips = [];
         this.settledClips = [];
-        this.maxFallingClips = 100;
-        this.maxSettledClips = 60;
+        this.maxFallingClips = 120;
+        this.maxSettledClips = 80;
 
-        // Fluid Paperclip Sea Simulation
-        this.fluidColumns = [];
-        this.numColumns = 48;
-        this.fluidBaseRatio = 0.92; // Default bottom rest line
-        this.fluidTargetRatio = 0.92;
+        // Dynamic Fluid & Granular Slumping Pile Simulation
+        this.numColumns = 54;
+        this.pileHeights = new Float32Array(this.numColumns); // Local height of pile in pixels
+        this.pileVelocities = new Float32Array(this.numColumns);
         this.initFluidColumns();
 
         // Background Pixel Stars
@@ -54,13 +54,11 @@ class CosmicVisualizer {
     }
 
     initFluidColumns() {
-        this.fluidColumns = [];
+        this.pileHeights = new Float32Array(this.numColumns);
+        this.pileVelocities = new Float32Array(this.numColumns);
         for (let i = 0; i < this.numColumns; ++i) {
-            this.fluidColumns.push({
-                height: 100,
-                targetHeight: 100,
-                velocity: 0
-            });
+            this.pileHeights[i] = 2.0; // small initial base
+            this.pileVelocities[i] = 0.0;
         }
     }
 
@@ -69,7 +67,7 @@ class CosmicVisualizer {
         for (let i = 0; i < count; ++i) {
             this.stars.push({
                 x: Math.random(),
-                y: Math.random() * 0.8, // keep in upper space
+                y: Math.random() * 0.75, // keep in upper cosmic space
                 size: Math.random() > 0.8 ? 2 : 1,
                 color: Math.random() > 0.5 ? '#00f0ff' : (Math.random() > 0.5 ? '#ffe600' : '#ff2a85'),
                 twinkleSpeed: 1 + Math.random() * 3,
@@ -108,48 +106,58 @@ class CosmicVisualizer {
         if (this.pixelCanvas.width > 0) {
             this.emitClickSparks(this.pixelCanvas.width / 2, this.pixelCanvas.height / 2, 12);
         }
-        this.spawnPaperclips(1);
+        // Spawn paperclip falling directly from the center/hero
+        this.spawnPaperclips(1, this.pixelCanvas.width / 2);
     }
 
-    spawnPaperclips(count = 1) {
+    spawnPaperclips(count = 1, preferredX = null) {
         const pw = this.pixelCanvas.width || 200;
-        const ph = this.pixelCanvas.height || 150;
-
         const colors = ['#ffffff', '#00f0ff', '#d0e8ff', '#ffe600', '#7fe0ff'];
-        const spawnCount = Math.min(count, 20); // Cap per-frame particle spawn for performance
+        const spawnCount = Math.min(count, 18); // Particle limit per frame for smooth 60fps
 
         for (let i = 0; i < spawnCount; ++i) {
             if (this.fallingClips.length >= this.maxFallingClips) {
                 this.fallingClips.shift();
             }
 
-            const x = Math.random() * (pw - 20) + 10;
-            const vx = (Math.random() - 0.5) * 1.2;
-            const vy = 0.8 + Math.random() * 2.2;
+            // Determine drop X position: clustered around preferredX or randomly along ceiling
+            let x;
+            if (preferredX !== null && count <= 3) {
+                x = preferredX + (Math.random() - 0.5) * 30;
+            } else {
+                x = Math.random() * (pw - 24) + 12;
+            }
+            x = Math.max(6, Math.min(pw - 6, x));
+
+            const vx = (Math.random() - 0.5) * 1.5;
+            const vy = 0.8 + Math.random() * 2.0;
             const rot = Math.random() * Math.PI * 2;
-            const vRot = (Math.random() - 0.5) * 0.3;
+            const vRot = (Math.random() - 0.5) * 0.35;
             const color = colors[Math.floor(Math.random() * colors.length)];
 
             this.fallingClips.push({
                 x: x,
-                y: -5 - Math.random() * 15,
+                y: -6 - Math.random() * 12,
                 vx: vx,
                 vy: vy,
                 rot: rot,
                 vRot: vRot,
                 color: color,
-                size: 5 + Math.random() * 3,
+                size: 5 + Math.random() * 2.5,
                 bounces: 0,
                 settled: false,
-                life: 6.0
+                life: 8.0
             });
         }
 
-        // If high volume production, perturb fluid surface and add wave energy!
-        if (count > 5 && this.fluidColumns.length > 0) {
-            for (let k = 0; k < Math.min(count, 8); ++k) {
-                const colIdx = Math.floor(Math.random() * this.fluidColumns.length);
-                this.fluidColumns[colIdx].velocity += (Math.random() * 1.5 + 0.5);
+        // If mass production (e.g. high CPS), directly feed fluid volume at random drop points
+        if (count > 5) {
+            const feedPoints = Math.min(count, 10);
+            for (let k = 0; k < feedPoints; ++k) {
+                const targetX = Math.random() * pw;
+                const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((targetX / pw) * this.numColumns)));
+                this.pileHeights[colIdx] += 0.8;
+                this.pileVelocities[colIdx] += 0.4;
             }
         }
     }
@@ -198,84 +206,53 @@ class CosmicVisualizer {
 
         const pw = this.pixelCanvas.width || 200;
         const ph = this.pixelCanvas.height || 150;
+        const maxAllowedPile = ph * 0.45; // Max mound height (up to 45% of screen)
 
-        // Calculate Fluid Target Height based on production & clip volume (rises smoothly up to 30% screen height)
-        let fillRatio = 0.92;
-        if (state) {
-            const cpsVal = state.calculateTotalCPS ? state.calculateTotalCPS().toDouble() : 0;
-            const clipsVal = state.clips.toDouble();
-            const volumeBoost = Math.min(0.24, Math.log10(Math.max(1, clipsVal + cpsVal * 5)) * 0.035);
-            fillRatio = Math.max(0.68, 0.92 - volumeBoost);
-        }
-        this.fluidTargetRatio += (fillRatio - this.fluidTargetRatio) * (dt * 1.5);
-        const fluidBaseY = ph * this.fluidTargetRatio;
-
-        // 1. Update Fluid Wave Columns (Springs & Wave Diffusion)
-        const springK = 0.028;
-        const damping = 0.05;
-        const spread = 0.22;
-
-        for (let i = 0; i < this.fluidColumns.length; ++i) {
-            const col = this.fluidColumns[i];
-            col.targetHeight = fluidBaseY;
-            const diff = col.height - col.targetHeight;
-            col.velocity += (-springK * diff) - (damping * col.velocity);
-            col.height += col.velocity;
-        }
-
-        // Wave propagation passes
-        const leftDeltas = new Float32Array(this.fluidColumns.length);
-        const rightDeltas = new Float32Array(this.fluidColumns.length);
-        for (let p = 0; p < 4; ++p) {
-            for (let i = 0; i < this.fluidColumns.length; ++i) {
-                if (i > 0) {
-                    leftDeltas[i] = spread * (this.fluidColumns[i].height - this.fluidColumns[i - 1].height);
-                    this.fluidColumns[i - 1].velocity += leftDeltas[i];
-                }
-                if (i < this.fluidColumns.length - 1) {
-                    rightDeltas[i] = spread * (this.fluidColumns[i].height - this.fluidColumns[i + 1].height);
-                    this.fluidColumns[i + 1].velocity += rightDeltas[i];
-                }
-            }
-            for (let i = 0; i < this.fluidColumns.length; ++i) {
-                if (i > 0) this.fluidColumns[i - 1].height += leftDeltas[i];
-                if (i < this.fluidColumns.length - 1) this.fluidColumns[i + 1].height += rightDeltas[i];
-            }
-        }
-
-        // 2. Update Falling Paperclips Physics
+        // 1. UPDATE FALLING PAPERCLIPS & IMPACT ON PILES
         for (let i = this.fallingClips.length - 1; i >= 0; --i) {
             const p = this.fallingClips[i];
 
             if (!p.settled) {
-                p.vy += 0.28; // Gravity
+                p.vy += 0.26; // Gravity
                 p.x += p.vx;
                 p.y += p.vy;
                 p.rot += p.vRot;
 
-                // Find fluid surface at x position
-                const colIdx = Math.max(0, Math.min(this.fluidColumns.length - 1, Math.floor((p.x / pw) * this.fluidColumns.length)));
-                const surfaceY = this.fluidColumns[colIdx] ? this.fluidColumns[colIdx].height : fluidBaseY;
+                // Clamp X inside screen walls with bounce
+                if (p.x < 4) { p.x = 4; p.vx = Math.abs(p.vx) * 0.7; }
+                else if (p.x > pw - 4) { p.x = pw - 4; p.vx = -Math.abs(p.vx) * 0.7; }
 
+                const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((p.x / pw) * this.numColumns)));
+                const currentMoundHeight = this.pileHeights[colIdx];
+                const surfaceY = ph - currentMoundHeight;
+
+                // Collision with floor or fluid mound surface!
                 if (p.y >= surfaceY) {
                     p.y = surfaceY;
-                    // Splash wave column
-                    if (this.fluidColumns[colIdx]) {
-                        this.fluidColumns[colIdx].velocity += p.vy * 0.35;
-                    }
+
+                    // Deposit paperclip mass into the mound at this specific drop point!
+                    this.pileHeights[colIdx] = Math.min(maxAllowedPile, this.pileHeights[colIdx] + 0.65);
+                    this.pileVelocities[colIdx] += p.vy * 0.25;
+
+                    // Calculate local slope to slide down the mound!
+                    const leftH = colIdx > 0 ? this.pileHeights[colIdx - 1] : currentMoundHeight;
+                    const rightH = colIdx < this.numColumns - 1 ? this.pileHeights[colIdx + 1] : currentMoundHeight;
+                    const slope = (leftH - rightH); // positive = slopes down to the right
 
                     p.bounces++;
                     if (p.bounces < 2 && Math.abs(p.vy) > 1.2) {
-                        p.vy = -p.vy * 0.3;
-                        p.vx *= 0.6;
+                        p.vy = -p.vy * 0.25;
+                        p.vx = (p.vx * 0.5) + (slope * 0.3); // Slide down the slope!
                         p.vRot *= 0.5;
                     } else {
+                        // Settle on the slope
                         p.settled = true;
                         p.vy = 0;
                         p.vx = 0;
                         p.vRot = 0;
-                        p.settleColIdx = colIdx;
-                        // Move to settled clips
+                        p.colIdx = colIdx;
+                        p.slopeAngle = Math.atan2(slope, 6);
+
                         if (this.settledClips.length >= this.maxSettledClips) {
                             this.settledClips.shift();
                         }
@@ -287,7 +264,47 @@ class CosmicVisualizer {
             }
         }
 
-        // 3. Update Settled Clips on Fluid Surface
+        // 2. GRANULAR / VISCOUS FLUID SLUMPING & FLOW SIMULATION (Spills from where they drop!)
+        // Material flows from tall columns to shorter adjacent columns
+        const viscosity = 0.18; // Flow speed
+        const angleOfRepose = 0.6; // Max natural slope before flowing outward
+        const springK = 0.04;
+        const damping = 0.08;
+
+        for (let pass = 0; pass < 3; ++pass) {
+            for (let i = 0; i < this.numColumns; ++i) {
+                // Flow to left neighbor
+                if (i > 0) {
+                    const diffLeft = this.pileHeights[i] - this.pileHeights[i - 1];
+                    if (diffLeft > angleOfRepose) {
+                        const flow = (diffLeft - angleOfRepose) * viscosity;
+                        this.pileHeights[i] -= flow;
+                        this.pileHeights[i - 1] += flow;
+                        this.pileVelocities[i - 1] += flow * 0.3;
+                    }
+                }
+                // Flow to right neighbor
+                if (i < this.numColumns - 1) {
+                    const diffRight = this.pileHeights[i] - this.pileHeights[i + 1];
+                    if (diffRight > angleOfRepose) {
+                        const flow = (diffRight - angleOfRepose) * viscosity;
+                        this.pileHeights[i] -= flow;
+                        this.pileHeights[i + 1] += flow;
+                        this.pileVelocities[i + 1] += flow * 0.3;
+                    }
+                }
+            }
+        }
+
+        // Wave momentum & surface tension
+        for (let i = 0; i < this.numColumns; ++i) {
+            // Slight natural decay / compression towards base over time so it stays organic
+            this.pileHeights[i] += this.pileVelocities[i];
+            this.pileVelocities[i] *= (1.0 - damping);
+            if (this.pileHeights[i] < 1.0) this.pileHeights[i] = 1.0;
+        }
+
+        // 3. Update Settled Resting Clips on Dynamic Terrain
         for (let i = this.settledClips.length - 1; i >= 0; --i) {
             const s = this.settledClips[i];
             s.life -= dt;
@@ -295,9 +312,8 @@ class CosmicVisualizer {
                 this.settledClips.splice(i, 1);
                 continue;
             }
-            // Ride wave height
-            if (s.settleColIdx !== undefined && this.fluidColumns[s.settleColIdx]) {
-                s.y = this.fluidColumns[s.settleColIdx].height;
+            if (s.colIdx !== undefined) {
+                s.y = ph - this.pileHeights[s.colIdx];
             }
         }
 
@@ -320,8 +336,8 @@ class CosmicVisualizer {
         const displayH = this.canvas.height = this.canvas.clientHeight;
         if (displayW <= 0 || displayH <= 0) return;
 
-        // Pixel resolution scale factor: ~2.5x pixelation
-        const pixelScale = 2.5;
+        // Pixel resolution scale factor: ~2.4x pixelation
+        const pixelScale = 2.4;
         const pw = Math.max(120, Math.floor(displayW / pixelScale));
         const ph = Math.max(80, Math.floor(displayH / pixelScale));
 
@@ -334,12 +350,12 @@ class CosmicVisualizer {
         const pctx = this.pixelCtx;
         pctx.imageSmoothingEnabled = false;
 
-        // 1. Draw Space / Factory Cartoon Background onto Pixel Canvas
+        // 1. Draw Space / Factory Background onto Pixel Canvas
         this.renderBackground(pctx, pw, ph);
 
-        // 2. Render Scale Scene
+        // 2. Render Scale Scene in Background / Center
         pctx.save();
-        pctx.translate(pw / 2, ph / 2 - 10);
+        pctx.translate(pw / 2, ph / 2 - 12);
         pctx.scale(this.camZoom, this.camZoom);
 
         if (this.tier === 0) {
@@ -356,10 +372,10 @@ class CosmicVisualizer {
 
         pctx.restore();
 
-        // 3. Render Fluid Paperclip Ocean & Falling Paperclips at the Bottom
-        this.renderPaperclipFluid(pctx, pw, ph);
+        // 3. Render Spilling Fluid Paperclip Mountains & Flowing Terrain
+        this.renderFlowingPaperclipSea(pctx, pw, ph);
 
-        // 4. Render Falling Paperclips
+        // 4. Render Falling Tumbling Clips
         this.renderFallingPaperclips(pctx);
 
         // 5. Render Pixel Sparks
@@ -656,77 +672,85 @@ class CosmicVisualizer {
         ctx.restore();
     }
 
-    renderPaperclipFluid(ctx, w, h) {
-        if (this.fluidColumns.length === 0) return;
+    renderFlowingPaperclipSea(ctx, w, h) {
+        const colWidth = w / (this.numColumns - 1);
+        const time = this.cosmicRotation;
 
-        const colWidth = w / (this.fluidColumns.length - 1);
-
-        // 1. Draw Metallic Fluid Body
-        const fluidGrad = ctx.createLinearGradient(0, h * 0.7, 0, h);
-        fluidGrad.addColorStop(0, '#1d2a44');
-        fluidGrad.addColorStop(0.5, '#151d30');
-        fluidGrad.addColorStop(1, '#0c111c');
+        // 1. Draw Flowing Fluid Mass from Dynamic Mounds to Canvas Bottom
+        const fluidGrad = ctx.createLinearGradient(0, h * 0.55, 0, h);
+        fluidGrad.addColorStop(0, '#223252');
+        fluidGrad.addColorStop(0.4, '#17223b');
+        fluidGrad.addColorStop(1, '#0b101c');
 
         ctx.fillStyle = fluidGrad;
         ctx.beginPath();
         ctx.moveTo(0, h);
 
-        for (let i = 0; i < this.fluidColumns.length; ++i) {
+        for (let i = 0; i < this.numColumns; ++i) {
             const x = i * colWidth;
-            const y = this.fluidColumns[i].height;
+            const y = h - this.pileHeights[i];
             if (i === 0) {
                 ctx.lineTo(x, y);
             } else {
                 const prevX = (i - 1) * colWidth;
-                const prevY = this.fluidColumns[i - 1].height;
+                const prevY = h - this.pileHeights[i - 1];
                 const midX = (prevX + x) / 2;
                 const midY = (prevY + y) / 2;
                 ctx.quadraticCurveTo(prevX, prevY, midX, midY);
             }
         }
-        ctx.lineTo(w, this.fluidColumns[this.fluidColumns.length - 1].height);
+        ctx.lineTo(w, h - this.pileHeights[this.numColumns - 1]);
         ctx.lineTo(w, h);
         ctx.closePath();
         ctx.fill();
 
-        // 2. Cyan Wave Highlight Rim
-        ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)';
+        // 2. Cyan Wave Edge Glow
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        for (let i = 0; i < this.fluidColumns.length; ++i) {
+        for (let i = 0; i < this.numColumns; ++i) {
             const x = i * colWidth;
-            const y = this.fluidColumns[i].height;
+            const y = h - this.pileHeights[i];
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
         }
         ctx.stroke();
 
-        // 3. Dense Paperclip Texture Inside the Fluid Pool
-        ctx.strokeStyle = 'rgba(120, 180, 240, 0.25)';
+        // 3. Dense Cross-Hatch Paperclip Texture Inside the Flowing Mass
+        ctx.strokeStyle = 'rgba(130, 200, 255, 0.28)';
         ctx.lineWidth = 1;
-        const time = this.cosmicRotation;
-        for (let fx = 12; fx < w - 8; fx += 16) {
-            const colIdx = Math.floor((fx / w) * this.fluidColumns.length);
-            const topY = this.fluidColumns[colIdx] ? this.fluidColumns[colIdx].height : h * 0.9;
-            if (topY < h - 4) {
-                const fy = topY + 6 + (Math.sin(fx + time) * 3 + 4);
-                this.drawTinyPaperclip(ctx, fx, fy, 4, Math.sin(fx) * 1.5, 'rgba(0, 240, 255, 0.3)');
+        for (let fx = 8; fx < w - 6; fx += 14) {
+            const colIdx = Math.floor((fx / w) * this.numColumns);
+            const moundH = this.pileHeights[colIdx] || 2;
+            if (moundH > 6) {
+                const topY = h - moundH;
+                const fy = topY + 4 + (Math.sin(fx * 0.8 + time) * 3 + 3);
+                this.drawTinyPaperclip(ctx, fx, fy, 4, Math.sin(fx + time) * 1.2, 'rgba(0, 240, 255, 0.35)');
             }
         }
 
-        // 4. Jutting Paperclips Poking Out Along the Fluid Surface
-        for (let i = 1; i < this.fluidColumns.length - 1; i += 2) {
+        // 4. Jutting Paperclips Poking Out Along Flow Slopes & Crests
+        for (let i = 1; i < this.numColumns - 1; i += 2) {
             const x = i * colWidth;
-            const y = this.fluidColumns[i].height;
-            const rot = Math.sin(i * 1.7 + time * 0.5) * 0.6 - 0.2;
-            const colors = ['#ffffff', '#00f0ff', '#ffe600', '#7fe0ff'];
-            const color = colors[i % colors.length];
-            this.drawTinyPaperclip(ctx, x, y - 1, 5, rot, color);
+            const y = h - this.pileHeights[i];
+            const moundH = this.pileHeights[i];
+
+            if (moundH > 3) {
+                // Slope-aligned angle + subtle wiggle
+                const leftH = this.pileHeights[i - 1];
+                const rightH = this.pileHeights[i + 1];
+                const slopeAngle = Math.atan2(leftH - rightH, colWidth * 2);
+                const rot = slopeAngle + Math.sin(i * 1.5 + time) * 0.3;
+
+                const colors = ['#ffffff', '#00f0ff', '#ffe600', '#7fe0ff', '#ffffff'];
+                const color = colors[i % colors.length];
+                this.drawTinyPaperclip(ctx, x, y - 2, 5.5, rot, color);
+            }
         }
 
-        // 5. Render Settled Resting Paperclips
+        // 5. Render Settled Resting Paperclips on Slopes
         this.settledClips.forEach(s => {
-            this.drawTinyPaperclip(ctx, s.x, s.y - 1, s.size, s.rot, s.color);
+            this.drawTinyPaperclip(ctx, s.x, s.y - 1, s.size, s.rot + (s.slopeAngle || 0), s.color);
         });
     }
 

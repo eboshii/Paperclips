@@ -741,6 +741,48 @@ class GameEngine {
         }
     }
 
+    resetState() {
+        this.clips = BigDouble.zero();
+        this.lifetimeClips = BigDouble.zero();
+        this.fractionalClips = 0.0;
+        this.wire = new BigDouble(5000.0, 0);
+        this.isWireUnlocked = false;
+        this.ops = 0.0;
+        this.maxOps = 1000.0;
+        this.humanPopulation = 8000000000;
+        this.flywheelCharge = 0.0;
+
+        // Reset Subsystems
+        this.buildings.initCatalog();
+        this.techTree.initCatalog();
+        this.techTree.holdToClickEnabled = false;
+        this.techTree.smartWireLogisticsUnlocked = false;
+        this.techTree.smartWireActive = true;
+        this.techTree.autoplacerEnabled = false;
+        this.techTree.milestoneRoundingUnlocked = false;
+        this.techTree.telemetryHUDUnlocked = false;
+        this.techTree.autoResearchQueueUnlocked = false;
+        this.techTree.clickMultiplier = 1.0;
+        this.techTree.globalCPSMultiplier = 1.0;
+        this.techTree.wireWasteReduction = 0.0;
+        this.techTree.flywheelMaxBoost = 1.0;
+
+        this.spatialGrid = new SpatialGridEngine();
+        this.achievements = new AchievementManager();
+        this.dialogue = new DialogueDirector();
+        this.news = new NewsTickerEngine();
+
+        if (this.visualizer) {
+            this.visualizer.fallingClips = [];
+            this.visualizer.settledClips = [];
+            this.visualizer.initFluidColumns();
+            this.visualizer.tier = 0;
+            this.visualizer.autoTier = true;
+        }
+
+        this.renderAll();
+    }
+
     exportSave() {
         this.saveGame();
         const raw = localStorage.getItem('objective_paperclips_save');
@@ -756,7 +798,9 @@ class GameEngine {
             try {
                 const json = decodeURIComponent(escape(atob(str)));
                 localStorage.setItem('objective_paperclips_save', json);
-                window.location.reload();
+                this.loadSave();
+                this.renderAll();
+                alert("Save successfully imported!");
             } catch (e) {
                 alert("Invalid save string format!");
             }
@@ -766,7 +810,8 @@ class GameEngine {
     wipeSave() {
         if (confirm("WARNING: Are you sure you want to wipe all simulation progress? This cannot be undone.")) {
             localStorage.removeItem('objective_paperclips_save');
-            window.location.reload();
+            this.resetState();
+            this.spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2, "SIMULATION RESET!", "gold-popup");
         }
     }
 }
