@@ -7,7 +7,6 @@
 #include <cstring>
 #include <cstdio>
 #include <iostream>
-#include <zlib.h>
 
 #include "OmniMeshBuilder.h"
 #include "OmniFont.h"
@@ -36,8 +35,8 @@ struct RasterVertex {
 };
 
 /// <summary>
-/// High-Performance Pure C++ Software Rasterizer and Offscreen Renderer.
-/// Provides pixel-perfect 3D and 2D HUD rendering with PNG capture.
+/// High-Performance Pure C++ Cel-Shaded Software Rasterizer & HUD Renderer (Zero External Dependencies).
+/// Supports 3D cartoon toon-shading, inverted-hull ink outlines, 2D vector cartoon sprites, and PNG export.
 /// </summary>
 class OmniSoftwareRasterizer {
 public:
@@ -47,11 +46,11 @@ public:
     std::vector<float> depthBuffer;
 
     OmniSoftwareRasterizer(int w = 1280, int h = 720) : width(w), height(h) {
-        pixels.resize(static_cast<size_t>(width * height), 0xFF0E1117);
+        pixels.resize(static_cast<size_t>(width * height), 0xFF141724);
         depthBuffer.resize(static_cast<size_t>(width * height), 1e9f);
     }
 
-    void Clear(float r = 0.055f, float g = 0.065f, float b = 0.09f, float a = 1.0f) {
+    void Clear(float r = 0.08f, float g = 0.09f, float b = 0.14f, float a = 1.0f) {
         uint8_t cr = static_cast<uint8_t>(std::clamp(r * 255.0f, 0.0f, 255.0f));
         uint8_t cg = static_cast<uint8_t>(std::clamp(g * 255.0f, 0.0f, 255.0f));
         uint8_t cb = static_cast<uint8_t>(std::clamp(b * 255.0f, 0.0f, 255.0f));
@@ -101,15 +100,43 @@ public:
 
     void DrawHUDCard(float x, float y, float w, float h, float bgR, float bgG, float bgB, float bgA, float borderR, float borderG, float borderB, float borderA) {
         DrawHUDQuad(x, y, w, h, bgR, bgG, bgB, bgA);
-        DrawHUDBorder(x, y, w, h, 1.0f, borderR, borderG, borderB, borderA);
+        DrawHUDBorder(x, y, w, h, 1.5f, borderR, borderG, borderB, borderA);
+    }
+
+    // Chunky Cartoon 3D Arcade Button Card (With bottom physical press lip and rounded border highlights)
+    void DrawHUDTactileCard(float x, float y, float w, float h, float bgR, float bgG, float bgB, float bgA,
+                            float borderR, float borderG, float borderB, float borderA,
+                            float lipHeight = 4.0f, bool isPressed = false) 
+    {
+        float curY = isPressed ? (y + lipHeight * 0.7f) : y;
+        float curH = isPressed ? (h - lipHeight * 0.3f) : h;
+
+        // Bottom 3D shadow lip
+        if (!isPressed && lipHeight > 0.0f) {
+            float lipR = bgR * 0.55f;
+            float lipG = bgG * 0.55f;
+            float lipB = bgB * 0.55f;
+            DrawHUDQuad(x + 2.0f, y + h - lipHeight, w - 4.0f, lipHeight + 2.0f, lipR, lipG, lipB, bgA);
+        }
+
+        // Main button body
+        DrawHUDQuad(x, curY, w, curH - (isPressed ? 0.0f : lipHeight), bgR, bgG, bgB, bgA);
+
+        // Top glossy highlight stripe
+        float hiR = std::min(1.0f, bgR * 1.35f + 0.15f);
+        float hiG = std::min(1.0f, bgG * 1.35f + 0.15f);
+        float hiB = std::min(1.0f, bgB * 1.35f + 0.15f);
+        DrawHUDQuad(x + 2.0f, curY + 1.5f, w - 4.0f, 2.0f, hiR, hiG, hiB, bgA * 0.6f);
+
+        // Comic-book dark outline
+        DrawHUDBorder(x, curY, w, curH, 1.5f, borderR, borderG, borderB, borderA);
     }
 
     void DrawHUDText(float x, float y, const std::string& text, float scale = 1.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f, bool dropShadow = true) {
-        if (dropShadow) {
-            int iscale = (scale >= 2.5f) ? 3 : ((scale >= 1.5f) ? 2 : 1);
-            RenderGlyphString(x + static_cast<float>(iscale), y + static_cast<float>(iscale), text, iscale, 0.0f, 0.0f, 0.0f, a * 0.85f);
-        }
         int iscale = (scale >= 2.5f) ? 3 : ((scale >= 1.5f) ? 2 : 1);
+        if (dropShadow) {
+            RenderGlyphString(x + static_cast<float>(iscale), y + static_cast<float>(iscale), text, iscale, 0.04f, 0.05f, 0.08f, a * 0.90f);
+        }
         RenderGlyphString(x, y, text, iscale, r, g, b, a);
     }
 
@@ -123,7 +150,45 @@ public:
         DrawHUDText(rightX - w, y, text, scale, r, g, b, a, dropShadow);
     }
 
-    // 3D Scene Viewport Renderer (Centered in X: 340..895, Y: 58..660)
+    // 2D Vector Cartoon Sprites
+    void Draw2DPaperclipIcon(float cx, float cy, float scale = 1.0f, float r = 1.0f, float g = 0.85f, float b = 0.25f, float a = 1.0f) {
+        float sw = 3.0f * scale;
+        float h = 18.0f * scale;
+        float w = 9.0f * scale;
+
+        // Dark Outline
+        DrawHUDQuad(cx - w * 0.5f - 1.0f, cy - h * 0.5f - 1.0f, w + 2.0f, h + 2.0f, 0.05f, 0.06f, 0.09f, a);
+
+        // Body loops
+        DrawHUDQuad(cx - w * 0.5f, cy - h * 0.5f, sw, h, r, g, b, a);
+        DrawHUDQuad(cx - w * 0.5f, cy - h * 0.5f, w, sw, r, g, b, a);
+        DrawHUDQuad(cx + w * 0.5f - sw, cy - h * 0.5f, sw, h, r, g, b, a);
+        DrawHUDQuad(cx - w * 0.2f, cy + h * 0.5f - sw, w * 0.7f, sw, r, g, b, a);
+        DrawHUDQuad(cx - w * 0.2f, cy - h * 0.1f, sw, h * 0.6f, r, g, b, a);
+        DrawHUDQuad(cx - w * 0.2f, cy - h * 0.1f, w * 0.4f, sw, r, g, b, a);
+        DrawHUDQuad(cx + w * 0.2f - sw, cy - h * 0.1f, sw, h * 0.4f, r, g, b, a);
+    }
+
+    void Draw2DCoinIcon(float cx, float cy, float radius = 7.0f) {
+        float r = radius;
+        // Outline
+        DrawHUDQuad(cx - r - 1.0f, cy - r - 1.0f, (r * 2.0f) + 2.0f, (r * 2.0f) + 2.0f, 0.1f, 0.08f, 0.02f, 1.0f);
+        // Golden disc
+        DrawHUDQuad(cx - r, cy - r, r * 2.0f, r * 2.0f, 0.98f, 0.75f, 0.18f, 1.0f);
+        // Inner highlight
+        DrawHUDQuad(cx - r + 1.5f, cy - r + 1.5f, r * 2.0f - 3.0f, r * 2.0f - 3.0f, 1.0f, 0.88f, 0.35f, 1.0f);
+        // Center $ sign
+        DrawHUDTextCentered(cx, cy - 4.0f, "$", 1.0f, 0.65f, 0.45f, 0.05f, 1.0f, false);
+    }
+
+    void Draw2DSparkIcon(float cx, float cy, float size = 6.0f, float r = 1.0f, float g = 0.95f, float b = 0.4f) {
+        // 4-point cartoon sparkle
+        DrawHUDQuad(cx - 1.0f, cy - size, 2.0f, size * 2.0f, r, g, b, 1.0f);
+        DrawHUDQuad(cx - size, cy - 1.0f, size * 2.0f, 2.0f, r, g, b, 1.0f);
+        DrawHUDQuad(cx - 2.0f, cy - 2.0f, 4.0f, 4.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+    }
+
+    // 3D Scene Viewport Renderer with 3-Band Stepped Cel-Shading & Cartoon Outlines
     void DrawMesh3D(const std::vector<RenderVertex3D>& mesh, float posX, float posY, float posZ, float rotDeg, float scale,
                     float camDist = 5.5f, float camPitch = 25.0f, float camYaw = -20.0f) 
     {
@@ -141,7 +206,8 @@ public:
         float cosY = std::cos(radYaw);
         float sinY = std::sin(radYaw);
 
-        Vec3f lightDir = Vec3f(0.40f, 0.85f, 0.50f).normalized();
+        Vec3f lightDir = Vec3f(0.45f, 0.85f, 0.45f).normalized();
+        Vec3f specDir = Vec3f(0.2f, 0.5f, 0.8f).normalized();
         float fovRad = 45.0f * 3.14159265f / 180.0f;
         float tanHalfFov = std::tan(fovRad * 0.5f);
         float aspect = static_cast<float>(width) / static_cast<float>(height);
@@ -164,9 +230,17 @@ public:
                 float ny = v.ny;
                 float nz = -v.nx * sinR + v.nz * cosR;
                 float nDotL = std::max(0.0f, nx * lightDir.x + ny * lightDir.y + nz * lightDir.z);
-                float intensity = 0.40f + 0.60f * nDotL;
 
-                // View Space (Rotate Yaw, Rotate Pitch, Translate (0, -0.5, -camDist))
+                // 3-Band Stepped Cel Shading (Cartoon Toon Lighting)
+                float toonIntensity = 0.50f; // Shadow tone
+                if (nDotL > 0.65f) toonIntensity = 1.05f; // Bright highlight
+                else if (nDotL > 0.20f) toonIntensity = 0.82f; // Mid-tone
+
+                // Specular glint
+                float spec = std::max(0.0f, nx * specDir.x + ny * specDir.y + nz * specDir.z);
+                if (spec > 0.90f) toonIntensity += 0.35f;
+
+                // View Space
                 float yx = mx * cosY - mz * sinY;
                 float yy = my;
                 float yz = mx * sinY + mz * cosY;
@@ -193,19 +267,18 @@ public:
                 rv[i].sz = vz;
                 rv[i].invW = invZ;
 
-                rv[i].r = std::clamp(v.r * intensity, 0.0f, 1.0f);
-                rv[i].g = std::clamp(v.g * intensity, 0.0f, 1.0f);
-                rv[i].b = std::clamp(v.b * intensity, 0.0f, 1.0f);
+                rv[i].r = std::clamp(v.r * toonIntensity, 0.0f, 1.0f);
+                rv[i].g = std::clamp(v.g * toonIntensity, 0.0f, 1.0f);
+                rv[i].b = std::clamp(v.b * toonIntensity, 0.0f, 1.0f);
                 rv[i].a = v.a;
             }
 
             if (behind) continue;
-            // Clip to center viewport
             RasterizeTriangle(rv[0], rv[1], rv[2], 340, 58, 895, 660);
         }
     }
 
-    // Dedicated 3D Hero Paperclip Renderer (Rendered inside Left Pedestal: X: 36..320, Y: 122..406)
+    // 3D Fat Hero Paperclip Renderer with Thick Ink Outline & High-Contrast Cel Shading
     void DrawHeroPaperclip3D(const std::vector<RenderVertex3D>& mesh, float rotDeg, float scale) {
         if (mesh.empty()) return;
 
@@ -215,59 +288,96 @@ public:
 
         float centerX = 178.0f;
         float centerY = 262.0f;
-        float zoom = 95.0f * scale; // Fits 2.3 height mesh perfectly in 284x284 box
+        float zoom = 92.0f * scale;
 
-        Vec3f lightDir = Vec3f(0.5f, 0.8f, 0.7f).normalized();
-        Vec3f specularDir = Vec3f(0.2f, 0.4f, 0.9f).normalized();
+        Vec3f lightDir = Vec3f(0.55f, 0.80f, 0.60f).normalized();
+        Vec3f specularDir = Vec3f(0.20f, 0.40f, 0.90f).normalized();
 
-        // Clear pedestal depth
-        for (int y = 122; y <= 404; ++y) {
-            for (int x = 38; x <= 318; ++x) {
+        // Clear pedestal depth buffer
+        for (int y = 120; y <= 404; ++y) {
+            for (int x = 36; x <= 320; ++x) {
                 depthBuffer[y * width + x] = 1e9f;
             }
         }
 
         size_t triCount = mesh.size() / 3;
+
+        // 1. INK OUTLINE PASS (Inverted Hull / Black Expansion Pass)
         for (size_t t = 0; t < triCount; ++t) {
             RasterVertex rv[3];
-
             for (int i = 0; i < 3; ++i) {
                 const auto& v = mesh[t * 3 + i];
 
-                // 3D rotation with isometric tilt
-                float rx = v.x * cosR + v.z * sinR;
-                float ry = v.y;
-                float rz = -v.x * sinR + v.z * cosR;
+                // Expand vertex along normal by outline thickness
+                float ox = v.x + v.nx * 0.045f;
+                float oy = v.y + v.ny * 0.045f;
+                float oz = v.z + v.nz * 0.045f;
 
-                // Subtle 3D tilt
+                float rx = ox * cosR + oz * sinR;
+                float ry = oy;
+                float rz = -ox * sinR + oz * cosR;
+
                 float tx = rx;
                 float ty = ry * 0.92f - rz * 0.38f;
                 float tz = ry * 0.38f + rz * 0.92f;
 
-                // Lighting with metallic sheen
+                rv[i].sx = centerX + tx * zoom;
+                rv[i].sy = centerY - ty * zoom;
+                rv[i].sz = 5.2f - tz * 2.0f; // Slightly further behind for clean outline depth
+                rv[i].invW = 1.0f / rv[i].sz;
+
+                // Bold Comic Ink Outline Color (Deep ink navy/charcoal)
+                rv[i].r = 0.06f;
+                rv[i].g = 0.07f;
+                rv[i].b = 0.10f;
+                rv[i].a = 1.0f;
+            }
+            RasterizeTriangle(rv[0], rv[1], rv[2], 38, 122, 318, 404);
+        }
+
+        // 2. MAIN TOON-SHADED CEL PASS
+        for (size_t t = 0; t < triCount; ++t) {
+            RasterVertex rv[3];
+            for (int i = 0; i < 3; ++i) {
+                const auto& v = mesh[t * 3 + i];
+
+                float rx = v.x * cosR + v.z * sinR;
+                float ry = v.y;
+                float rz = -v.x * sinR + v.z * cosR;
+
+                float tx = rx;
+                float ty = ry * 0.92f - rz * 0.38f;
+                float tz = ry * 0.38f + rz * 0.92f;
+
                 float nx = v.nx * cosR + v.nz * sinR;
                 float ny = v.ny;
                 float nz = -v.nx * sinR + v.nz * cosR;
                 float nDotL = std::max(0.0f, nx * lightDir.x + ny * lightDir.y + nz * lightDir.z);
-                float spec = std::pow(std::max(0.0f, nx * specularDir.x + ny * specularDir.y + nz * specularDir.z), 16.0f);
-                float intensity = 0.45f + 0.55f * nDotL + 0.35f * spec;
+
+                // 3-Band Stepped Cel Shading with Shiny Glossy Highlights
+                float toon = 0.55f;
+                if (nDotL > 0.65f) toon = 1.10f;
+                else if (nDotL > 0.25f) toon = 0.85f;
+
+                float spec = std::max(0.0f, nx * specularDir.x + ny * specularDir.y + nz * specularDir.z);
+                if (spec > 0.88f) toon += 0.40f; // Pure shiny glint
 
                 rv[i].sx = centerX + tx * zoom;
                 rv[i].sy = centerY - ty * zoom;
                 rv[i].sz = 5.0f - tz * 2.0f;
                 rv[i].invW = 1.0f / rv[i].sz;
 
-                // Metallic silver/gold color
-                rv[i].r = std::clamp(0.92f * intensity, 0.0f, 1.0f);
-                rv[i].g = std::clamp(0.94f * intensity, 0.0f, 1.0f);
-                rv[i].b = std::clamp(0.98f * intensity, 0.0f, 1.0f);
+                // Bright Candy Metallic Gold/Silver Tint
+                rv[i].r = std::clamp(v.r * toon, 0.0f, 1.0f);
+                rv[i].g = std::clamp(v.g * toon, 0.0f, 1.0f);
+                rv[i].b = std::clamp(v.b * toon, 0.0f, 1.0f);
                 rv[i].a = 1.0f;
             }
-
             RasterizeTriangle(rv[0], rv[1], rv[2], 38, 122, 318, 404);
         }
     }
 
+    // 100% Pure Standard C++ PNG Writer (Zero External Dependencies, No zlib.h / -lz required)
     bool SavePNG(const std::string& filepath) const {
         FILE* fp = fopen(filepath.c_str(), "wb");
         if (!fp) return false;
@@ -275,46 +385,116 @@ public:
         const uint8_t sig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
         fwrite(sig, 1, 8, fp);
 
-        auto write_chunk = [&](const char* type, const uint8_t* data, uint32_t len) {
-            uint32_t lenBE = ((len >> 24) & 0xFF) | ((len >> 8) & 0xFF00) | ((len << 8) & 0xFF0000) | ((len << 24) & 0xFF000000);
-            fwrite(&lenBE, 1, 4, fp);
-            fwrite(type, 1, 4, fp);
-            if (len > 0 && data) fwrite(data, 1, len, fp);
-            uLong crc = crc32(0L, Z_NULL, 0);
-            crc = crc32(crc, (const Bytef*)type, 4);
-            if (len > 0 && data) crc = crc32(crc, (const Bytef*)data, len);
-            uint32_t crcBE = ((crc >> 24) & 0xFF) | ((crc >> 8) & 0xFF00) | ((crc << 8) & 0xFF0000) | ((crc << 24) & 0xFF000000);
-            fwrite(&crcBE, 1, 4, fp);
+        auto crc32_fn = [](const uint8_t* data, size_t length, uint32_t initCRC = 0xFFFFFFFF) -> uint32_t {
+            uint32_t crc = initCRC;
+            for (size_t i = 0; i < length; ++i) {
+                crc ^= data[i];
+                for (int k = 0; k < 8; ++k) {
+                    crc = (crc >> 1) ^ (0xEDB88320u & (-(crc & 1)));
+                }
+            }
+            return crc;
         };
 
+        auto adler32_fn = [](const uint8_t* data, size_t length) -> uint32_t {
+            uint32_t a = 1, b = 0;
+            for (size_t i = 0; i < length; ++i) {
+                a = (a + data[i]) % 65521u;
+                b = (b + a) % 65521u;
+            }
+            return (b << 16) | a;
+        };
+
+        auto write_chunk = [&](const char type[4], const uint8_t* data, size_t len) {
+            uint8_t lenBytes[4] = {
+                static_cast<uint8_t>((len >> 24) & 0xFF),
+                static_cast<uint8_t>((len >> 16) & 0xFF),
+                static_cast<uint8_t>((len >> 8) & 0xFF),
+                static_cast<uint8_t>(len & 0xFF)
+            };
+            fwrite(lenBytes, 1, 4, fp);
+            fwrite(type, 1, 4, fp);
+            if (len > 0 && data) {
+                fwrite(data, 1, len, fp);
+            }
+            uint32_t crc = crc32_fn(reinterpret_cast<const uint8_t*>(type), 4);
+            if (len > 0 && data) {
+                crc = crc32_fn(data, len, crc);
+            }
+            crc = ~crc;
+            uint8_t crcBytes[4] = {
+                static_cast<uint8_t>((crc >> 24) & 0xFF),
+                static_cast<uint8_t>((crc >> 16) & 0xFF),
+                static_cast<uint8_t>((crc >> 8) & 0xFF),
+                static_cast<uint8_t>(crc & 0xFF)
+            };
+            fwrite(crcBytes, 1, 4, fp);
+        };
+
+        // 1. IHDR
         uint8_t ihdr[13];
-        uint32_t wBE = ((width >> 24) & 0xFF) | ((width >> 8) & 0xFF00) | ((width << 8) & 0xFF0000) | ((width << 24) & 0xFF000000);
-        uint32_t hBE = ((height >> 24) & 0xFF) | ((height >> 8) & 0xFF00) | ((height << 8) & 0xFF0000) | ((height << 24) & 0xFF000000);
-        memcpy(&ihdr[0], &wBE, 4);
-        memcpy(&ihdr[4], &hBE, 4);
-        ihdr[8] = 8;
-        ihdr[9] = 6; // RGBA
-        ihdr[10] = 0;
-        ihdr[11] = 0;
-        ihdr[12] = 0;
+        ihdr[0] = static_cast<uint8_t>((width >> 24) & 0xFF);
+        ihdr[1] = static_cast<uint8_t>((width >> 16) & 0xFF);
+        ihdr[2] = static_cast<uint8_t>((width >> 8) & 0xFF);
+        ihdr[3] = static_cast<uint8_t>(width & 0xFF);
+
+        ihdr[4] = static_cast<uint8_t>((height >> 24) & 0xFF);
+        ihdr[5] = static_cast<uint8_t>((height >> 16) & 0xFF);
+        ihdr[6] = static_cast<uint8_t>((height >> 8) & 0xFF);
+        ihdr[7] = static_cast<uint8_t>(height & 0xFF);
+
+        ihdr[8] = 8;  // bit depth
+        ihdr[9] = 6;  // RGBA
+        ihdr[10] = 0; // deflate
+        ihdr[11] = 0; // standard filter
+        ihdr[12] = 0; // no interlace
         write_chunk("IHDR", ihdr, 13);
 
-        std::vector<uint8_t> rawScanlines((width * 4 + 1) * height);
+        // 2. IDAT (Uncompressed Deflate Stream)
+        size_t rawSize = static_cast<size_t>((width * 4 + 1) * height);
+        std::vector<uint8_t> raw(rawSize);
         for (int y = 0; y < height; ++y) {
-            rawScanlines[y * (width * 4 + 1)] = 0;
+            size_t rowOffset = static_cast<size_t>(y * (width * 4 + 1));
+            raw[rowOffset] = 0; // Filter: None
             for (int x = 0; x < width; ++x) {
                 uint32_t c = pixels[y * width + x];
-                rawScanlines[y * (width * 4 + 1) + 1 + x * 4 + 0] = (c >> 16) & 0xFF; // R
-                rawScanlines[y * (width * 4 + 1) + 1 + x * 4 + 1] = (c >> 8) & 0xFF;  // G
-                rawScanlines[y * (width * 4 + 1) + 1 + x * 4 + 2] = (c >> 0) & 0xFF;  // B
-                rawScanlines[y * (width * 4 + 1) + 1 + x * 4 + 3] = (c >> 24) & 0xFF; // A
+                raw[rowOffset + 1 + x * 4 + 0] = static_cast<uint8_t>((c >> 16) & 0xFF); // R
+                raw[rowOffset + 1 + x * 4 + 1] = static_cast<uint8_t>((c >> 8) & 0xFF);  // G
+                raw[rowOffset + 1 + x * 4 + 2] = static_cast<uint8_t>(c & 0xFF);         // B
+                raw[rowOffset + 1 + x * 4 + 3] = static_cast<uint8_t>((c >> 24) & 0xFF); // A
             }
         }
 
-        uLongf destLen = compressBound(rawScanlines.size());
-        std::vector<uint8_t> compressed(destLen);
-        compress(compressed.data(), &destLen, rawScanlines.data(), rawScanlines.size());
-        write_chunk("IDAT", compressed.data(), static_cast<uint32_t>(destLen));
+        std::vector<uint8_t> idat;
+        idat.push_back(0x78); // Zlib header
+        idat.push_back(0x01);
+
+        size_t offset = 0;
+        while (offset < rawSize) {
+            size_t blockSize = std::min(static_cast<size_t>(65535), rawSize - offset);
+            bool isFinal = (offset + blockSize >= rawSize);
+            idat.push_back(isFinal ? 0x01 : 0x00);
+
+            uint16_t len = static_cast<uint16_t>(blockSize);
+            uint16_t nlen = static_cast<uint16_t>(~len);
+            idat.push_back(static_cast<uint8_t>(len & 0xFF));
+            idat.push_back(static_cast<uint8_t>((len >> 8) & 0xFF));
+            idat.push_back(static_cast<uint8_t>(nlen & 0xFF));
+            idat.push_back(static_cast<uint8_t>((nlen >> 8) & 0xFF));
+
+            idat.insert(idat.end(), raw.begin() + offset, raw.begin() + offset + blockSize);
+            offset += blockSize;
+        }
+
+        uint32_t adler = adler32_fn(raw.data(), raw.size());
+        idat.push_back(static_cast<uint8_t>((adler >> 24) & 0xFF));
+        idat.push_back(static_cast<uint8_t>((adler >> 16) & 0xFF));
+        idat.push_back(static_cast<uint8_t>((adler >> 8) & 0xFF));
+        idat.push_back(static_cast<uint8_t>(adler & 0xFF));
+
+        write_chunk("IDAT", idat.data(), idat.size());
+
+        // 3. IEND
         write_chunk("IEND", nullptr, 0);
 
         fclose(fp);

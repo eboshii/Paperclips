@@ -61,6 +61,7 @@ public:
     void EndHUD2D();
 
     bool SaveScreenshot(const std::string& filepath) const;
+    bool SavePNG(const std::string& filepath) const { return SaveScreenshot(filepath); }
     OmniSoftwareRasterizer& GetRasterizer() { return m_rasterizer; }
     const OmniSoftwareRasterizer& GetRasterizer() const { return m_rasterizer; }
 

@@ -172,7 +172,7 @@ int main() {
 
     // 3. Build Procedural 3D Cosmic Meshes
     auto floorMesh = OmniMeshBuilder::BuildFactoryFloorMesh(24.0f, 24);
-    auto heroClipMesh = OmniMeshBuilder::BuildPaperclipMesh(0.045f, 64);
+    auto heroClipMesh = OmniMeshBuilder::BuildPaperclipMesh(0.12f, 64);
     auto earthMesh = OmniCosmicRenderer::BuildPlanetEarthMesh(1.8f, 16, 32);
     auto orbitalRingMesh = OmniCosmicRenderer::BuildEquatorialRingMesh(2.5f, 2.9f, 48);
     auto sunMesh = OmniCosmicRenderer::BuildStarSunMesh(2.2f, 16, 32);
@@ -679,63 +679,70 @@ int main() {
 
         // 2. Left Column Panel (X: 16 to 340, Y: 16 to 704)
         window.DrawHUDCard(16.0f, 16.0f, 324.0f, 688.0f,
-            0.08f, 0.10f, 0.14f, 0.94f,
-            0.20f, 0.24f, 0.32f, 0.65f);
+            0.10f, 0.12f, 0.18f, 0.96f,
+            0.24f, 0.30f, 0.44f, 0.75f);
+
+        auto& rast = window.GetRasterizer();
+        rast.Draw2DSparkIcon(65.0f, 28.0f, 5.0f, 1.0f, 0.85f, 0.3f);
+        rast.Draw2DSparkIcon(290.0f, 28.0f, 5.0f, 1.0f, 0.85f, 0.3f);
 
         // Header / Logo
-        window.DrawHUDTextCentered(178.0f, 28.0f, "PAPERCLIPS", 1.0f, 1.0f, 0.82f, 0.28f, 1.0f);
+        window.DrawHUDTextCentered(178.0f, 26.0f, "PAPERCLIPS", 1.1f, 1.0f, 0.88f, 0.32f, 1.0f);
 
         // Big Numbers Odometer
         std::string clipStr = FormatClipsCount(lifetimeClips);
-        window.DrawHUDTextCentered(178.0f, 48.0f, clipStr, 2.0f, 1.0f, 0.95f, 0.85f, 1.0f);
-        window.DrawHUDTextCentered(178.0f, 70.0f, "paperclips", 1.0f, 0.70f, 0.75f, 0.82f, 1.0f);
+        window.DrawHUDTextCentered(178.0f, 48.0f, clipStr, 2.0f, 1.0f, 0.96f, 0.86f, 1.0f);
+        window.DrawHUDTextCentered(178.0f, 70.0f, "paperclips", 1.0f, 0.75f, 0.82f, 0.92f, 1.0f);
         
         std::string cpsLabel = "per second: " + (currentCPS > BigDouble::zero() ? FormatClipsCount(currentCPS) : "0");
-        window.DrawHUDTextCentered(178.0f, 88.0f, cpsLabel, 1.0f, 0.35f, 0.90f, 0.55f, 1.0f);
+        window.DrawHUDTextCentered(178.0f, 88.0f, cpsLabel, 1.0f, 0.38f, 0.95f, 0.60f, 1.0f);
 
         // Hairline Divider
-        window.DrawHUDQuad(36.0f, 108.0f, 284.0f, 1.0f, 0.25f, 0.30f, 0.40f, 0.40f);
+        window.DrawHUDQuad(36.0f, 108.0f, 284.0f, 1.5f, 0.28f, 0.35f, 0.50f, 0.50f);
 
-        // Hero Clicker Pedestal Backdrop
+        // Hero Clicker Pedestal Backdrop with cartoon spark glints
         window.DrawHUDCard(36.0f, 120.0f, 284.0f, 284.0f,
-            0.05f, 0.07f, 0.10f, 0.85f,
-            0.22f, 0.28f, 0.38f, 0.50f);
+            0.07f, 0.09f, 0.14f, 0.90f,
+            0.28f, 0.36f, 0.52f, 0.60f);
+
+        rast.Draw2DSparkIcon(54.0f, 138.0f, 4.0f, 0.98f, 0.85f, 0.30f);
+        rast.Draw2DSparkIcon(302.0f, 138.0f, 4.0f, 0.98f, 0.85f, 0.30f);
 
         // Flywheel Momentum Boost Bar
         float flywheelPercent = flywheel.GetChargePercent();
         if (flywheelPercent > 0.0f) {
             float boostWidth = 260.0f * (flywheelPercent / 100.0f);
             window.DrawHUDQuad(48.0f, 414.0f, 260.0f, 6.0f, 0.15f, 0.18f, 0.24f, 0.8f);
-            window.DrawHUDQuad(48.0f, 414.0f, boostWidth, 6.0f, 0.35f, 0.85f, 0.95f, 1.0f);
-            window.DrawHUDTextCentered(178.0f, 424.0f, "Overclock Boost Active", 1.0f, 0.4f, 0.85f, 1.0f, 0.9f);
+            window.DrawHUDQuad(48.0f, 414.0f, boostWidth, 6.0f, 0.38f, 0.90f, 1.0f, 1.0f);
+            window.DrawHUDTextCentered(178.0f, 424.0f, "Overclock Boost Active", 1.0f, 0.45f, 0.90f, 1.0f, 0.95f);
         }
 
         // Secondary Stockpile Card (Y: 448..692)
         window.DrawHUDCard(28.0f, 448.0f, 300.0f, 244.0f,
-            0.07f, 0.09f, 0.12f, 0.92f,
-            0.18f, 0.22f, 0.28f, 0.50f);
+            0.09f, 0.11f, 0.16f, 0.94f,
+            0.22f, 0.28f, 0.40f, 0.60f);
 
-        window.DrawHUDText(42.0f, 460.0f, "RESOURCES", 1.0f, 0.60f, 0.68f, 0.78f, 1.0f);
+        window.DrawHUDText(42.0f, 460.0f, "RESOURCES", 1.0f, 0.65f, 0.75f, 0.88f, 1.0f);
 
         // Wire Stock
-        window.DrawHUDText(42.0f, 480.0f, "Wire: " + FormatClipsCount(playerWire) + " kg", 1.0f, 0.95f, 0.95f, 0.95f, 1.0f);
+        window.DrawHUDText(42.0f, 480.0f, "Wire: " + FormatClipsCount(playerWire) + " kg", 1.0f, 0.95f, 0.98f, 1.0f, 1.0f);
 
         // Funds & Operations
-        window.DrawHUDText(42.0f, 552.0f, "Funds: " + FormatCurrency(playerFunds), 1.0f, 0.40f, 0.95f, 0.60f, 1.0f);
-        window.DrawHUDText(42.0f, 576.0f, "Ops: " + FormatClipsCount(BigDouble(playerOps, 0)), 1.0f, 0.40f, 0.80f, 1.0f, 1.0f);
+        window.DrawHUDText(42.0f, 552.0f, "Funds: " + FormatCurrency(playerFunds), 1.0f, 0.45f, 0.98f, 0.65f, 1.0f);
+        window.DrawHUDText(42.0f, 576.0f, "Ops: " + FormatClipsCount(BigDouble(playerOps, 0)), 1.0f, 0.45f, 0.85f, 1.0f, 1.0f);
 
         if (lifetimeClips >= BigDouble(1.0, 6)) {
-            window.DrawHUDText(42.0f, 600.0f, "Human Pop: " + FormatWithCommas(humanPopulation), 1.0f, 0.95f, 0.45f, 0.45f, 1.0f);
+            window.DrawHUDText(42.0f, 600.0f, "Human Pop: " + FormatWithCommas(humanPopulation), 1.0f, 0.98f, 0.50f, 0.50f, 1.0f);
         }
         
         std::string eq = equivalency.GetEquivalencyString(lifetimeClips);
         if (eq.length() > 34) eq = eq.substr(0, 32) + "..";
-        window.DrawHUDText(42.0f, 626.0f, "Mass: " + eq, 1.0f, 0.70f, 0.75f, 0.80f, 0.9f);
+        window.DrawHUDText(42.0f, 626.0f, "Mass: " + eq, 1.0f, 0.75f, 0.80f, 0.88f, 0.9f);
 
         // 3. Right Column Panel (Store & Upgrades) (X: 900 to 1264, Y: 16 to 704)
         window.DrawHUDCard(900.0f, 16.0f, 364.0f, 688.0f,
-            0.08f, 0.10f, 0.14f, 0.94f,
-            0.20f, 0.24f, 0.32f, 0.65f);
+            0.10f, 0.12f, 0.18f, 0.96f,
+            0.24f, 0.30f, 0.44f, 0.75f);
 
         if (uiManager.activeTab == InteractiveTab::Store) {
             window.DrawHUDText(916.0f, 72.0f, "Buy Multiplier:", 1.0f, 0.65f, 0.70f, 0.80f, 1.0f);

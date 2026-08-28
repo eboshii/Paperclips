@@ -243,9 +243,9 @@ int main(int argc, char** argv) {
     techWeb.UpdateAvailableNodes(playerOps, lifetimeClips);
     achievements.CheckProgress(lifetimeClips, playerFunds.toDouble(), false);
 
-    // Build 3D Meshes
+    // Build 3D Fat Cartoon Meshes
     auto floorMesh = OmniMeshBuilder::BuildFactoryFloorMesh(24.0f, 24);
-    auto heroClipMesh = OmniMeshBuilder::BuildPaperclipMesh(0.048f, 64);
+    auto heroClipMesh = OmniMeshBuilder::BuildPaperclipMesh(0.12f, 64);
     auto earthMesh = OmniCosmicRenderer::BuildPlanetEarthMesh(1.8f, 16, 32);
     auto orbitalRingMesh = OmniCosmicRenderer::BuildEquatorialRingMesh(2.5f, 2.9f, 48);
     auto sunMesh = OmniCosmicRenderer::BuildStarSunMesh(2.2f, 16, 32);
@@ -274,7 +274,7 @@ int main(int argc, char** argv) {
     std::string wireBtnText = "+ Buy " + FormatWithCommas(wireGainAmount) + " kg Wire";
     std::string wireBtnSub = "Cost: " + FormatCurrency(wireCost);
     uiManager.AddActionPill("btn_buy_wire", 38.0f, 504.0f, 280.0f, 36.0f,
-        wireBtnText, wireBtnSub, 0.16f, 0.38f, 0.28f, canAffordWire, nullptr,
+        wireBtnText, wireBtnSub, 0.16f, 0.42f, 0.30f, canAffordWire, nullptr,
         "Raw Wire Stockpile", "Essential raw material for bending paperclips.\nProvides immediate physical stock.");
 
     if (uiManager.activeTab == InteractiveTab::Store) {
@@ -423,22 +423,22 @@ int main(int argc, char** argv) {
     }
 
     if (spawnTestPopups) {
-        uiManager.SpawnPopup(178.0f, 220.0f, "+1 CLIP", 0.35f, 1.0f, 0.45f, 1.3f);
-        uiManager.SpawnPopup(178.0f, 180.0f, "+$50 SPARK", 1.0f, 0.85f, 0.25f, 1.4f);
+        uiManager.SpawnPopup(178.0f, 220.0f, "+1 CLIP!", 0.98f, 0.88f, 0.35f, 1.4f);
+        uiManager.SpawnPopup(178.0f, 180.0f, "+$50 SPARK!", 0.35f, 0.95f, 0.55f, 1.5f);
     }
 
     CosmicVisualTier activeTier = (forcedCosmicTier >= 0) ? static_cast<CosmicVisualTier>(forcedCosmicTier) : OmniCosmicRenderer::DetermineTier(lifetimeClips);
 
     if (activeTier == CosmicVisualTier::FactoryFloor) {
-        window.BeginFrame(0.055f, 0.065f, 0.09f);
+        window.BeginFrame(0.09f, 0.11f, 0.16f);
     } else if (activeTier == CosmicVisualTier::PlanetaryEarth) {
-        window.BeginFrame(0.02f, 0.04f, 0.07f);
+        window.BeginFrame(0.04f, 0.07f, 0.14f);
     } else if (activeTier == CosmicVisualTier::SolarDysonSwarm) {
-        window.BeginFrame(0.08f, 0.05f, 0.02f);
+        window.BeginFrame(0.12f, 0.08f, 0.04f);
     } else if (activeTier == CosmicVisualTier::GalacticPenrose) {
-        window.BeginFrame(0.04f, 0.01f, 0.07f);
+        window.BeginFrame(0.06f, 0.02f, 0.10f);
     } else {
-        window.BeginFrame(0.01f, 0.01f, 0.02f);
+        window.BeginFrame(0.02f, 0.02f, 0.05f);
     }
 
     // 1. Draw 3D Cosmic World in Center Viewport
@@ -476,11 +476,12 @@ int main(int argc, char** argv) {
 
     // 2. Begin 2D HUD
     window.BeginHUD2D();
+    auto& rast = window.GetRasterizer();
 
     // Top News Ticker
     window.DrawHUDCard(350.0f, 16.0f, 540.0f, 36.0f,
-        0.08f, 0.10f, 0.14f, 0.90f,
-        0.22f, 0.28f, 0.38f, 0.60f);
+        0.11f, 0.14f, 0.20f, 0.94f,
+        0.28f, 0.38f, 0.55f, 0.70f);
 
     std::string news = "News: Sterling Robotics deploys autonomous desktop bending prototype.";
     if (preset == "mid") news = "News: Factory floor expansion approved after zero recorded defects.";
@@ -488,18 +489,20 @@ int main(int argc, char** argv) {
     else if (preset == "cosmic") news = "News: Autonomous probes report deep space matter conversion active.";
 
     if (news.length() > 58) news = news.substr(0, 55) + "...";
-    window.DrawHUDText(364.0f, 28.0f, news, 1.0f, 0.90f, 0.92f, 0.96f, 0.95f);
+    window.DrawHUDText(364.0f, 28.0f, news, 1.0f, 0.92f, 0.95f, 1.0f, 0.95f);
 
-    // Left Panel Background
+    // Left Panel Background (Warm playful slate)
     window.DrawHUDCard(16.0f, 16.0f, 324.0f, 688.0f,
-        0.08f, 0.10f, 0.14f, 0.94f,
-        0.20f, 0.24f, 0.32f, 0.65f);
+        0.10f, 0.12f, 0.18f, 0.96f,
+        0.24f, 0.30f, 0.44f, 0.75f);
 
-    window.DrawHUDTextCentered(178.0f, 28.0f, "PAPERCLIPS", 1.0f, 1.0f, 0.82f, 0.28f, 1.0f);
+    rast.Draw2DSparkIcon(65.0f, 28.0f, 5.0f, 1.0f, 0.85f, 0.3f);
+    rast.Draw2DSparkIcon(290.0f, 28.0f, 5.0f, 1.0f, 0.85f, 0.3f);
+    window.DrawHUDTextCentered(178.0f, 26.0f, "PAPERCLIPS", 1.1f, 1.0f, 0.88f, 0.32f, 1.0f);
 
     std::string clipStr = FormatClipsCount(lifetimeClips);
-    window.DrawHUDTextCentered(178.0f, 48.0f, clipStr, 2.0f, 1.0f, 0.95f, 0.85f, 1.0f);
-    window.DrawHUDTextCentered(178.0f, 70.0f, "paperclips", 1.0f, 0.70f, 0.75f, 0.82f, 1.0f);
+    window.DrawHUDTextCentered(178.0f, 48.0f, clipStr, 2.0f, 1.0f, 0.96f, 0.86f, 1.0f);
+    window.DrawHUDTextCentered(178.0f, 70.0f, "paperclips", 1.0f, 0.75f, 0.82f, 0.92f, 1.0f);
 
     SpatialSynergyReport gridSynergies = spatialGrid.EvaluateSpatialSynergies();
     BigDouble baseCPS = BigDouble(autoClippers * 1.0 + stampers * 15.0 + sinterers * 120.0 + megamills * 1500.0, 0)
@@ -507,14 +510,17 @@ int main(int argc, char** argv) {
     BigDouble currentCPS = baseCPS * gridSynergies.totalLayoutMultiplier * flywheel.GetGlobalCPSMultiplier();
 
     std::string cpsLabel = "per second: " + (currentCPS > BigDouble::zero() ? FormatClipsCount(currentCPS) : "0");
-    window.DrawHUDTextCentered(178.0f, 88.0f, cpsLabel, 1.0f, 0.35f, 0.90f, 0.55f, 1.0f);
+    window.DrawHUDTextCentered(178.0f, 88.0f, cpsLabel, 1.0f, 0.38f, 0.95f, 0.60f, 1.0f);
 
-    window.DrawHUDQuad(36.0f, 108.0f, 284.0f, 1.0f, 0.25f, 0.30f, 0.40f, 0.40f);
+    window.DrawHUDQuad(36.0f, 108.0f, 284.0f, 1.5f, 0.28f, 0.35f, 0.50f, 0.50f);
 
-    // Hero Pedestal Frame
+    // Hero Pedestal Frame with Playful Corners
     window.DrawHUDCard(36.0f, 120.0f, 284.0f, 284.0f,
-        0.05f, 0.07f, 0.10f, 0.85f,
-        0.22f, 0.28f, 0.38f, 0.50f);
+        0.07f, 0.09f, 0.14f, 0.90f,
+        0.28f, 0.36f, 0.52f, 0.60f);
+
+    rast.Draw2DSparkIcon(54.0f, 138.0f, 4.0f, 0.98f, 0.85f, 0.30f);
+    rast.Draw2DSparkIcon(302.0f, 138.0f, 4.0f, 0.98f, 0.85f, 0.30f);
 
     // Flywheel Boost
     float flywheelPercent = flywheel.GetChargePercent();
@@ -522,45 +528,45 @@ int main(int argc, char** argv) {
         float pct = (flywheelPercent > 0.0f) ? flywheelPercent : 65.0f;
         float boostWidth = 260.0f * (pct / 100.0f);
         window.DrawHUDQuad(48.0f, 414.0f, 260.0f, 6.0f, 0.15f, 0.18f, 0.24f, 0.8f);
-        window.DrawHUDQuad(48.0f, 414.0f, boostWidth, 6.0f, 0.35f, 0.85f, 0.95f, 1.0f);
-        window.DrawHUDTextCentered(178.0f, 424.0f, "Overclock Boost Active", 1.0f, 0.4f, 0.85f, 1.0f, 0.9f);
+        window.DrawHUDQuad(48.0f, 414.0f, boostWidth, 6.0f, 0.38f, 0.90f, 1.0f, 1.0f);
+        window.DrawHUDTextCentered(178.0f, 424.0f, "Overclock Boost Active", 1.0f, 0.45f, 0.90f, 1.0f, 0.95f);
     }
 
     // Stockpile Card
     window.DrawHUDCard(28.0f, 448.0f, 300.0f, 244.0f,
-        0.07f, 0.09f, 0.12f, 0.92f,
-        0.18f, 0.22f, 0.28f, 0.50f);
+        0.09f, 0.11f, 0.16f, 0.94f,
+        0.22f, 0.28f, 0.40f, 0.60f);
 
-    window.DrawHUDText(42.0f, 460.0f, "RESOURCES", 1.0f, 0.60f, 0.68f, 0.78f, 1.0f);
-    window.DrawHUDText(42.0f, 480.0f, "Wire: " + FormatClipsCount(playerWire) + " kg", 1.0f, 0.95f, 0.95f, 0.95f, 1.0f);
-    window.DrawHUDText(42.0f, 552.0f, "Funds: " + FormatCurrency(playerFunds), 1.0f, 0.40f, 0.95f, 0.60f, 1.0f);
-    window.DrawHUDText(42.0f, 576.0f, "Ops: " + FormatClipsCount(BigDouble(playerOps, 0)), 1.0f, 0.40f, 0.80f, 1.0f, 1.0f);
+    window.DrawHUDText(42.0f, 460.0f, "RESOURCES", 1.0f, 0.65f, 0.75f, 0.88f, 1.0f);
+    window.DrawHUDText(42.0f, 480.0f, "Wire: " + FormatClipsCount(playerWire) + " kg", 1.0f, 0.95f, 0.98f, 1.0f, 1.0f);
+    window.DrawHUDText(42.0f, 552.0f, "Funds: " + FormatCurrency(playerFunds), 1.0f, 0.45f, 0.98f, 0.65f, 1.0f);
+    window.DrawHUDText(42.0f, 576.0f, "Ops: " + FormatClipsCount(BigDouble(playerOps, 0)), 1.0f, 0.45f, 0.85f, 1.0f, 1.0f);
 
     if (lifetimeClips >= BigDouble(1.0, 6)) {
-        window.DrawHUDText(42.0f, 600.0f, "Human Pop: " + FormatWithCommas(humanPopulation), 1.0f, 0.95f, 0.45f, 0.45f, 1.0f);
+        window.DrawHUDText(42.0f, 600.0f, "Human Pop: " + FormatWithCommas(humanPopulation), 1.0f, 0.98f, 0.50f, 0.50f, 1.0f);
     }
     
     std::string eq = equivalency.GetEquivalencyString(lifetimeClips);
     if (eq.length() > 34) eq = eq.substr(0, 32) + "..";
-    window.DrawHUDText(42.0f, 626.0f, "Mass: " + eq, 1.0f, 0.70f, 0.75f, 0.80f, 0.9f);
+    window.DrawHUDText(42.0f, 626.0f, "Mass: " + eq, 1.0f, 0.75f, 0.80f, 0.88f, 0.9f);
 
     // Right Panel Background
     window.DrawHUDCard(900.0f, 16.0f, 364.0f, 688.0f,
-        0.08f, 0.10f, 0.14f, 0.94f,
-        0.20f, 0.24f, 0.32f, 0.65f);
+        0.10f, 0.12f, 0.18f, 0.96f,
+        0.24f, 0.30f, 0.44f, 0.75f);
 
     if (uiManager.activeTab == InteractiveTab::Store) {
-        window.DrawHUDText(916.0f, 72.0f, "Buy Multiplier:", 1.0f, 0.65f, 0.70f, 0.80f, 1.0f);
+        window.DrawHUDText(916.0f, 72.0f, "Buy Multiplier:", 1.0f, 0.70f, 0.78f, 0.90f, 1.0f);
     }
 
-    // 3. Draw 3D Hero Paperclip inside Left Pedestal
-    window.DrawHeroPaperclip3D(heroClipMesh, 28.0f, 1.25f);
+    // 3. Draw 3D Fat Hero Paperclip inside Left Pedestal with Cel Shading & Ink Outline
+    window.DrawHeroPaperclip3D(heroClipMesh, 28.0f, 1.35f);
 
     // 4. Render All Interactive UI buttons, popups, and tooltips
     uiManager.RenderUI(window);
     window.EndHUD2D();
 
-    if (window.SaveScreenshot(outputPath)) {
+    if (window.SavePNG(outputPath)) {
         std::cout << "[SUCCESS] Screenshot saved: " << outputPath << "\n";
         return 0;
     } else {
