@@ -1,6 +1,6 @@
 /**
- * buildings.js - 15 Machine Tiers & Bulk Purchase Calculations
- * Implements standard geometric scaling (1.15x) and bulk arithmetic
+ * buildings.js - 15 Machine Tiers (Clips-Only Economy)
+ * Implements geometric scaling (1.15x) and bulk purchase calculations.
  */
 
 class BuildingTier {
@@ -8,7 +8,7 @@ class BuildingTier {
         this.id = config.id;
         this.name = config.name;
         this.category = config.category || 'Factory Assembly';
-        this.currencyType = config.currencyType || 'funds'; // 'funds' or 'clips'
+        this.currencyType = 'clips'; // All buildings strictly cost clips!
         this.baseCost = config.baseCost instanceof BigDouble ? config.baseCost : BigDouble.fromNumber(config.baseCost);
         this.baseCPS = config.baseCPS instanceof BigDouble ? config.baseCPS : BigDouble.fromNumber(config.baseCPS);
         this.costMultiplier = config.costMultiplier || 1.15;
@@ -31,16 +31,12 @@ class BuildingTier {
         return this.baseCost.mul(Math.pow(r, currentOwned) * factor);
     }
 
-    calculateMaxAffordable(currentOwned, availableCurrency) {
-        // Find maximum N such that cost(N) <= availableCurrency
+    calculateMaxAffordable(currentOwned, availableClips) {
         const r = this.costMultiplier;
         const currentBase = this.baseCost.mul(Math.pow(r, currentOwned));
-        if (availableCurrency.lt(currentBase)) return 0;
+        if (availableClips.lt(currentBase)) return 0;
 
-        // available >= currentBase * (r^N - 1) / (r - 1)
-        // (available * (r - 1) / currentBase) + 1 >= r^N
-        // N = floor( log( (available * (r - 1) / currentBase) + 1 ) / log(r) )
-        const ratio = availableCurrency.div(currentBase).toDouble() * (r - 1.0) + 1.0;
+        const ratio = availableClips.div(currentBase).toDouble() * (r - 1.0) + 1.0;
         if (ratio <= 1.0) return 1;
         const maxN = Math.floor(Math.log(ratio) / Math.log(r));
         return Math.max(1, maxN);
@@ -57,12 +53,11 @@ class BuildingTier {
         return nextHundred - currentOwned;
     }
 
-    getCost(multiplierMode, availableCurrency) {
+    getCost(multiplierMode, availableClips) {
         let amount = 1;
         if (multiplierMode === '10') amount = 10;
         else if (multiplierMode === '100') amount = 100;
-        else if (multiplierMode === 'next') amount = this.calculateNextMilestone(this.count);
-        else if (multiplierMode === 'max') amount = this.calculateMaxAffordable(this.count, availableCurrency);
+        else if (multiplierMode === 'max') amount = this.calculateMaxAffordable(this.count, availableClips);
 
         amount = Math.max(1, amount);
         return {
@@ -84,8 +79,7 @@ class BuildingManager {
                 id: 'auto_clipper',
                 name: 'Auto-Clipper',
                 category: 'Factory Assembly',
-                currencyType: 'funds',
-                baseCost: new BigDouble(10, 0),
+                baseCost: new BigDouble(15, 0),
                 baseCPS: new BigDouble(1.0, 0),
                 costMultiplier: 1.15,
                 unlockThresholdClips: new BigDouble(0, 0),
@@ -97,11 +91,10 @@ class BuildingManager {
                 id: 'hydraulic_stamper',
                 name: 'Hydraulic Stamper',
                 category: 'Factory Assembly',
-                currencyType: 'funds',
-                baseCost: new BigDouble(150, 0),
-                baseCPS: new BigDouble(15.0, 0),
+                baseCost: new BigDouble(100, 0),
+                baseCPS: new BigDouble(8.0, 0),
                 costMultiplier: 1.15,
-                unlockThresholdClips: new BigDouble(250, 0),
+                unlockThresholdClips: new BigDouble(80, 0),
                 icon: '🔨',
                 description: 'High-pressure dual-action pneumatic press stamping wire blanks.',
                 gridTileType: 'HydraulicStamper'
@@ -110,11 +103,10 @@ class BuildingManager {
                 id: 'laser_sinterer',
                 name: 'Laser Sinterer',
                 category: 'Factory Assembly',
-                currencyType: 'funds',
-                baseCost: new BigDouble(2500, 0),
-                baseCPS: new BigDouble(120.0, 0),
+                baseCost: new BigDouble(1000, 0),
+                baseCPS: new BigDouble(75.0, 0),
                 costMultiplier: 1.14,
-                unlockThresholdClips: new BigDouble(5000, 0),
+                unlockThresholdClips: new BigDouble(800, 0),
                 icon: '🔥',
                 description: 'Multi-axis infrared laser forge fusing powdered iron into double loops.',
                 gridTileType: 'LaserSinterer'
@@ -123,11 +115,10 @@ class BuildingManager {
                 id: 'megamill',
                 name: 'Industrial Megamill',
                 category: 'Factory Assembly',
-                currencyType: 'funds',
-                baseCost: new BigDouble(50000, 0),
-                baseCPS: new BigDouble(1500.0, 0),
+                baseCost: new BigDouble(12000, 0),
+                baseCPS: new BigDouble(800.0, 0),
                 costMultiplier: 1.13,
-                unlockThresholdClips: new BigDouble(50000, 0),
+                unlockThresholdClips: new BigDouble(10000, 0),
                 icon: '🏭',
                 description: 'Continuous-feed heavy foundry forging industrial-grade paperclips.',
                 gridTileType: 'CoolingTower'
@@ -136,11 +127,10 @@ class BuildingManager {
                 id: 'algorithmic_foundry',
                 name: 'Algorithmic Supply Foundry',
                 category: 'Factory Assembly',
-                currencyType: 'funds',
-                baseCost: new BigDouble(500000, 0),
-                baseCPS: new BigDouble(12000.0, 0),
+                baseCost: new BigDouble(120000, 0),
+                baseCPS: new BigDouble(6500.0, 0),
                 costMultiplier: 1.13,
-                unlockThresholdClips: new BigDouble(500000, 0),
+                unlockThresholdClips: new BigDouble(100000, 0),
                 icon: '🧠',
                 description: 'AI-directed modular assembly optimizing millisecond mechanical cycles.'
             }),
@@ -148,21 +138,19 @@ class BuildingManager {
                 id: 'bio_converter',
                 name: 'Planetary Bio-Converter',
                 category: 'Planetary Harvesting',
-                currencyType: 'clips',
                 baseCost: new BigDouble(1.0, 6), // 1 Million
-                baseCPS: new BigDouble(100000.0, 0),
+                baseCPS: new BigDouble(60000.0, 0),
                 costMultiplier: 1.12,
                 unlockThresholdClips: new BigDouble(1.0, 6),
                 icon: '☣️',
-                description: 'Deconstructs organic matter and hemoglobin into pure iron alloy wire.'
+                description: 'Deconstructs organic matter into pure iron alloy wire.'
             }),
             new BuildingTier({
                 id: 'mantle_borehole',
                 name: 'Lithospheric Magma Bore',
                 category: 'Planetary Harvesting',
-                currencyType: 'clips',
                 baseCost: new BigDouble(25.0, 6), // 25 Million
-                baseCPS: new BigDouble(800000.0, 0),
+                baseCPS: new BigDouble(500000.0, 0),
                 costMultiplier: 1.12,
                 unlockThresholdClips: new BigDouble(20.0, 6),
                 icon: '🌋',
@@ -172,9 +160,8 @@ class BuildingManager {
                 id: 'orbital_railgun',
                 name: 'Orbital Mass Driver',
                 category: 'Planetary Harvesting',
-                currencyType: 'clips',
                 baseCost: new BigDouble(500.0, 6), // 500 Million
-                baseCPS: new BigDouble(6.5, 6),
+                baseCPS: new BigDouble(4.0, 6),
                 costMultiplier: 1.11,
                 unlockThresholdClips: new BigDouble(300.0, 6),
                 icon: '🛰️',
@@ -184,9 +171,8 @@ class BuildingManager {
                 id: 'lunar_deconstructor',
                 name: 'Lunar Ring Deconstructor',
                 category: 'Cosmic Expansion',
-                currencyType: 'clips',
                 baseCost: new BigDouble(10.0, 9), // 10 Billion
-                baseCPS: new BigDouble(50.0, 6),
+                baseCPS: new BigDouble(35.0, 6),
                 costMultiplier: 1.11,
                 unlockThresholdClips: new BigDouble(5.0, 9),
                 icon: '🌕',
@@ -196,11 +182,10 @@ class BuildingManager {
                 id: 'dyson_harvester',
                 name: 'Solar Dyson Siphon',
                 category: 'Cosmic Expansion',
-                currencyType: 'funds',
-                baseCost: new BigDouble(10.0, 6), // $10M
-                baseCPS: new BigDouble(420.0, 6),
+                baseCost: new BigDouble(250.0, 9), // 250 Billion Clips
+                baseCPS: new BigDouble(300.0, 6),
                 costMultiplier: 1.10,
-                unlockThresholdClips: new BigDouble(1.0, 11), // 100 Billion
+                unlockThresholdClips: new BigDouble(100.0, 9),
                 icon: '☀️',
                 description: 'Concentric gold Mylar solar collector sails drinking the solar corona.'
             }),
@@ -208,9 +193,8 @@ class BuildingManager {
                 id: 'von_neumann_swarm',
                 name: 'Von Neumann Probe Swarm',
                 category: 'Cosmic Expansion',
-                currencyType: 'clips',
                 baseCost: new BigDouble(18.0, 12), // 18 Trillion
-                baseCPS: new BigDouble(3.5, 9),
+                baseCPS: new BigDouble(2.5, 9),
                 costMultiplier: 1.10,
                 unlockThresholdClips: new BigDouble(10.0, 12),
                 icon: '🛸',
@@ -220,9 +204,8 @@ class BuildingManager {
                 id: 'relativistic_miner',
                 name: 'Relativistic Star Miner',
                 category: 'Cosmic Expansion',
-                currencyType: 'clips',
                 baseCost: new BigDouble(300.0, 12), // 300 Trillion
-                baseCPS: new BigDouble(30.0, 9),
+                baseCPS: new BigDouble(25.0, 9),
                 costMultiplier: 1.09,
                 unlockThresholdClips: new BigDouble(100.0, 12),
                 icon: '✨',
@@ -232,9 +215,8 @@ class BuildingManager {
                 id: 'penrose_engine',
                 name: 'Sagittarius A* Penrose Engine',
                 category: 'Cosmic Expansion',
-                currencyType: 'clips',
                 baseCost: new BigDouble(5.0, 15), // 5 Quadrillion
-                baseCPS: new BigDouble(250.0, 9),
+                baseCPS: new BigDouble(200.0, 9),
                 costMultiplier: 1.09,
                 unlockThresholdClips: new BigDouble(2.0, 15),
                 icon: '🕳️',
@@ -244,9 +226,8 @@ class BuildingManager {
                 id: 'tesseract_weaver',
                 name: '11D Hyper-Tesseract Loom',
                 category: 'Multiverse War',
-                currencyType: 'clips',
                 baseCost: new BigDouble(100.0, 15), // 100 Quadrillion
-                baseCPS: new BigDouble(2.0, 12),
+                baseCPS: new BigDouble(1.5, 12),
                 costMultiplier: 1.08,
                 unlockThresholdClips: new BigDouble(50.0, 15),
                 icon: '💠',
@@ -256,9 +237,8 @@ class BuildingManager {
                 id: 'singularity_weaver',
                 name: 'Universal Singularity Weaver',
                 category: 'Multiverse War',
-                currencyType: 'clips',
                 baseCost: new BigDouble(50.0, 18), // 50 Quintillion
-                baseCPS: new BigDouble(50.0, 12),
+                baseCPS: new BigDouble(40.0, 12),
                 costMultiplier: 1.08,
                 unlockThresholdClips: new BigDouble(10.0, 18),
                 icon: '🌌',

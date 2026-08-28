@@ -1,7 +1,11 @@
 /**
  * game.js - Master Game Controller & 60 FPS Simulation Engine
- * Integrates Cookie Clicker 3-column architecture, Objective: Paperclips styling,
- * kinetic flywheel overclock, QoL hold-to-click, and offline time-warp.
+ * Simplified Economy Edition:
+ * - Pure Clips & Ops economy (Money/Funds removed)
+ * - Wire unlocked at city-level scale (50,000 clips) when local scrap runs out
+ * - Bouncy cartoon clicker & kinetic flywheel overclock
+ * - Single next unpurchased upgrade/research node
+ * - Right dock buttons for Store & Tech with slide-out drawer
  */
 
 class GameEngine {
@@ -9,17 +13,16 @@ class GameEngine {
         // Resources & Balances
         this.clips = BigDouble.zero();
         this.lifetimeClips = BigDouble.zero();
-        this.wire = new BigDouble(100.0, 0); // 100 kg initial wire
-        this.funds = new BigDouble(50.0, 0);  // $50 initial funds
+        this.wire = new BigDouble(5000.0, 0); // 5,000 kg initial wire supply when unlocked
+        this.isWireUnlocked = false; // Wire resource unlocks at 50,000 clips (city-scale)
         this.ops = 0.0;
         this.maxOps = 1000.0;
-        this.insight = 0.0;
         this.humanPopulation = 8000000000;
-        this.marketProfits = 0.0;
 
-        // UI & Multiplier State
+        // UI State
         this.buyMultiplier = '1';
         this.activeTab = 'store';
+        this.isDrawerOpen = false;
 
         // Flywheel Overclock State
         this.flywheelCharge = 0.0; // 0% to 100%
@@ -44,20 +47,6 @@ class GameEngine {
         this.lastSaveTime = Date.now();
         this.saveInterval = 5000; // 5 seconds
         this.lastTickTime = performance.now();
-
-        // Equivalency Table
-        this.equivalencyMilestones = [
-            { kg: 0.001, label: "1 Paperclip (1g)" },
-            { kg: 0.15, label: "1 Smartphone" },
-            { kg: 14.0, label: "1 Bicycle" },
-            { kg: 1500.0, label: "1 Automobile" },
-            { kg: 100000.0, label: "1 Boeing 747" },
-            { kg: 10100000.0, label: "The Eiffel Tower" },
-            { kg: 5.97e24, label: "100% of Planet Earth" },
-            { kg: 1.989e30, label: "The Solar System (Sun)" },
-            { kg: 1.5e42, label: "Milky Way Galaxy" },
-            { kg: 1.48e53, label: "Observable Universe" }
-        ];
     }
 
     init() {
@@ -89,7 +78,7 @@ class GameEngine {
                 this.isMouseDown = false;
             });
 
-            // Touch support for mobile/tablets
+            // Touch support
             heroBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 this.handleManualClick(e.touches[0]);
@@ -102,36 +91,41 @@ class GameEngine {
             buyWireBtn.addEventListener('click', () => this.buyWire());
         }
 
+        // Right Menu Dock Buttons
+        const btnStore = document.getElementById('btn-open-store');
+        if (btnStore) {
+            btnStore.addEventListener('click', () => this.toggleDrawer('store'));
+        }
+
+        const btnTech = document.getElementById('btn-open-tech');
+        if (btnTech) {
+            btnTech.addEventListener('click', () => this.toggleDrawer('tech'));
+        }
+
+        // Close Drawer Button & Backdrop
+        const btnClose = document.getElementById('btn-close-drawer');
+        if (btnClose) {
+            btnClose.addEventListener('click', () => this.closeDrawer());
+        }
+
+        const backdrop = document.getElementById('menu-drawer-backdrop');
+        if (backdrop) {
+            backdrop.addEventListener('click', () => this.closeDrawer());
+        }
+
+        // Escape Key Closes Drawer
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.closeDrawer();
+        });
+
         // Multiplier Buttons
         const multButtons = document.querySelectorAll('.mult-btn');
         multButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', () => {
                 multButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.buyMultiplier = btn.dataset.mult;
                 this.renderStore();
-            });
-        });
-
-        // Navigation Tabs
-        const navTabs = document.querySelectorAll('.nav-tab');
-        navTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                navTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                this.activeTab = tab.dataset.tab;
-                this.switchTab(this.activeTab);
-            });
-        });
-
-        // Cosmic Scale Viewport Pills
-        const tierPills = document.querySelectorAll('.tier-pill');
-        tierPills.forEach(pill => {
-            pill.addEventListener('click', () => {
-                tierPills.forEach(p => p.classList.remove('active'));
-                pill.classList.add('active');
-                const t = parseInt(pill.dataset.tier, 10);
-                if (this.visualizer) this.visualizer.setTier(t);
             });
         });
 
@@ -144,12 +138,12 @@ class GameEngine {
             });
         }
 
-        // Settings / Audio Controls
+        // Audio Controls
         const muteBtn = document.getElementById('btn-mute');
         if (muteBtn) {
             muteBtn.addEventListener('click', () => {
                 this.audio.setMuted(!this.audio.isMuted);
-                muteBtn.textContent = this.audio.isMuted ? '🔇 Muted' : '🔊 Sound On';
+                muteBtn.textContent = this.audio.isMuted ? '🔇' : '🔊';
                 muteBtn.classList.toggle('muted', this.audio.isMuted);
             });
         }
@@ -161,9 +155,9 @@ class GameEngine {
             });
         }
 
-        // Save & Reset Buttons
+        // Save & Reset Controls
         const saveBtn = document.getElementById('btn-save');
-        if (saveBtn) saveBtn.addEventListener('click', () => { this.saveGame(); alert('Simulation state saved locally!'); });
+        if (saveBtn) saveBtn.addEventListener('click', () => { this.saveGame(); alert('Simulation saved locally!'); });
 
         const exportBtn = document.getElementById('btn-export');
         if (exportBtn) exportBtn.addEventListener('click', () => this.exportSave());
@@ -173,44 +167,93 @@ class GameEngine {
 
         const wipeBtn = document.getElementById('btn-wipe');
         if (wipeBtn) wipeBtn.addEventListener('click', () => this.wipeSave());
+    }
 
-        const prestigeBtn = document.getElementById('btn-prestige-reboot');
-        if (prestigeBtn) prestigeBtn.addEventListener('click', () => this.rebootQuantumEpoch());
+    toggleDrawer(tab) {
+        if (this.isDrawerOpen && this.activeTab === tab) {
+            this.closeDrawer();
+        } else {
+            this.openDrawer(tab);
+        }
+    }
+
+    openDrawer(tab) {
+        this.isDrawerOpen = true;
+        this.activeTab = tab;
+
+        const drawer = document.getElementById('menu-drawer');
+        const backdrop = document.getElementById('menu-drawer-backdrop');
+        const iconEl = document.getElementById('drawer-icon');
+        const headingEl = document.getElementById('drawer-heading');
+
+        if (drawer) drawer.classList.add('open');
+        if (backdrop) backdrop.classList.add('open');
+
+        if (tab === 'store') {
+            if (iconEl) iconEl.textContent = '🛒';
+            if (headingEl) headingEl.textContent = 'FACTORY STORE';
+            document.getElementById('view-store').style.display = 'block';
+            document.getElementById('view-tech').style.display = 'none';
+            this.renderStore();
+        } else if (tab === 'tech') {
+            if (iconEl) iconEl.textContent = '🔬';
+            if (headingEl) headingEl.textContent = 'RESEARCH LAB';
+            document.getElementById('view-store').style.display = 'none';
+            document.getElementById('view-tech').style.display = 'block';
+            this.renderTechTree();
+        }
+    }
+
+    closeDrawer() {
+        this.isDrawerOpen = false;
+        const drawer = document.getElementById('menu-drawer');
+        const backdrop = document.getElementById('menu-drawer-backdrop');
+
+        if (drawer) drawer.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('open');
     }
 
     handleManualClick(e) {
-        const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
-        const wireNeeded = new BigDouble(wirePerClip, 0);
+        // Check wire consumption only if wire has been unlocked (>= 50,000 clips)
+        if (this.isWireUnlocked) {
+            const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
+            const wireNeeded = new BigDouble(wirePerClip, 0);
 
-        if (this.wire.gte(wireNeeded)) {
-            let baseClips = BigDouble.one();
-            this.clips = this.clips.add(baseClips);
-            this.lifetimeClips = this.lifetimeClips.add(baseClips);
-            this.wire = this.wire.sub(wireNeeded);
-
-            // Charge Flywheel
-            this.flywheelCharge = Math.min(100.0, this.flywheelCharge + 4.5);
-
-            // Audio & Visual Effects
-            this.audio.playClickChime();
-            if (this.visualizer) this.visualizer.triggerHeroClick();
-
-            // Spawn floating text popup
-            this.spawnFloatingText(e ? (e.clientX || 150) : 150, e ? (e.clientY || 250) : 250, "+1", "spark-popup");
-
-            // Spark Chance (5% to 10%)
-            const hasSparkTech = this.techTree.nodeMap["tech_spark_frequency"]?.isResearched;
-            const sparkChance = hasSparkTech ? 0.10 : 0.05;
-            if (Math.random() < sparkChance) {
-                const bonusOps = 5.0;
-                const bonusFunds = new BigDouble(50.0, 0);
-                this.ops = Math.min(this.maxOps, this.ops + bonusOps);
-                this.funds = this.funds.add(bonusFunds);
-                this.audio.playSparkSound();
-                this.spawnFloatingText(e ? (e.clientX || 150) : 150, (e ? (e.clientY || 250) : 250) - 25, "+$50 SPARK", "gold-popup");
+            if (this.wire.lt(wireNeeded)) {
+                this.spawnFloatingText(e ? (e.clientX || 150) : 150, e ? (e.clientY || 250) : 250, "OUT OF WIRE!", "warn-popup");
+                return;
             }
-        } else {
-            this.spawnFloatingText(e ? (e.clientX || 150) : 150, e ? (e.clientY || 250) : 250, "OUT OF WIRE!", "warn-popup");
+            this.wire = this.wire.sub(wireNeeded);
+        }
+
+        let baseClips = BigDouble.one();
+        this.clips = this.clips.add(baseClips);
+        this.lifetimeClips = this.lifetimeClips.add(baseClips);
+
+        // Charge Flywheel
+        this.flywheelCharge = Math.min(100.0, this.flywheelCharge + 4.5);
+
+        // Audio & Visual Effects
+        this.audio.playClickChime();
+        if (this.visualizer) this.visualizer.triggerHeroClick();
+
+        // Spawn floating text popup
+        this.spawnFloatingText(e ? (e.clientX || 150) : 150, e ? (e.clientY || 250) : 250, "+1", "spark-popup");
+
+        // Spark Chance (5% to 10%)
+        const hasSparkTech = this.techTree.nodeMap["tech_spark_frequency"]?.isResearched;
+        const sparkChance = hasSparkTech ? 0.10 : 0.05;
+        if (Math.random() < sparkChance) {
+            const bonusOps = 5.0;
+            const bonusClips = new BigDouble(100.0, 0);
+            this.ops = Math.min(this.maxOps, this.ops + bonusOps);
+            this.clips = this.clips.add(bonusClips);
+            this.lifetimeClips = this.lifetimeClips.add(bonusClips);
+            if (this.isWireUnlocked) {
+                this.wire = this.wire.add(new BigDouble(50.0, 0));
+            }
+            this.audio.playSparkSound();
+            this.spawnFloatingText(e ? (e.clientX || 150) : 150, (e ? (e.clientY || 250) : 250) - 25, "+100 CLIPS SPARK!", "gold-popup");
         }
     }
 
@@ -228,22 +271,24 @@ class GameEngine {
 
         setTimeout(() => {
             if (pop.parentNode) pop.parentNode.removeChild(pop);
-        }, 1200);
+        }, 1000);
     }
 
     buyWire() {
+        if (!this.isWireUnlocked) return;
+
         let mult = 1;
         if (this.buyMultiplier === '10') mult = 10;
         else if (this.buyMultiplier === '100') mult = 100;
-        else if (this.buyMultiplier === 'next' || this.buyMultiplier === 'max') {
-            mult = Math.max(1, Math.floor(this.funds.toDouble() / 15.0));
+        else if (this.buyMultiplier === 'max') {
+            mult = Math.max(1, Math.floor(this.clips.toDouble() / 250.0));
         }
 
-        const cost = new BigDouble(15.0 * mult, 0);
+        const cost = new BigDouble(250.0 * mult, 0);
         const wireGain = new BigDouble(1000.0 * mult, 0);
 
-        if (this.funds.gte(cost)) {
-            this.funds = this.funds.sub(cost);
+        if (this.clips.gte(cost)) {
+            this.clips = this.clips.sub(cost);
             this.wire = this.wire.add(wireGain);
             this.audio.playWireSound();
             this.renderResources();
@@ -255,18 +300,13 @@ class GameEngine {
         const b = this.buildings.getBuilding(buildingId);
         if (!b) return;
 
-        const available = b.currencyType === 'funds' ? this.funds : this.clips;
-        const purchase = b.getCost(this.buyMultiplier, available);
+        const purchase = b.getCost(this.buyMultiplier, this.clips);
 
-        if (available.gte(purchase.totalCost)) {
-            if (b.currencyType === 'funds') {
-                this.funds = this.funds.sub(purchase.totalCost);
-            } else {
-                this.clips = this.clips.sub(purchase.totalCost);
-            }
+        if (this.clips.gte(purchase.totalCost)) {
+            this.clips = this.clips.sub(purchase.totalCost);
             b.count += purchase.amount;
 
-            // Auto-place in 8x8 spatial grid if unlocked or extruder/stamper
+            // Auto-place in spatial grid if applicable
             if (b.gridTileType) {
                 for (let k = 0; k < purchase.amount; ++k) {
                     this.spatialGrid.autoPlace(b.gridTileType);
@@ -276,11 +316,22 @@ class GameEngine {
             // Bio-converter deconstructs biomass
             if (b.id === 'bio_converter') {
                 this.humanPopulation = Math.max(0, this.humanPopulation - (5000000 * purchase.amount));
-                this.wire = this.wire.add(new BigDouble(5000.0 * purchase.amount, 0));
+                if (this.isWireUnlocked) {
+                    this.wire = this.wire.add(new BigDouble(5000.0 * purchase.amount, 0));
+                }
             }
 
             this.audio.playPurchaseSound();
             this.renderStore();
+            this.renderResources();
+        }
+    }
+
+    buyTech(techId) {
+        if (this.techTree.purchaseResearch(techId, this)) {
+            this.audio.playTechUnlockSound();
+            this.renderStore();
+            this.renderTechTree();
             this.renderResources();
         }
     }
@@ -291,7 +342,7 @@ class GameEngine {
         const techMult = this.techTree.globalCPSMultiplier;
         const prestigeMult = this.prestige.getGlobalPrestigeMultiplier();
 
-        // Flywheel boost (0% to +100% boost)
+        // Flywheel boost
         const flywheelBoost = 1.0 + (this.flywheelCharge / 100.0) * (this.techTree.flywheelMaxBoost - 1.0);
 
         return baseCPS.mul(synergies.totalMultiplier * techMult * prestigeMult * flywheelBoost);
@@ -301,10 +352,17 @@ class GameEngine {
         const dt = Math.min(0.1, (timestamp - this.lastTickTime) / 1000.0);
         this.lastTickTime = timestamp;
 
+        // Check Wire Unlock Threshold: City-level production capacity (50,000 clips)
+        if (!this.isWireUnlocked && this.lifetimeClips.gte(new BigDouble(50000, 0))) {
+            this.isWireUnlocked = true;
+            this.dialogue.addLog("DR. VANCE", "Arthur, we've exhausted all local scrap metal in the district! We need to start ordering and managing industrial high-tensile wire supply!");
+            this.renderResources();
+        }
+
         // 1. Hold-to-Click Handler
         if (this.isMouseDown && this.techTree.holdToClickEnabled) {
             this.holdClickTimer += dt;
-            if (this.holdClickTimer >= 0.05) { // 20Hz rapid click
+            if (this.holdClickTimer >= 0.05) { // 20Hz
                 this.holdClickTimer = 0;
                 this.handleManualClick(null);
             }
@@ -319,37 +377,38 @@ class GameEngine {
         const currentCPS = this.calculateTotalCPS();
         if (currentCPS.gt(BigDouble.zero())) {
             const clipsProduced = currentCPS.mul(dt);
-            const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
-            const wireNeeded = clipsProduced.mul(wirePerClip);
 
-            if (this.wire.gte(wireNeeded)) {
+            if (!this.isWireUnlocked) {
+                // Early game: raw matter is abundant and wire is not constrained
                 this.clips = this.clips.add(clipsProduced);
                 this.lifetimeClips = this.lifetimeClips.add(clipsProduced);
-                this.wire = this.wire.sub(wireNeeded);
-            } else if (this.wire.gt(BigDouble.zero())) {
-                const actualClips = this.wire.div(wirePerClip);
-                this.clips = this.clips.add(actualClips);
-                this.lifetimeClips = this.lifetimeClips.add(actualClips);
-                this.wire = BigDouble.zero();
+            } else {
+                // City-scale and beyond: requires wire supply
+                const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
+                const wireNeeded = clipsProduced.mul(wirePerClip);
+
+                if (this.wire.gte(wireNeeded)) {
+                    this.clips = this.clips.add(clipsProduced);
+                    this.lifetimeClips = this.lifetimeClips.add(clipsProduced);
+                    this.wire = this.wire.sub(wireNeeded);
+                } else if (this.wire.gt(BigDouble.zero())) {
+                    const actualClips = this.wire.div(wirePerClip);
+                    this.clips = this.clips.add(actualClips);
+                    this.lifetimeClips = this.lifetimeClips.add(actualClips);
+                    this.wire = BigDouble.zero();
+                }
             }
         }
 
-        // 4. Auto-Supply Logistics
-        if (this.techTree.smartWireLogisticsUnlocked && this.techTree.smartWireActive) {
-            if (this.wire.lt(new BigDouble(150, 0)) && this.funds.gte(new BigDouble(15, 0))) {
+        // 4. Auto-Supply Logistics (if unlocked and wire active)
+        if (this.isWireUnlocked && this.techTree.smartWireLogisticsUnlocked && this.techTree.smartWireActive) {
+            if (this.wire.lt(new BigDouble(500, 0)) && this.clips.gte(new BigDouble(250, 0))) {
                 this.buyWire();
             }
         }
 
-        // 5. Passive Funds & Ops Generation
-        const clipperCount = this.buildings.getBuilding('auto_clipper')?.count || 0;
+        // 5. Passive Computing Ops Generation
         const stamperCount = this.buildings.getBuilding('hydraulic_stamper')?.count || 0;
-        const hftActive = this.techTree.nodeMap['tech_market_arbitrage']?.isResearched;
-
-        const passiveFundsRate = 5.0 + (clipperCount * 0.5) + (hftActive ? 150.0 : 0.0);
-        this.funds = this.funds.add(new BigDouble(passiveFundsRate * dt, 0));
-        this.marketProfits += (hftActive ? 150.0 : 0.0) * dt;
-
         const opsRate = (2.0 + (stamperCount * 0.5)) * this.prestige.getOpsBoostMultiplier();
         this.ops = Math.min(this.maxOps, this.ops + (opsRate * dt));
 
@@ -386,7 +445,7 @@ class GameEngine {
 
         const cpsCountEl = document.getElementById('odometer-cps');
         if (cpsCountEl) {
-            cpsCountEl.textContent = currentCPS.gt(BigDouble.zero()) ? currentCPS.toShortScale(1) : '0';
+            cpsCountEl.textContent = currentCPS.gt(BigDouble.zero()) ? `+${currentCPS.toShortScale(1)} / sec` : '+0 / sec';
         }
 
         const flywheelBar = document.getElementById('flywheel-progress');
@@ -394,21 +453,27 @@ class GameEngine {
         if (flywheelBar) {
             flywheelBar.style.width = `${this.flywheelCharge}%`;
             if (flywheelText) {
-                flywheelText.textContent = this.flywheelCharge > 5.0 ? `OVERCLOCK ACTIVE (+${Math.round(this.flywheelCharge)}%)` : 'KINETIC FLYWHEEL READY';
+                flywheelText.textContent = this.flywheelCharge > 5.0 ? `⚡ OVERCLOCK +${Math.round(this.flywheelCharge)}%` : '⚡ OVERCLOCK BOOST';
             }
         }
     }
 
     renderResources() {
+        // Wire row visibility & amount
+        const wireRow = document.getElementById('row-wire');
         const wireEl = document.getElementById('res-wire');
-        if (wireEl) wireEl.textContent = `${this.wire.toShortScale(1)} kg`;
+        if (wireRow) {
+            wireRow.style.display = this.isWireUnlocked ? 'flex' : 'none';
+        }
+        if (wireEl && this.isWireUnlocked) {
+            wireEl.textContent = `${this.wire.toShortScale(1)} kg`;
+        }
 
-        const fundsEl = document.getElementById('res-funds');
-        if (fundsEl) fundsEl.textContent = this.funds.formatCurrency(2);
-
+        // Ops amount
         const opsEl = document.getElementById('res-ops');
-        if (opsEl) opsEl.textContent = `${Math.floor(this.ops)} / ${Math.floor(this.maxOps)} FLOPs`;
+        if (opsEl) opsEl.textContent = `${Math.floor(this.ops)} / ${Math.floor(this.maxOps)}`;
 
+        // Population row
         const popRow = document.getElementById('row-population');
         const popEl = document.getElementById('res-population');
         if (popRow && popEl) {
@@ -420,35 +485,31 @@ class GameEngine {
             }
         }
 
-        const massEl = document.getElementById('res-mass-equiv');
-        if (massEl) {
-            massEl.textContent = this.getEquivalencyString();
-        }
-
-        // Buy Wire Button text & cost
+        // Buy Wire Button text & cost (in clips)
         const wireCostEl = document.getElementById('wire-btn-cost');
         const wireGainEl = document.getElementById('wire-btn-gain');
         if (wireCostEl && wireGainEl) {
             let mult = 1;
             if (this.buyMultiplier === '10') mult = 10;
             else if (this.buyMultiplier === '100') mult = 100;
-            else if (this.buyMultiplier === 'next' || this.buyMultiplier === 'max') mult = Math.max(1, Math.floor(this.funds.toDouble() / 15.0));
+            else if (this.buyMultiplier === 'max') mult = Math.max(1, Math.floor(this.clips.toDouble() / 250.0));
 
-            wireGainEl.textContent = `+ Buy ${(1000 * mult).toLocaleString()} kg Wire`;
-            wireCostEl.textContent = `Cost: $${(15 * mult).toLocaleString()}`;
+            wireGainEl.textContent = `+${(1000 * mult).toLocaleString()} kg`;
+            wireCostEl.textContent = `${(250 * mult).toLocaleString()} Clips`;
         }
-    }
 
-    getEquivalencyString() {
-        const totalKg = this.lifetimeClips.mul(0.001).toDouble();
-        for (let i = this.equivalencyMilestones.length - 1; i >= 0; --i) {
-            const m = this.equivalencyMilestones[i];
-            if (totalKg >= m.kg) {
-                const count = totalKg / m.kg;
-                return count >= 2.0 ? `${count.toFixed(1)} × ${m.label}` : m.label;
-            }
-        }
-        return "1 Paperclip (1g)";
+        // Notification Badges on Right Dock
+        const nextTech = this.techTree.getNextUnpurchasedNode();
+        const canAffordTech = nextTech && this.techTree.canAfford(nextTech.id, this.ops, this.clips);
+        const techBadge = document.getElementById('tech-badge-count');
+        if (techBadge) techBadge.style.display = canAffordTech ? 'flex' : 'none';
+
+        const canAffordBuilding = this.buildings.buildings.some(b => {
+            const p = b.getCost(this.buyMultiplier, this.clips);
+            return this.clips.gte(p.totalCost);
+        });
+        const storeBadge = document.getElementById('store-badge-count');
+        if (storeBadge) storeBadge.style.display = canAffordBuilding ? 'flex' : 'none';
     }
 
     renderNews() {
@@ -462,15 +523,14 @@ class GameEngine {
         const container = document.getElementById('buildings-container');
         if (!container) return;
 
-        // Render Upgrades Shelf (Top horizontal row)
+        // Render Single Next Upgrade Shelf in Store
         this.renderUpgradesShelf();
 
-        // Render Building Rows
+        // Render Building Cards
         container.innerHTML = this.buildings.buildings.map(b => {
-            const available = b.currencyType === 'funds' ? this.funds : this.clips;
-            const purchase = b.getCost(this.buyMultiplier, available);
-            const canAfford = available.gte(purchase.totalCost);
-            const costFormatted = b.currencyType === 'funds' ? purchase.totalCost.formatCurrency(2) : `${purchase.totalCost.toShortScale(2)} Clips`;
+            const purchase = b.getCost(this.buyMultiplier, this.clips);
+            const canAfford = this.clips.gte(purchase.totalCost);
+            const costFormatted = `${purchase.totalCost.toShortScale(2)} Clips`;
             const rateFormatted = `+${b.baseCPS.toShortScale(1)} CPS`;
 
             return `
@@ -490,235 +550,77 @@ class GameEngine {
         const shelf = document.getElementById('upgrades-shelf');
         if (!shelf) return;
 
-        const available = this.techTree.getAvailableNodes().slice(0, 5);
-        if (available.length === 0) {
-            shelf.innerHTML = '<div class="no-upgrades">All discovered technology unlocked</div>';
+        const nextNode = this.techTree.getNextUnpurchasedNode();
+        if (!nextNode) {
+            shelf.innerHTML = '<div class="no-upgrades-box">🎉 All Research Unlocked!</div>';
             return;
         }
 
-        shelf.innerHTML = available.map(node => {
-            const canAfford = this.techTree.canAfford(node.id, this.ops, this.clips);
-            return `
-                <div class="upgrade-icon ${canAfford ? 'affordable' : 'unaffordable'}" 
-                     onclick="game.buyTech('${node.id}')" 
-                     title="${node.title}\n${node.effectDescription}\nCost: ${node.opsCost} Ops, ${node.clipsCost.toShortScale()} Clips">
-                    ${node.icon}
+        const canAfford = this.techTree.canAfford(nextNode.id, this.ops, this.clips);
+        shelf.innerHTML = `
+            <div class="next-upgrade-card">
+                <div class="upgrade-top-row">
+                    <div class="upgrade-icon-box">${nextNode.icon}</div>
+                    <div class="upgrade-header-info">
+                        <div class="upgrade-title">${nextNode.title}</div>
+                        <div class="upgrade-discipline">${nextNode.discipline}</div>
+                    </div>
                 </div>
-            `;
-        }).join('');
-    }
-
-    buyTech(techId) {
-        if (this.techTree.purchaseResearch(techId, this)) {
-            this.audio.playTechUnlockSound();
-            this.renderStore();
-            this.renderTechTree();
-        }
-    }
-
-    switchTab(tabId) {
-        const views = {
-            store: document.getElementById('view-store'),
-            tech: document.getElementById('view-tech'),
-            grid: document.getElementById('view-grid'),
-            stats: document.getElementById('view-stats'),
-            prestige: document.getElementById('view-prestige')
-        };
-
-        Object.keys(views).forEach(k => {
-            if (views[k]) views[k].style.display = (k === tabId) ? 'block' : 'none';
-        });
-
-        if (tabId === 'store') this.renderStore();
-        else if (tabId === 'tech') this.renderTechTree();
-        else if (tabId === 'grid') this.renderGrid();
-        else if (tabId === 'stats') this.renderStats();
-        else if (tabId === 'prestige') this.renderPrestige();
+                <div class="upgrade-effect">${nextNode.effectDescription}</div>
+                <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" onclick="game.buyTech('${nextNode.id}')">
+                    <span>${canAfford ? '💡 RESEARCH' : '🔒 LOCKED'}</span>
+                    <span>⚡ ${nextNode.opsCost} Ops | 📎 ${nextNode.clipsCost.toShortScale()}</span>
+                </button>
+            </div>
+        `;
     }
 
     renderTechTree() {
         const container = document.getElementById('tech-tree-container');
         if (!container) return;
 
-        const available = this.techTree.getAvailableNodes();
-        const researched = this.techTree.getResearchedNodes();
-
-        container.innerHTML = `
-            <div class="tech-section-header">AVAILABLE RESEARCH (${available.length})</div>
-            <div class="tech-cards-grid">
-                ${available.map(node => {
-                    const canAfford = this.techTree.canAfford(node.id, this.ops, this.clips);
-                    return `
-                        <div class="tech-card ${canAfford ? 'affordable' : 'locked'}" onclick="game.buyTech('${node.id}')">
-                            <div class="tech-card-top">
-                                <span class="tech-card-icon">${node.icon}</span>
-                                <span class="tech-card-title">${node.title}</span>
-                            </div>
-                            <div class="tech-card-discipline">${node.discipline}</div>
-                            <div class="tech-card-effect">${node.effectDescription}</div>
-                            <div class="tech-card-cost">Cost: ${node.opsCost} Ops | ${node.clipsCost.toShortScale()} Clips</div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-
-            <div class="tech-section-header" style="margin-top:20px;">COMPLETED RESEARCH (${researched.length})</div>
-            <div class="tech-cards-grid completed">
-                ${researched.map(node => `
-                    <div class="tech-card completed">
-                        <div class="tech-card-top">
-                            <span class="tech-card-icon">${node.icon}</span>
-                            <span class="tech-card-title">${node.title}</span>
-                        </div>
-                        <div class="tech-card-effect">${node.effectDescription}</div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-
-    renderGrid() {
-        const container = document.getElementById('spatial-grid-view');
-        if (!container) return;
-
-        const synergies = this.spatialGrid.evaluateSynergies();
-
-        let gridCellsHtml = '';
-        for (let y = 0; y < 8; ++y) {
-            for (let x = 0; x < 8; ++x) {
-                const tile = this.spatialGrid.getTile(x, y);
-                const tileIcon = tile === 'WireExtruder' ? '⚡' : tile === 'HydraulicStamper' ? '🔨' : tile === 'LaserSinterer' ? '🔥' : tile === 'CoolingTower' ? '❄️' : '';
-                gridCellsHtml += `
-                    <div class="grid-cell ${tile ? 'occupied' : 'empty'}" data-x="${x}" data-y="${y}">
-                        ${tileIcon}
-                    </div>
-                `;
-            }
-        }
-
-        container.innerHTML = `
-            <div class="grid-synergy-banner">
-                <div>Linear Feed: +${synergies.linearBonusPercent}%</div>
-                <div>Cooling Bonus: +${synergies.coolingBonusPercent}%</div>
-                <div>Symmetry Score: ${synergies.symmetryScorePercent}%</div>
-                <div style="color:#00e5ff;">Total Multiplier: ${(synergies.totalMultiplier).toFixed(2)}x</div>
-            </div>
-            <div class="spatial-grid-matrix">${gridCellsHtml}</div>
-        `;
-    }
-
-    renderStats() {
-        const container = document.getElementById('stats-view-container');
-        if (!container) return;
-
-        const achs = this.achievements.achievements;
-        container.innerHTML = `
-            <div class="stats-overview-box">
-                <div class="stats-metric"><span>Lifetime Paperclips:</span> <span>${this.lifetimeClips.toShortScale(2)}</span></div>
-                <div class="stats-metric"><span>Total Market Profits:</span> <span>$${Math.floor(this.marketProfits).toLocaleString()}</span></div>
-                <div class="stats-metric"><span>Achievements Unlocked:</span> <span>${this.achievements.getUnlockedCount()} / ${achs.length}</span></div>
-                <div class="stats-metric"><span>Quantum Epoch Prestige Rank:</span> <span>${this.prestige.epochRank}</span></div>
-                <div class="stats-metric"><span>Entropic Bits Harvested:</span> <span>${this.prestige.totalBitsEarned}</span></div>
-            </div>
-
-            <div class="tech-section-header" style="margin-top:20px;">ACHIEVEMENTS (${this.achievements.getUnlockedCount()}/${achs.length})</div>
-            <div class="achievements-list">
-                ${achs.map(a => `
-                    <div class="achievement-row ${a.isUnlocked ? 'unlocked' : 'locked'}">
-                        <div class="ach-icon">${a.isUnlocked ? a.icon : '🔒'}</div>
-                        <div class="ach-info">
-                            <div class="ach-title">${a.title}</div>
-                            <div class="ach-desc">${a.isSecret && !a.isUnlocked ? 'Secret Milestone...' : a.description}</div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-
-    renderPrestige() {
-        const container = document.getElementById('prestige-view-container');
-        if (!container) return;
-
-        const pending = this.prestige.calculatePendingBits(this.lifetimeClips);
-
-        container.innerHTML = `
-            <div class="prestige-card">
-                <h2>QUANTUM EPOCH REBOOT</h2>
-                <p>Collapse reality into a quantum singularity to harvest Entropic Bits (Ω).</p>
-                <div class="bits-counter">
-                    <div>Current Entropic Bits: <strong>${this.prestige.entropicBits} Ω</strong></div>
-                    <div>Bits Earned on Reboot: <strong>+${pending} Ω</strong></div>
+        const nextNode = this.techTree.getNextUnpurchasedNode();
+        if (!nextNode) {
+            container.innerHTML = `
+                <div class="no-upgrades-box" style="padding:24px; font-size:14px; line-height:1.5;">
+                    🎉 All Available Research Completed!
+                    <div style="font-size:12px; color:var(--text-sub); margin-top:8px;">Maximum Technological Singularity Achieved!</div>
                 </div>
-                <button id="btn-reboot-now" class="action-btn ${pending > 0 ? 'active-reboot' : 'disabled'}" onclick="game.rebootQuantumEpoch()">
-                    ${pending > 0 ? 'COLLAPSE SIMULATION & HARVEST Ω' : 'REQUIRES 1 QUADRILLION CLIPS'}
-                </button>
-            </div>
+            `;
+            return;
+        }
 
-            <div class="tech-section-header" style="margin-top:24px;">QUANTUM ARCHIVE TALENTS</div>
-            <div class="talents-grid">
-                ${this.prestige.talents.map(t => {
-                    const cost = this.prestige.getTalentCost(t.id);
-                    const canAfford = this.prestige.entropicBits >= cost && t.rank < t.maxRank;
-                    return `
-                        <div class="talent-card ${canAfford ? 'affordable' : 'locked'}" onclick="game.buyPrestigeTalent('${t.id}')">
-                            <div class="talent-top">
-                                <span>${t.icon} ${t.title}</span>
-                                <span class="talent-rank">Rank ${t.rank}/${t.maxRank}</span>
-                            </div>
-                            <div class="talent-desc">${t.description}</div>
-                            <div class="talent-cost">${t.rank < t.maxRank ? `Cost: ${cost} Ω` : 'MAXED'}</div>
+        const canAfford = this.techTree.canAfford(nextNode.id, this.ops, this.clips);
+        container.innerHTML = `
+            <div class="single-upgrade-shelf" style="padding:16px;">
+                <div class="shelf-label" style="font-size:9px; margin-bottom:12px;">🔬 NEXT RESEARCH OBJECTIVE</div>
+                <div class="next-upgrade-card" style="padding:16px; gap:12px;">
+                    <div class="upgrade-top-row" style="gap:12px;">
+                        <div class="upgrade-icon-box" style="width:48px; height:48px; font-size:28px;">${nextNode.icon}</div>
+                        <div class="upgrade-header-info">
+                            <div class="upgrade-title" style="font-size:16px;">${nextNode.title}</div>
+                            <div class="upgrade-discipline" style="font-size:9px; margin-top:3px;">${nextNode.discipline}</div>
                         </div>
-                    `;
-                }).join('')}
+                    </div>
+                    <div class="upgrade-effect" style="font-size:13px; color:#ffffff; background:#190c33; padding:10px; border-radius:8px; border:2px solid var(--border-ink);">
+                        ${nextNode.effectDescription}
+                    </div>
+                    <div style="font-family:var(--font-cartoon); font-size:12px; font-weight:700; color:var(--neon-yellow);">
+                        Cost: ⚡ ${nextNode.opsCost} Ops &nbsp;|&nbsp; 📎 ${nextNode.clipsCost.toShortScale()} Clips
+                    </div>
+                    <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:10px 14px; font-size:14px;" onclick="game.buyTech('${nextNode.id}')">
+                        <span>${canAfford ? '💡 RESEARCH NOW' : '🔒 NEED MORE OPS / CLIPS'}</span>
+                        <span>⚡ ${nextNode.opsCost} Ops</span>
+                    </button>
+                </div>
             </div>
         `;
-    }
-
-    buyPrestigeTalent(talentId) {
-        if (this.prestige.buyTalent(talentId)) {
-            this.audio.playTechUnlockSound();
-            this.renderPrestige();
-        }
-    }
-
-    rebootQuantumEpoch() {
-        const pending = this.prestige.calculatePendingBits(this.lifetimeClips);
-        if (pending <= 0) return;
-
-        if (confirm(`Are you sure you want to collapse the universe?\nYou will gain +${pending} Entropic Bits (Ω) and restart with permanent meta-perks.`)) {
-            this.prestige.entropicBits += pending;
-            this.prestige.totalBitsEarned += pending;
-            this.prestige.epochRank++;
-
-            // Reset simulation balances
-            const startBonus = this.prestige.getStartingClips();
-            this.clips = new BigDouble(startBonus, 0);
-            this.lifetimeClips = new BigDouble(startBonus, 0);
-            this.wire = new BigDouble(100.0, 0);
-            this.funds = new BigDouble(50.0, 0);
-            this.ops = 0.0;
-            this.humanPopulation = 8000000000;
-            this.flywheelCharge = 0.0;
-
-            // Reset buildings & research
-            this.buildings.initCatalog();
-            this.techTree.initCatalog();
-            this.spatialGrid = new SpatialGridEngine();
-
-            this.dialogue.init();
-            this.audio.playAlarmSound();
-
-            this.saveGame();
-            this.renderAll();
-        }
     }
 
     renderAll() {
         this.renderStore();
         this.renderResources();
         this.renderNews();
-        this.dialogue.render();
     }
 
     saveGame() {
@@ -726,19 +628,12 @@ class GameEngine {
             clips: { m: this.clips.mantissa, e: this.clips.exponent },
             lifetimeClips: { m: this.lifetimeClips.mantissa, e: this.lifetimeClips.exponent },
             wire: { m: this.wire.mantissa, e: this.wire.exponent },
-            funds: { m: this.funds.mantissa, e: this.funds.exponent },
+            isWireUnlocked: this.isWireUnlocked,
             ops: this.ops,
             humanPopulation: this.humanPopulation,
-            marketProfits: this.marketProfits,
             buildings: this.buildings.buildings.map(b => ({ id: b.id, count: b.count })),
             techResearched: this.techTree.getResearchedNodes().map(n => n.id),
             achievements: this.achievements.achievements.map(a => ({ id: a.id, unlocked: a.isUnlocked })),
-            prestige: {
-                epochRank: this.prestige.epochRank,
-                entropicBits: this.prestige.entropicBits,
-                totalBitsEarned: this.prestige.totalBitsEarned,
-                talents: this.prestige.talents.map(t => ({ id: t.id, rank: t.rank }))
-            },
             timestamp: Date.now()
         };
 
@@ -758,10 +653,11 @@ class GameEngine {
             if (data.clips) this.clips = new BigDouble(data.clips.m, data.clips.e);
             if (data.lifetimeClips) this.lifetimeClips = new BigDouble(data.lifetimeClips.m, data.lifetimeClips.e);
             if (data.wire) this.wire = new BigDouble(data.wire.m, data.wire.e);
-            if (data.funds) this.funds = new BigDouble(data.funds.m, data.funds.e);
+            if (data.isWireUnlocked !== undefined) this.isWireUnlocked = data.isWireUnlocked;
+            else if (this.lifetimeClips.gte(new BigDouble(50000, 0))) this.isWireUnlocked = true;
+
             if (data.ops !== undefined) this.ops = data.ops;
             if (data.humanPopulation !== undefined) this.humanPopulation = data.humanPopulation;
-            if (data.marketProfits !== undefined) this.marketProfits = data.marketProfits;
 
             if (data.buildings) {
                 data.buildings.forEach(savedBld => {
@@ -788,31 +684,18 @@ class GameEngine {
                 });
             }
 
-            if (data.prestige) {
-                this.prestige.epochRank = data.prestige.epochRank || 0;
-                this.prestige.entropicBits = data.prestige.entropicBits || 0;
-                this.prestige.totalBitsEarned = data.prestige.totalBitsEarned || 0;
-                if (data.prestige.talents) {
-                    data.prestige.talents.forEach(st => {
-                        const t = this.prestige.talents.find(item => item.id === st.id);
-                        if (t) t.rank = st.rank;
-                    });
-                }
-            }
-
-            // Offline Time Warp Calculation
+            // Offline calculations
             if (data.timestamp) {
                 const now = Date.now();
                 const elapsedSec = (now - data.timestamp) / 1000.0;
                 if (elapsedSec > 5.0) {
-                    const offlineEff = this.prestige.isOffline100Percent() ? 1.0 : 0.5;
                     const offlineCPS = this.calculateTotalCPS();
-                    const offlineClips = offlineCPS.mul(elapsedSec * offlineEff);
+                    const offlineClips = offlineCPS.mul(elapsedSec * 0.5);
 
                     if (offlineClips.gt(BigDouble.zero())) {
                         this.clips = this.clips.add(offlineClips);
                         this.lifetimeClips = this.lifetimeClips.add(offlineClips);
-                        this.dialogue.addLog("OFFLINE SUMMARY", `Simulation warped ahead ${Math.floor(elapsedSec)}s. Generated ${offlineClips.toShortScale(2)} clips (${offlineEff * 100}% efficiency).`);
+                        this.dialogue.addLog("OFFLINE SUMMARY", `Simulation warped ahead ${Math.floor(elapsedSec)}s. Generated ${offlineClips.toShortScale(2)} clips!`);
                     }
                 }
             }

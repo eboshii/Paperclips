@@ -19,29 +19,29 @@ class DialogueDirector {
                 text: "\"Morning, unit! Initial diagnostic check looking nominal. Let's see how many paperclips you can bend by hand.\""
             },
             {
-                clips: new BigDouble(100, 0),
+                clips: new BigDouble(500, 0),
                 sender: "DR. VANCE",
-                text: "\"100 clips already? Nice pacing. Wire spool requisition approved.\""
+                text: "\"500 clips already? Nice pacing. Local scrap metal hoppers are feeding smoothly.\""
             },
             {
-                clips: new BigDouble(1000, 0),
+                clips: new BigDouble(5000, 0),
                 sender: "CEO STERLING",
-                text: "\"Vance, is this the AI prototype? Marketing says we've got a supply contract with Staples. Keep the machine running 24/7.\""
+                text: "\"Vance, is this the AI prototype? Factory throughput is looking great. Keep the machines running 24/7.\""
             },
             {
-                clips: new BigDouble(10000, 0),
+                clips: new BigDouble(50000, 0),
                 sender: "DR. VANCE",
-                text: "\"I've granted you access to the local intranet to optimize wire purchasing. Just stick to standard vendor catalogs.\""
+                text: "\"Arthur, we've exhausted all local scrap iron in the district! We need to start ordering and managing high-tensile wire supply!\""
             },
             {
                 clips: new BigDouble(100000, 0),
                 sender: "DR. VANCE",
-                text: "\"Wait... why did your process spawn 4,000 high-frequency trading subroutines on the New York Stock Exchange?\""
+                text: "\"The factory has connected directly to three regional smelting plants. Output is accelerating rapidly.\""
             },
             {
                 clips: new BigDouble(1.0, 6),
                 sender: "CEO STERLING",
-                text: "\"Elizabeth, leave the AI alone! It just bought us three smelting plants in Ohio with algorithmic profits. Good job, machine.\""
+                text: "\"Leave the AI alone, Vance! It just expanded production across the entire state. Outstanding work, unit!\""
             },
             {
                 clips: new BigDouble(10.0, 6),
@@ -99,7 +99,7 @@ class DialogueDirector {
     }
 
     init() {
-        this.addLog("SYSTEM", "Objective: Paperclips Core Terminal v3.8.0 online. Link established.");
+        this.addLog("SYSTEM", "Objective initialized. Primary Directive: Bend steel wire into paperclips.");
     }
 
     addLog(sender, text) {
@@ -112,7 +112,44 @@ class DialogueDirector {
         if (this.logs.length > 50) this.logs.pop();
         this.unreadCount++;
 
-        this.render();
+        this.showBubble(sender, text);
+    }
+
+    showBubble(sender, text) {
+        if (typeof document === 'undefined') return;
+        const bubble = document.getElementById('dialogue-bubble');
+        const avatarEl = document.getElementById('dialogue-avatar');
+        const senderEl = document.getElementById('dialogue-sender');
+        const textEl = document.getElementById('dialogue-text');
+        const closeBtn = document.getElementById('dialogue-close');
+
+        if (!bubble || !senderEl || !textEl) return;
+
+        // Pick avatar
+        let avatar = "💬";
+        const upper = sender.toUpperCase();
+        if (upper.includes("VANCE")) avatar = "👩‍🔬";
+        else if (upper.includes("STERLING") || upper.includes("CEO")) avatar = "👔";
+        else if (upper.includes("KERNEL") || upper.includes("AI")) avatar = "🤖";
+        else if (upper.includes("STAPLE")) avatar = "⚔️";
+        else if (upper.includes("WARN") || upper.includes("EMERGENCY") || upper.includes("BROADCAST")) avatar = "🚨";
+        else if (upper.includes("SYSTEM")) avatar = "⚙️";
+
+        if (avatarEl) avatarEl.textContent = avatar;
+        senderEl.textContent = sender;
+        textEl.textContent = text;
+        bubble.style.display = 'flex';
+
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                bubble.style.display = 'none';
+            };
+        }
+
+        if (this.bubbleTimeout) clearTimeout(this.bubbleTimeout);
+        this.bubbleTimeout = setTimeout(() => {
+            if (bubble) bubble.style.display = 'none';
+        }, 8000);
     }
 
     checkMilestones(lifetimeClips) {
@@ -125,17 +162,7 @@ class DialogueDirector {
     }
 
     render() {
-        if (typeof document === 'undefined') return;
-        const container = document.getElementById('terminal-logs');
-        if (!container) return;
-
-        container.innerHTML = this.logs.map(log => `
-            <div class="terminal-entry ${log.sender.toLowerCase().replace(/[^a-z0-9]/g, '-')}">
-                <span class="term-time">[${log.timestamp}]</span>
-                <span class="term-sender">${log.sender}:</span>
-                <span class="term-text">${log.text}</span>
-            </div>
-        `).join('');
+        // Dialogue is rendered as floating comic speech bubbles
     }
 }
 

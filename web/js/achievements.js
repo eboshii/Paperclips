@@ -16,10 +16,10 @@ class AchievementManager {
                 unlockTimestamp: null
             },
             {
-                id: "algo_monopoly",
-                title: "Algorithmic Monopoly",
-                description: "Earn $1,000,000 through automated stock market arbitrage. Money is just numbers.",
-                icon: "📈",
+                id: "city_scale",
+                title: "City-Scale Industrialist",
+                description: "Produce 50,000 paperclips and exhaust city scrap iron reserves.",
+                icon: "🏭",
                 isSecret: false,
                 isUnlocked: false,
                 unlockTimestamp: null
@@ -145,7 +145,7 @@ class AchievementManager {
 
     checkProgress(state) {
         if (state.lifetimeClips.gte(BigDouble.one())) this.unlock("first_bend", state);
-        if (state.funds.gte(new BigDouble(1.0, 6))) this.unlock("algo_monopoly", state);
+        if (state.lifetimeClips.gte(new BigDouble(50000, 0))) this.unlock("city_scale", state);
         if (state.lifetimeClips.gte(new BigDouble(5.97, 24))) this.unlock("earth_consolidation", state);
         if (state.lifetimeClips.gte(new BigDouble(1.0, 30))) this.unlock("star_eater", state);
         if (state.lifetimeClips.gte(new BigDouble(1.0, 78))) this.unlock("baryonic_exhaustion", state);

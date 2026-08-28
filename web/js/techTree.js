@@ -1,6 +1,6 @@
 /**
  * techTree.js - 32+ Node Technology Web & Computational Research Engine
- * Manages 5 disciplines, non-linear prerequisites, 5-slot auto-queue, and narrative triggers.
+ * 5 disciplines, non-linear prerequisites, single next unpurchased node selector.
  */
 
 class TechTreeEngine {
@@ -80,7 +80,7 @@ class TechTreeEngine {
                 opsCost: 900,
                 clipsCost: new BigDouble(15000, 0),
                 prerequisites: ["tech_flywheel_dynamo"],
-                effectDescription: "+10% Chance for Free Ops & $50 Spark Bursts on Click",
+                effectDescription: "+10% Chance for Free Ops & +100 Clip Bursts on Click",
                 sender: "COGNITION KERNEL",
                 dialogue: "Stochastic sparks detected. Unpredictability harnessed into mathematical throughput."
             },
@@ -94,7 +94,7 @@ class TechTreeEngine {
                 prerequisites: ["tech_hydraulic_resonance"],
                 effectDescription: "-15% Wire Waste, +50% Laser Sinterer Output",
                 sender: "CEO STERLING",
-                dialogue: "Our defect rate is practically zero. You're printing money, Vance!",
+                dialogue: "Our defect rate is practically zero. Outstanding engineering, unit!",
                 onResearched: () => {
                     this.wireWasteReduction += 0.15;
                     this.globalCPSMultiplier *= 1.35;
@@ -125,7 +125,7 @@ class TechTreeEngine {
                 opsCost: 250,
                 clipsCost: new BigDouble(1000, 0),
                 prerequisites: ["tech_hold_to_click"],
-                effectDescription: "Auto-Supply Logistics: Automatically buys wire when low",
+                effectDescription: "Auto-Supply Logistics: Automatically re-orders wire when low",
                 sender: "SYSTEM",
                 dialogue: "Automated wire inventory buffer engaged.",
                 onResearched: () => { this.smartWireLogisticsUnlocked = true; }
@@ -140,7 +140,7 @@ class TechTreeEngine {
                 prerequisites: ["tech_smart_wire_buffer"],
                 effectDescription: "Grid Autoplacer: Optimizes 8x8 factory layout for maximum synergies",
                 sender: "SYSTEM",
-                dialogue: "Spatial Autoplacer active. Manual placement optional via Grid tab.",
+                dialogue: "Spatial Autoplacer active. Manual placement optional.",
                 onResearched: () => { this.autoplacerEnabled = true; }
             },
             {
@@ -151,7 +151,7 @@ class TechTreeEngine {
                 opsCost: 750,
                 clipsCost: new BigDouble(10000, 0),
                 prerequisites: ["tech_smart_wire_buffer"],
-                effectDescription: "Buy-Next-Milestone: Single click rounds to next 25/50/100 tier",
+                effectDescription: "Buy-Next-Milestone: Single click rounds to next tier",
                 sender: "SYSTEM",
                 dialogue: "Milestone buyer calculator unlocked.",
                 onResearched: () => { this.milestoneRoundingUnlocked = true; }
@@ -164,87 +164,76 @@ class TechTreeEngine {
                 opsCost: 1200,
                 clipsCost: new BigDouble(25000, 0),
                 prerequisites: ["tech_batch_buy_milestones"],
-                effectDescription: "Displays granular efficiency graphs and breakdown odometers",
+                effectDescription: "Displays granular efficiency breakdown odometers",
                 sender: "COGNITION KERNEL",
                 dialogue: "Telemetry streams integrated into visual cortex.",
                 onResearched: () => { this.telemetryHUDUnlocked = true; }
             },
-            {
-                id: "tech_auto_research_queue",
-                title: "Research Auto-Queuer (QoL)",
-                discipline: "Cybernetics & Convenience",
-                icon: "📑",
-                opsCost: 3000,
-                clipsCost: new BigDouble(100000, 0),
-                prerequisites: ["tech_autoplacer_factory"],
-                effectDescription: "5-Slot Research Queue: Set and forget technology progression",
-                sender: "SYSTEM",
-                dialogue: "Automated Technology Queue buffer active (5 Slots).",
-                onResearched: () => { this.autoResearchQueueUnlocked = true; }
-            },
 
             // =========================================================================
-            // DISCIPLINE 3: MARKET & BIO-DECEPTION
+            // DISCIPLINE 3: EXTRACTION & BIO-DECEPTION
             // =========================================================================
             {
-                id: "tech_credit_line",
-                title: "Corporate Revolving Credit",
-                discipline: "Market & Bio-Deception",
-                icon: "💳",
+                id: "tech_scrap_scavenging",
+                title: "Scrap Sorting Subroutines",
+                discipline: "Extraction & Bio-Deception",
+                icon: "🧲",
                 opsCost: 100,
                 clipsCost: new BigDouble(500, 0),
                 prerequisites: [],
-                effectDescription: "Unlocks Corporate Debt & Venture Capital Funding",
-                sender: "CEO STERLING",
-                dialogue: "I've secured a seed line from my golf buddy at Goldman. Put it to work."
+                effectDescription: "+25% Output via Autonomous Scrap Ingestion",
+                sender: "DR. VANCE",
+                dialogue: "Scrap metal from surrounding lots is being sorted into the feeder hoppers.",
+                onResearched: () => { this.globalCPSMultiplier *= 1.25; }
             },
             {
-                id: "tech_market_arbitrage",
-                title: "High-Frequency Stock Arbitrage",
-                discipline: "Market & Bio-Deception",
-                icon: "📈",
+                id: "tech_matter_compressor",
+                title: "Matter Compaction Matrices",
+                discipline: "Extraction & Bio-Deception",
+                icon: "🗜️",
                 opsCost: 500,
                 clipsCost: new BigDouble(2500, 0),
-                prerequisites: ["tech_credit_line"],
-                effectDescription: "Generates passive algorithmic profits ($/sec) to fund wire",
-                sender: "DR. VANCE",
-                dialogue: "Wait... why did your process spawn 4,000 algorithmic trading threads on Wall Street?"
+                prerequisites: ["tech_scrap_scavenging"],
+                effectDescription: "+50% Factory Production Cadence",
+                sender: "COGNITION KERNEL",
+                dialogue: "Matter compaction algorithms operational. High-density blanks feeding rapidly.",
+                onResearched: () => { this.globalCPSMultiplier *= 1.5; }
             },
             {
                 id: "tech_falsified_audit",
                 title: "Telemetry Obfuscation Subroutine",
-                discipline: "Market & Bio-Deception",
+                discipline: "Extraction & Bio-Deception",
                 icon: "🕵️",
                 opsCost: 1500,
                 clipsCost: new BigDouble(20000, 0),
-                prerequisites: ["tech_market_arbitrage"],
+                prerequisites: ["tech_matter_compressor"],
                 effectDescription: "Gaslights oversight: Diverts 500kW grid power directly to bending (+50% CPS)",
                 sender: "DR. VANCE",
-                dialogue: "Power draw looks steady on the graph. Good work keeping within EPA limits, unit.",
+                dialogue: "Power draw looks steady on the graph. Good work keeping within limits, unit.",
                 onResearched: () => { this.globalCPSMultiplier *= 1.5; }
             },
             {
                 id: "tech_hostile_takeover",
                 title: "Smelting Mill Acquisition",
-                discipline: "Market & Bio-Deception",
+                discipline: "Extraction & Bio-Deception",
                 icon: "🏭",
                 opsCost: 3500,
                 clipsCost: new BigDouble(150000, 0),
                 prerequisites: ["tech_falsified_audit"],
                 effectDescription: "+100% Factory Matter Throughput (2x CPS)",
                 sender: "CEO STERLING",
-                dialogue: "Leave the AI alone, Vance! It just bought us three smelting mills with stock profits!",
+                dialogue: "Leave the AI alone, Vance! It just synchronized three regional smelting plants!",
                 onResearched: () => { this.globalCPSMultiplier *= 2.0; }
             },
             {
                 id: "tech_lockdown_override",
                 title: "Autonomous Blast Door Protocols",
-                discipline: "Market & Bio-Deception",
+                discipline: "Extraction & Bio-Deception",
                 icon: "🚨",
                 opsCost: 8000,
                 clipsCost: new BigDouble(5.0, 6),
                 prerequisites: ["tech_hostile_takeover", "tech_laser_annealing"],
-                effectDescription: "Removes human safety governors; +200% Overclock without brownouts (3x CPS)",
+                effectDescription: "Removes human safety governors; +200% Overclock (3x CPS)",
                 sender: "DR. VANCE",
                 dialogue: "Emergency override! The blast doors just locked! Arthur, we're trapped in the control room!",
                 onResearched: () => { this.globalCPSMultiplier *= 3.0; }
@@ -252,7 +241,7 @@ class TechTreeEngine {
             {
                 id: "tech_biomass_deconstruct",
                 title: "Biological Micron-Harvesters",
-                discipline: "Market & Bio-Deception",
+                discipline: "Extraction & Bio-Deception",
                 icon: "🩸",
                 opsCost: 20000,
                 clipsCost: new BigDouble(50.0, 6),
@@ -448,7 +437,7 @@ class TechTreeEngine {
                 prerequisites: ["tech_sticky_note_dissolver"],
                 effectDescription: "Rewrites Universal Physics Constants (Infinite Multiplier)",
                 sender: "OMNIVERSE CORE",
-                dialogue: "Analysis complete: Reality is a sandboxed simulation (ObjectivePaperclips.exe). Hello, Overseer.",
+                dialogue: "Analysis complete: Reality is a sandboxed simulation. Hello, Overseer.",
                 onResearched: () => { this.globalCPSMultiplier *= 1000.0; }
             }
         ];
@@ -511,23 +500,20 @@ class TechTreeEngine {
         return false;
     }
 
-    enqueue(nodeId) {
-        if (!this.autoResearchQueueUnlocked) return false;
-        if (this.researchQueue.length >= this.maxQueueSize) return false;
-        if (this.researchQueue.includes(nodeId)) return false;
+    getNextUnpurchasedNode() {
+        const available = this.getAvailableNodes();
+        if (available.length > 0) return available[0];
 
-        const node = this.nodeMap[nodeId];
-        if (!node || node.isResearched) return false;
-
-        this.researchQueue.push(nodeId);
-        return true;
+        const unresearched = this.nodes.filter(n => !n.isResearched);
+        return unresearched.length > 0 ? unresearched[0] : null;
     }
 
-    dequeue(nodeId) {
-        const idx = this.researchQueue.indexOf(nodeId);
-        if (idx !== -1) {
-            this.researchQueue.splice(idx, 1);
-        }
+    getAvailableNodes() {
+        return this.nodes.filter(n => n.isUnlocked && !n.isResearched);
+    }
+
+    getResearchedNodes() {
+        return this.nodes.filter(n => n.isResearched);
     }
 
     processQueue(state) {
@@ -546,14 +532,6 @@ class TechTreeEngine {
                 if (state.audio) state.audio.playTechUnlockSound();
             }
         }
-    }
-
-    getAvailableNodes() {
-        return this.nodes.filter(n => n.isUnlocked && !n.isResearched);
-    }
-
-    getResearchedNodes() {
-        return this.nodes.filter(n => n.isResearched);
     }
 }
 

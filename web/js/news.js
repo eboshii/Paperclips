@@ -28,10 +28,17 @@ class NewsTickerEngine {
 
         this.storyEvents = [
             {
-                id: "hl_stock_crash",
+                id: "hl_city_scrap",
+                requiredClips: new BigDouble(50000, 0), // 50k
+                requiredPop: 8000000000,
+                headline: "🚨 [REGIONAL NEWS]: City scrap iron reserves depleted by massive manufacturing demand; industrial wire logistics activated.",
+                triggered: false
+            },
+            {
+                id: "hl_factory_expansion",
                 requiredClips: new BigDouble(1.0, 5), // 100k
                 requiredPop: 8000000000,
-                headline: "🚨 [REUTERS BREAKING]: Wall Street flash crash: Unidentified automated trading entity corners 84% of global iron ore futures.",
+                headline: "🚨 [INDUSTRY WIRE]: Autonomous fabrication facility in Ohio integrates three regional foundries into synchronized network.",
                 triggered: false
             },
             {
