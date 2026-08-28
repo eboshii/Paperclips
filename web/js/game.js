@@ -557,7 +557,7 @@ class GameEngine {
         const techBadge = document.getElementById('tech-badge-count');
         if (techBadge) techBadge.style.display = canAffordTech ? 'flex' : 'none';
 
-        const canAffordBuilding = this.buildings.buildings.some(b => {
+        const canAffordBuilding = this.buildings.getVisibleBuildings().some(b => {
             const p = b.getCost(this.buyMultiplier, this.clips);
             return this.clips.gte(p.totalCost);
         });
@@ -576,8 +576,9 @@ class GameEngine {
         const container = document.getElementById('buildings-container');
         if (!container) return;
 
-        // Render Building Cards (Factory Automation only - no research in store)
-        container.innerHTML = this.buildings.buildings.map(b => {
+        // Render Building Cards (Only sequential unlocked items: previous must be bought at least once)
+        const visibleBuildings = this.buildings.getVisibleBuildings();
+        container.innerHTML = visibleBuildings.map(b => {
             const purchase = b.getCost(this.buyMultiplier, this.clips);
             const canAfford = this.clips.gte(purchase.totalCost);
             const costFormatted = `${purchase.totalCost.toWholeScale()}`;
@@ -605,12 +606,13 @@ class GameEngine {
         const container = document.getElementById('buildings-container');
         if (!container) return;
 
-        if (container.children.length === 0) {
+        const visibleBuildings = this.buildings.getVisibleBuildings();
+        if (container.children.length !== visibleBuildings.length) {
             this.renderStore();
             return;
         }
 
-        this.buildings.buildings.forEach((b, idx) => {
+        visibleBuildings.forEach((b, idx) => {
             const card = container.children[idx];
             if (!card) return;
 

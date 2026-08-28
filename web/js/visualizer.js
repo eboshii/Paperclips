@@ -50,6 +50,10 @@ class CosmicVisualizer {
         this.pileHeights = new Float32Array(this.numColumns); // Local height of pile in pixels (0.0 initially)
         this.waveOffsets = new Float32Array(this.numColumns);
         this.waveVelocities = new Float32Array(this.numColumns);
+        this.internalFlowPhase = 0.0;
+        this.internalFlowVelocity = 0.0;
+        this.drainFlowPhase = 0.0;
+        this.drainFlowIntensity = 0.0;
         this.initFluidColumns();
 
         // Background Pixel Stars
@@ -166,15 +170,21 @@ class CosmicVisualizer {
                 life: 8.0
             });
         }
+
+        // Induce very slow internal creeping flow across the fluid mass when clips are added
+        this.internalFlowVelocity = Math.min(2.0, this.internalFlowVelocity + Math.min(count, 6) * 0.12);
     }
 
     /**
      * Triggers fluid dynamic draining upon spending paperclips.
-     * Fluid slumps and drains away smoothly over time.
+     * Fluid slumps and converges into the sink drain using fluid mechanics vector fields.
      * @param {number} ratio - Fractional cost of purchase (0.1 to 1.0)
      */
     drainPaperclips(ratio = 0.5) {
         const clampedRatio = Math.max(0.2, Math.min(1.0, ratio));
+
+        // Trigger convergent sink flow intensity
+        this.drainFlowIntensity = Math.min(3.0, this.drainFlowIntensity + clampedRatio * 2.5);
 
         // Induce downward suction whirlpool waves in the fluid (strongest at center)
         for (let i = 0; i < this.numColumns; ++i) {
@@ -183,7 +193,7 @@ class CosmicVisualizer {
             this.waveVelocities[i] -= (0.8 + suctionStrength + Math.random() * 0.8);
         }
 
-        // Settled clips slowly release into the fluid flow
+        // Settled clips slowly release into the converging fluid stream
         const removeCount = Math.floor(this.settledClips.length * clampedRatio * 0.4);
         if (removeCount > 0) {
             this.settledClips.splice(0, removeCount);
@@ -232,6 +242,14 @@ class CosmicVisualizer {
         this.cosmicRotation += dt * 0.8;
         this.heroRecoil += (1.0 - this.heroRecoil) * (dt * 10.0);
 
+        // Advance internal laminar fluid flow phase proportionally to active intake
+        this.internalFlowPhase += this.internalFlowVelocity * dt * 0.6;
+        this.internalFlowVelocity = Math.max(0, this.internalFlowVelocity - dt * 0.85);
+
+        // Advance convergent sink drain flow phase
+        this.drainFlowPhase += this.drainFlowIntensity * dt * 2.2;
+        this.drainFlowIntensity = Math.max(0, this.drainFlowIntensity - dt * 1.25);
+
         const pw = this.pixelCanvas.width || 200;
         const ph = this.pixelCanvas.height || 150;
         const floorY = ph - 2;
@@ -260,13 +278,14 @@ class CosmicVisualizer {
 
                 // Suction tug on wave velocity towards drain
                 this.waveVelocities[i] -= drainRate * 0.35;
+                this.drainFlowIntensity = Math.min(3.0, this.drainFlowIntensity + (excess * 0.25) * dt);
 
                 // Spawn draining paperclips pulled into bottom drains
-                if (Math.random() < 0.12 && this.drainingClips.length < this.maxDrainingClips) {
+                if (Math.random() < 0.14 && this.drainingClips.length < this.maxDrainingClips) {
                     const x = (i / (this.numColumns - 1)) * pw;
                     const moundH = Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
                     const startY = floorY - moundH;
-                    const toCenter = ((pw / 2) - x) * 0.04;
+                    const toCenter = ((pw / 2) - x) * 0.05;
 
                     this.drainingClips.push({
                         x: x + (Math.random() - 0.5) * 6,
@@ -310,6 +329,7 @@ class CosmicVisualizer {
                         this.pileHeights[colIdx] = Math.min(inventoryCapacity, this.pileHeights[colIdx] + 0.45);
                     }
                     this.waveVelocities[colIdx] += Math.min(1.5, p.vy * 0.2);
+                    this.internalFlowVelocity = Math.min(2.0, this.internalFlowVelocity + 0.08);
 
                     // Calculate local slope to slide down the mound!
                     const leftH = colIdx > 0 ? this.pileHeights[colIdx - 1] : currentMoundHeight;
@@ -854,8 +874,9 @@ class CosmicVisualizer {
                 if (moundH > 1.2) {
                     const topY = floorY - moundH;
                     const maxRows = Math.ceil(moundH / stepY);
+                    const dir = (c < numCols / 2) ? -1.0 : 1.0;
 
-                    // Anchor vertically to floorY so seeds and coordinates never oscillate or change between frames
+                    // Anchor vertically to floorY so seeds and coordinates are deterministic and stable
                     for (let r = 0; r < maxRows; ++r) {
                         const fy = floorY - 2.5 - (r * stepY);
                         if (fy < topY) break;
@@ -866,11 +887,30 @@ class CosmicVisualizer {
                         // Organic irregular static offset
                         const jitterX = (((seed * 19) % 100) / 100 - 0.5) * 5.5;
                         const jitterY = (((seed * 31) % 100) / 100 - 0.5) * 3.5;
-                        const px = fx + jitterX;
-                        const py = fy + jitterY;
 
-                        // Static 360° irregular rotation angles for tangled look
-                        const rot = ((seed * 137) % 628) / 100;
+                        // 1. Gentle internal laminar creeping flow when new paperclips are added
+                        const depthFactor = Math.min(1.0, (r + 1) / Math.max(1, maxRows));
+                        const flowX = dir * Math.sin(this.internalFlowPhase + r * 0.35 + c * 0.15) * (1.6 * depthFactor);
+                        const flowY = Math.cos(this.internalFlowPhase * 0.7 + c * 0.2) * (0.6 * depthFactor);
+                        const flowRot = dir * Math.sin(this.internalFlowPhase + (seed % 10)) * 0.15 * depthFactor;
+
+                        // 2. Convergent Sink Vector Field (Navier-Stokes Sink Flow towards bottom center drain)
+                        const sinkDx = (w / 2) - fx;
+                        const sinkDy = floorY - fy;
+                        const sinkDist = Math.sqrt(sinkDx * sinkDx + sinkDy * sinkDy) + 12.0;
+                        const sinkDirX = sinkDx / sinkDist;
+                        const sinkDirY = sinkDy / sinkDist;
+
+                        const sinkEffect = (this.drainFlowIntensity / 3.0) * Math.max(0.2, 1.0 - (sinkDist / (w * 0.75)));
+                        const sinkPullX = sinkDirX * sinkEffect * 3.5 * Math.sin(this.drainFlowPhase + r * 0.35);
+                        const sinkPullY = sinkDirY * sinkEffect * 2.8 * Math.cos(this.drainFlowPhase * 0.85 + c * 0.2);
+                        const sinkTorque = Math.sin(this.drainFlowPhase + sinkDist * 0.12) * 0.35 * sinkEffect;
+
+                        const px = fx + jitterX + flowX + sinkPullX;
+                        const py = fy + jitterY + flowY + sinkPullY;
+
+                        // 360° irregular rotation angles + subtle laminar flow + sink vortex torque
+                        const rot = ((seed * 137) % 628) / 100 + flowRot + sinkTorque;
                         const size = 3.6 + (((seed * 17) % 100) / 35.0); // 3.6 to 6.4 px
 
                         // Static randomized vibrant color per paperclip
@@ -905,7 +945,7 @@ class CosmicVisualizer {
             }
         }
 
-        // Render Settled Resting Paperclips on floor / mounds
+        // Render Settled Resting Paperclips on floor / mounds (with sink flow drift)
         this.settledClips.forEach(s => {
             this.drawTinyPaperclip(ctx, s.x, s.y, s.size, s.rot + (s.slopeAngle || 0), s.color);
         });
@@ -913,13 +953,13 @@ class CosmicVisualizer {
 
     renderDrainingPaperclips(ctx) {
         this.drainingClips.forEach(p => {
-            // Draw sleek suction tail line pulling into the floor
+            // Draw sleek curved streamline pulling into the sink center drain
             ctx.strokeStyle = p.color;
-            ctx.globalAlpha = 0.45;
-            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.55;
+            ctx.lineWidth = 1.2;
             ctx.beginPath();
-            ctx.moveTo(p.x, p.y - p.vy * 1.8);
-            ctx.lineTo(p.x, p.y);
+            ctx.moveTo(p.x - p.vx * 2.2, p.y - p.vy * 2.0);
+            ctx.quadraticCurveTo(p.x - p.vx, p.y - p.vy * 0.5, p.x, p.y);
             ctx.stroke();
             ctx.globalAlpha = 1.0;
 
