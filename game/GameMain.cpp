@@ -42,16 +42,17 @@
 #include "../engine/include/OmniInput.h"
 #include "../engine/include/OmniGLWindow.h"
 #include "../engine/include/OmniMeshBuilder.h"
+#include "../engine/include/OmniCosmicRenderer.h"
 
 using namespace OmniEngine;
 
 int main() {
     std::cout << "=================================================================\n";
-    std::cout << "  LAUNCHING OBJECTIVE: PAPERCLIPS - 3D GRAPHICAL OPENGL WINDOW\n";
+    std::cout << "  LAUNCHING OBJECTIVE: PAPERCLIPS - 3D MULTI-SCALE COSMIC ENGINE\n";
     std::cout << "=================================================================\n\n";
 
     // 1. Initialize Native 3D OpenGL Window (1280x720)
-    OmniGLWindow window("Objective: Paperclips - 3D Factory Floor & Avalanche Simulation", 1280, 720);
+    OmniGLWindow window("Objective: Paperclips - Multi-Scale 3D Cosmic Simulation", 1280, 720);
     if (!window.Initialize()) {
         std::cerr << "[ERROR] Could not initialize OpenGL window.\n";
     }
@@ -85,17 +86,23 @@ int main() {
     int bioConverters = 0;
 
     int activeTabIdx = 0;
+    int debugZoomTier = -1; // -1 for auto-tier progression, 0-4 for manual zoom tier
     std::string lastActionMessage = "Welcome Operator. Click the 3D Paperclip or press [SPACE]!";
 
-    // 3. Build Procedural 3D Meshes
+    // 3. Build Procedural 3D Cosmic Meshes
     auto floorMesh = OmniMeshBuilder::BuildFactoryFloorMesh(24.0f, 24);
     auto heroClipMesh = OmniMeshBuilder::BuildPaperclipMesh(0.045f, 64);
+    auto earthMesh = OmniCosmicRenderer::BuildPlanetEarthMesh(1.8f, 16, 32);
+    auto orbitalRingMesh = OmniCosmicRenderer::BuildEquatorialRingMesh(2.5f, 2.9f, 48);
+    auto sunMesh = OmniCosmicRenderer::BuildStarSunMesh(2.2f, 16, 32);
+    auto blackHoleMesh = OmniCosmicRenderer::BuildBlackHolePenroseMesh(4.5f, 48);
+    auto multiverseFoamMesh = OmniCosmicRenderer::BuildMultiverseFoamMesh();
 
     // Camera 3D Orbit State
     float camDistance = 5.5f;
     float camPitch = 25.0f;
     float camYaw = -20.0f;
-    float heroRotation = 0.0f;
+    float cosmicRotation = 0.0f;
 
     auto lastFrameTime = std::chrono::steady_clock::now();
     double terminalLogTimer = 0.0;
@@ -104,10 +111,8 @@ int main() {
         lastActionMessage = ">>> " + hl.newsBroadcast;
     };
 
-    // Helper: Place building on factory grid (Autoplacer or Sequential)
     auto placeBuildingTile = [&](FactoryTileType type, int count) {
         if (techWeb.autoplacerEnabled) {
-            // Symmetrical spiral placement pattern
             int x = (count * 3 + 1) % 8;
             int y = (count * 2) % 8;
             spatialGrid.PlaceFactoryTile(x, y, type);
@@ -117,7 +122,7 @@ int main() {
     };
 
     // ----------------------------------------------------
-    // Main 3D OpenGL Game Loop (60 FPS)
+    // Main 3D OpenGL Cosmic Game Loop (60 FPS)
     // ----------------------------------------------------
     while (window.IsOpen()) {
         if (!window.ProcessMessages()) break;
@@ -137,19 +142,18 @@ int main() {
             camPitch = std::clamp(camPitch + input.mouseDeltaY * 0.4f, 5.0f, 85.0f);
         }
 
-        // Left Mouse Click detection (Hero Clicker: X < 450, Y > 150; Buttons: X > 850)
         bool clickedBigClip = false;
         if (input.mouseLeftClicked) {
             if (input.mouseX < 450.0f && input.mouseY > 150.0f && input.mouseY < 600.0f) {
                 clickedBigClip = true;
             } else if (input.mouseX > 850.0f && input.mouseY > 180.0f && input.mouseY < 240.0f) {
-                input.lastKeyPressed = '1'; // Auto-Clipper
+                input.lastKeyPressed = '1';
             } else if (input.mouseX > 850.0f && input.mouseY > 250.0f && input.mouseY < 310.0f) {
-                input.lastKeyPressed = '2'; // Stamper
+                input.lastKeyPressed = '2';
             } else if (input.mouseX > 850.0f && input.mouseY > 320.0f && input.mouseY < 380.0f) {
-                input.lastKeyPressed = '3'; // Sinterer
+                input.lastKeyPressed = '3';
             } else if (input.mouseX > 850.0f && input.mouseY > 390.0f && input.mouseY < 450.0f) {
-                input.lastKeyPressed = 'w'; // Buy Wire
+                input.lastKeyPressed = 'w';
             }
         }
 
@@ -236,6 +240,11 @@ int main() {
                 lastActionMessage = "Purchased 1,000 kg Wire Spool.";
             }
         }
+        else if (input.lastKeyPressed == 'z' || input.lastKeyPressed == 'Z') {
+            // Cycle Cosmic Zoom View (Factory -> Earth -> Sun -> Black Hole -> Multiverse)
+            debugZoomTier = (debugZoomTier + 2) % 6 - 1;
+            lastActionMessage = (debugZoomTier == -1) ? "Cosmic View: [AUTO-PROGRESSION]" : ("Cosmic View: [TIER " + std::to_string(debugZoomTier + 1) + " PREVIEW]");
+        }
         else if (input.lastKeyPressed == 'a' || input.lastKeyPressed == 'A') {
             techWeb.autoplacerEnabled = !techWeb.autoplacerEnabled;
             lastActionMessage = techWeb.autoplacerEnabled ? "Grid Autoplacer: [ENABLED (+20% Symmetry)]" : "Grid Autoplacer: [DISABLED (Manual Mode)]";
@@ -258,10 +267,11 @@ int main() {
         // ----------------------------------------------------
         flywheel.Update(static_cast<float>(dt));
         ui.Update(static_cast<float>(dt));
-        heroRotation += dt * 45.0f;
+        cosmicRotation += dt * 30.0f;
 
         SpatialSynergyReport gridSynergies = spatialGrid.EvaluateSpatialSynergies();
-        BigDouble baseCPS = BigDouble(autoClippers * 1.0 + stampers * 15.0 + sinterers * 120.0 + megamills * 1500.0, 0);
+        BigDouble baseCPS = BigDouble(autoClippers * 1.0 + stampers * 15.0 + sinterers * 120.0 + megamills * 1500.0, 0)
+                          + BigDouble(bioConverters * 100000.0, 0);
         BigDouble currentCPS = baseCPS * gridSynergies.totalLayoutMultiplier * flywheel.GetGlobalCPSMultiplier();
 
         if (currentCPS > BigDouble::zero()) {
@@ -288,34 +298,68 @@ int main() {
         achievements.CheckProgress(lifetimeClips, playerFunds.toDouble(), false);
 
         // ----------------------------------------------------
-        // D. 3D OpenGL Graphics Rendering
+        // D. 3D OpenGL Cosmic Scale Rendering
         // ----------------------------------------------------
-        window.BeginFrame(0.08f, 0.10f, 0.14f);
-        window.SetCamera3D(camDistance, camPitch, camYaw);
+        CosmicVisualTier activeTier = (debugZoomTier >= 0) ? static_cast<CosmicVisualTier>(debugZoomTier) : OmniCosmicRenderer::DetermineTier(lifetimeClips);
 
-        // 1. Draw 3D Factory Floor
-        window.DrawMesh3D(floorMesh, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-
-        // 2. Draw 3D Machine Parts placed on the 8x8 Grid
-        for (int y = 0; y < 8; ++y) {
-            for (int x = 0; x < 8; ++x) {
-                FactoryTileType t = spatialGrid.GetFactoryTile(x, y);
-                if (t != FactoryTileType::Empty) {
-                    float worldX = (x - 3.5f) * 0.9f - 0.5f;
-                    float worldZ = (y - 3.5f) * 0.9f;
-                    auto machineMesh = OmniMeshBuilder::BuildMachineMesh(t, worldX, worldZ, 0.8f);
-                    window.DrawMesh3D(machineMesh, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-                }
-            }
+        // Set background sky atmospheric tint based on cosmic tier
+        if (activeTier == CosmicVisualTier::FactoryFloor) {
+            window.BeginFrame(0.08f, 0.10f, 0.14f); // Warm workshop ambient
+        } else if (activeTier == CosmicVisualTier::PlanetaryEarth) {
+            window.BeginFrame(0.02f, 0.04f, 0.08f); // Earth low orbit void
+        } else if (activeTier == CosmicVisualTier::SolarDysonSwarm) {
+            window.BeginFrame(0.10f, 0.06f, 0.02f); // Heliocentric golden glow
+        } else if (activeTier == CosmicVisualTier::GalacticPenrose) {
+            window.BeginFrame(0.05f, 0.01f, 0.09f); // Violet galactic core
+        } else {
+            window.BeginFrame(0.01f, 0.01f, 0.02f); // 11D Multiverse void
         }
 
-        // 3. Draw 3D Floating Hero Paperclip (with squish scale)
-        float clipScale = ui.GetHeroClicker().GetState().scale * 1.3f;
-        window.DrawMesh3D(heroClipMesh, -1.8f, 0.8f, 0.0f, heroRotation, clipScale);
+        window.SetCamera3D(camDistance, camPitch, camYaw);
 
-        // 4. Draw 3D Granular Paperclip Pile (32 degree angle of repose on factory floor)
-        float pileCount = static_cast<float>(lifetimeClips.toDouble());
-        window.DrawPaperclipMound(pileCount);
+        // ----------------------------------------------------
+        // 3D Scene Selector
+        // ----------------------------------------------------
+        if (activeTier == CosmicVisualTier::FactoryFloor) {
+            // 1. Draw 3D Factory Floor & Grid Machines
+            window.DrawMesh3D(floorMesh, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            for (int y = 0; y < 8; ++y) {
+                for (int x = 0; x < 8; ++x) {
+                    FactoryTileType t = spatialGrid.GetFactoryTile(x, y);
+                    if (t != FactoryTileType::Empty) {
+                        float worldX = (x - 3.5f) * 0.9f - 0.5f;
+                        float worldZ = (y - 3.5f) * 0.9f;
+                        auto machineMesh = OmniMeshBuilder::BuildMachineMesh(t, worldX, worldZ, 0.8f);
+                        window.DrawMesh3D(machineMesh, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+                    }
+                }
+            }
+            // Hero Paperclip & Mounds
+            float clipScale = ui.GetHeroClicker().GetState().scale * 1.3f;
+            window.DrawMesh3D(heroClipMesh, -1.8f, 0.8f, 0.0f, cosmicRotation, clipScale);
+            window.DrawPaperclipMound(static_cast<float>(lifetimeClips.toDouble()));
+        }
+        else if (activeTier == CosmicVisualTier::PlanetaryEarth) {
+            // 2. Draw 3D Planet Earth & Equatorial Mass Driver Ring
+            window.DrawMesh3D(earthMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 0.5f, 1.0f);
+            window.DrawMesh3D(orbitalRingMesh, 0.0f, 0.0f, 0.0f, -cosmicRotation * 0.2f, 1.0f);
+            window.DrawMesh3D(heroClipMesh, -3.2f, 1.2f, 0.0f, cosmicRotation, 0.8f);
+        }
+        else if (activeTier == CosmicVisualTier::SolarDysonSwarm) {
+            // 3. Draw 3D Solar Star & Concentric Dyson Mirrors
+            window.DrawMesh3D(sunMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 0.3f, 1.0f);
+            window.DrawMesh3D(orbitalRingMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 0.8f, 1.2f);
+            window.DrawMesh3D(orbitalRingMesh, 0.0f, 0.0f, 0.0f, -cosmicRotation * 0.5f, 1.5f);
+        }
+        else if (activeTier == CosmicVisualTier::GalacticPenrose) {
+            // 4. Draw 3D Galactic Black Hole Penrose Loom
+            window.DrawMesh3D(blackHoleMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 1.2f, 1.0f);
+            window.DrawMesh3D(orbitalRingMesh, 0.0f, 0.0f, 0.0f, -cosmicRotation * 0.6f, 1.8f);
+        }
+        else {
+            // 5. Draw 11D Multiverse Foam & Alternate Universe Bubbles
+            window.DrawMesh3D(multiverseFoamMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 0.4f, 1.0f);
+        }
 
         // ----------------------------------------------------
         // E. 2D Graphical HUD Overlay
@@ -349,10 +393,9 @@ int main() {
         terminalLogTimer += dt;
         if (terminalLogTimer >= 1.0) {
             terminalLogTimer = 0.0;
-            std::cout << "[3D RENDER TICK] Total Clips: " << lifetimeClips.toShortScale() 
-                      << " | CPS: +" << currentCPS.toShortScale() 
-                      << " | Grid Synergy: " << gridSynergies.totalLayoutMultiplier << "x"
-                      << " | Autoplacer: " << (techWeb.autoplacerEnabled ? "ON" : "OFF") << "\n";
+            const char* tierNames[] = { "Factory Floor", "Planetary Earth", "Solar Dyson Swarm", "Galactic Penrose", "11D Multiverse Void" };
+            std::cout << "[COSMIC 3D VIEW: " << tierNames[static_cast<int>(activeTier)] << "] Total Clips: " 
+                      << lifetimeClips.toShortScale() << " | CPS: +" << currentCPS.toShortScale() << "\n";
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
