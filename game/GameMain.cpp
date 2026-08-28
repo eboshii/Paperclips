@@ -104,6 +104,18 @@ int main() {
         lastActionMessage = ">>> " + hl.newsBroadcast;
     };
 
+    // Helper: Place building on factory grid (Autoplacer or Sequential)
+    auto placeBuildingTile = [&](FactoryTileType type, int count) {
+        if (techWeb.autoplacerEnabled) {
+            // Symmetrical spiral placement pattern
+            int x = (count * 3 + 1) % 8;
+            int y = (count * 2) % 8;
+            spatialGrid.PlaceFactoryTile(x, y, type);
+        } else {
+            spatialGrid.PlaceFactoryTile(count % 8, count / 8, type);
+        }
+    };
+
     // ----------------------------------------------------
     // Main 3D OpenGL Game Loop (60 FPS)
     // ----------------------------------------------------
@@ -125,23 +137,19 @@ int main() {
             camPitch = std::clamp(camPitch + input.mouseDeltaY * 0.4f, 5.0f, 85.0f);
         }
 
-        // Left Mouse Click detection (Hero Clicker area: screen X < 450, Y > 200)
+        // Left Mouse Click detection (Hero Clicker: X < 450, Y > 150; Buttons: X > 850)
         bool clickedBigClip = false;
         if (input.mouseLeftClicked) {
             if (input.mouseX < 450.0f && input.mouseY > 150.0f && input.mouseY < 600.0f) {
                 clickedBigClip = true;
             } else if (input.mouseX > 850.0f && input.mouseY > 180.0f && input.mouseY < 240.0f) {
-                // Clicked Buy Auto-Clipper
-                input.lastKeyPressed = '1';
+                input.lastKeyPressed = '1'; // Auto-Clipper
             } else if (input.mouseX > 850.0f && input.mouseY > 250.0f && input.mouseY < 310.0f) {
-                // Clicked Buy Hydraulic Stamper
-                input.lastKeyPressed = '2';
+                input.lastKeyPressed = '2'; // Stamper
             } else if (input.mouseX > 850.0f && input.mouseY > 320.0f && input.mouseY < 380.0f) {
-                // Clicked Buy Laser Sinterer
-                input.lastKeyPressed = '3';
+                input.lastKeyPressed = '3'; // Sinterer
             } else if (input.mouseX > 850.0f && input.mouseY > 390.0f && input.mouseY < 450.0f) {
-                // Clicked Buy Wire
-                input.lastKeyPressed = 'w';
+                input.lastKeyPressed = 'w'; // Buy Wire
             }
         }
 
@@ -176,7 +184,8 @@ int main() {
             if (playerFunds >= cost) {
                 playerFunds = playerFunds - cost;
                 autoClippers++;
-                lastActionMessage = "Purchased 1x Auto-Clipper.";
+                placeBuildingTile(FactoryTileType::WireExtruder, autoClippers);
+                lastActionMessage = "Purchased & Placed 1x Auto-Clipper on Factory Grid.";
             } else {
                 lastActionMessage = "Need $" + cost.toShortScale() + " for Auto-Clipper.";
             }
@@ -186,7 +195,8 @@ int main() {
             if (playerFunds >= cost) {
                 playerFunds = playerFunds - cost;
                 stampers++;
-                lastActionMessage = "Purchased 1x Hydraulic Stamper.";
+                placeBuildingTile(FactoryTileType::HydraulicStamper, stampers);
+                lastActionMessage = "Purchased & Placed 1x Hydraulic Stamper on Factory Grid.";
             } else {
                 lastActionMessage = "Need $" + cost.toShortScale() + " for Stamper.";
             }
@@ -196,7 +206,8 @@ int main() {
             if (playerFunds >= cost) {
                 playerFunds = playerFunds - cost;
                 sinterers++;
-                lastActionMessage = "Purchased 1x Laser Sinterer.";
+                placeBuildingTile(FactoryTileType::LaserSinterer, sinterers);
+                lastActionMessage = "Purchased & Placed 1x Laser Sinterer on Factory Grid.";
             }
         }
         else if (input.lastKeyPressed == '4') {
@@ -225,6 +236,10 @@ int main() {
                 lastActionMessage = "Purchased 1,000 kg Wire Spool.";
             }
         }
+        else if (input.lastKeyPressed == 'a' || input.lastKeyPressed == 'A') {
+            techWeb.autoplacerEnabled = !techWeb.autoplacerEnabled;
+            lastActionMessage = techWeb.autoplacerEnabled ? "Grid Autoplacer: [ENABLED (+20% Symmetry)]" : "Grid Autoplacer: [DISABLED (Manual Mode)]";
+        }
         else if (input.lastKeyPressed == '\t') {
             activeTabIdx = (activeTabIdx + 1) % 5;
         }
@@ -243,10 +258,11 @@ int main() {
         // ----------------------------------------------------
         flywheel.Update(static_cast<float>(dt));
         ui.Update(static_cast<float>(dt));
-        heroRotation += dt * 45.0f; // Smooth rotation
+        heroRotation += dt * 45.0f;
 
+        SpatialSynergyReport gridSynergies = spatialGrid.EvaluateSpatialSynergies();
         BigDouble baseCPS = BigDouble(autoClippers * 1.0 + stampers * 15.0 + sinterers * 120.0 + megamills * 1500.0, 0);
-        BigDouble currentCPS = baseCPS * flywheel.GetGlobalCPSMultiplier();
+        BigDouble currentCPS = baseCPS * gridSynergies.totalLayoutMultiplier * flywheel.GetGlobalCPSMultiplier();
 
         if (currentCPS > BigDouble::zero()) {
             BigDouble produced = currentCPS * dt;
@@ -274,17 +290,30 @@ int main() {
         // ----------------------------------------------------
         // D. 3D OpenGL Graphics Rendering
         // ----------------------------------------------------
-        window.BeginFrame(0.08f, 0.10f, 0.14f); // Deep studio factory atmosphere
+        window.BeginFrame(0.08f, 0.10f, 0.14f);
         window.SetCamera3D(camDistance, camPitch, camYaw);
 
         // 1. Draw 3D Factory Floor
         window.DrawMesh3D(floorMesh, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 
-        // 2. Draw 3D Floating Hero Paperclip (with squish scale)
+        // 2. Draw 3D Machine Parts placed on the 8x8 Grid
+        for (int y = 0; y < 8; ++y) {
+            for (int x = 0; x < 8; ++x) {
+                FactoryTileType t = spatialGrid.GetFactoryTile(x, y);
+                if (t != FactoryTileType::Empty) {
+                    float worldX = (x - 3.5f) * 0.9f - 0.5f;
+                    float worldZ = (y - 3.5f) * 0.9f;
+                    auto machineMesh = OmniMeshBuilder::BuildMachineMesh(t, worldX, worldZ, 0.8f);
+                    window.DrawMesh3D(machineMesh, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+                }
+            }
+        }
+
+        // 3. Draw 3D Floating Hero Paperclip (with squish scale)
         float clipScale = ui.GetHeroClicker().GetState().scale * 1.3f;
         window.DrawMesh3D(heroClipMesh, -1.8f, 0.8f, 0.0f, heroRotation, clipScale);
 
-        // 3. Draw 3D Granular Paperclip Pile (32 degree angle of repose on factory floor)
+        // 4. Draw 3D Granular Paperclip Pile (32 degree angle of repose on factory floor)
         float pileCount = static_cast<float>(lifetimeClips.toDouble());
         window.DrawPaperclipMound(pileCount);
 
@@ -293,7 +322,7 @@ int main() {
         // ----------------------------------------------------
         window.BeginHUD2D();
 
-        // Top Breaking News Banner (Translucent Dark Charcoal)
+        // Top Breaking News Banner
         window.DrawHUDQuad(20.0f, 15.0f, 1240.0f, 45.0f, 0.12f, 0.14f, 0.18f, 0.90f);
         // Left Stats Card
         window.DrawHUDQuad(20.0f, 75.0f, 380.0f, 620.0f, 0.10f, 0.12f, 0.16f, 0.85f);
@@ -322,8 +351,8 @@ int main() {
             terminalLogTimer = 0.0;
             std::cout << "[3D RENDER TICK] Total Clips: " << lifetimeClips.toShortScale() 
                       << " | CPS: +" << currentCPS.toShortScale() 
-                      << " | Wire: " << playerWire.toShortScale() << " kg"
-                      << " | Pile Mounds: " << static_cast<int>(pileCount) << " rendered in 3D\n";
+                      << " | Grid Synergy: " << gridSynergies.totalLayoutMultiplier << "x"
+                      << " | Autoplacer: " << (techWeb.autoplacerEnabled ? "ON" : "OFF") << "\n";
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(16));

@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include "OmniSpatialGrid.h"
 
 namespace OmniEngine {
 
@@ -14,7 +15,7 @@ struct RenderVertex3D {
 };
 
 /// <summary>
-/// Procedural 3D Geometry Generator for Factory Floor, 3D Paperclips, and Particle Mounds.
+/// Procedural 3D Geometry Generator for Factory Floor, 3D Paperclips, Machines, and Mounds.
 /// </summary>
 class OmniMeshBuilder {
 public:
@@ -25,38 +26,31 @@ public:
         std::vector<RenderVertex3D> vertices;
         const float pi = 3.14159265359f;
 
-        // Parametric path for a double-loop paperclip
         std::vector<std::array<float, 3>> curvePoints;
-        // Outer loop
         for (int i = 0; i <= segments / 2; ++i) {
             float t = (float)i / (segments / 2);
             float angle = t * pi;
             curvePoints.push_back({ std::cos(angle) * 0.4f, std::sin(angle) * 0.4f + 0.8f, 0.0f });
         }
-        // Left long side
         for (int i = 0; i <= segments / 2; ++i) {
             float t = (float)i / (segments / 2);
             curvePoints.push_back({ -0.4f, 0.8f - t * 1.6f, 0.0f });
         }
-        // Bottom loop
         for (int i = 0; i <= segments / 2; ++i) {
             float t = (float)i / (segments / 2);
             float angle = pi + t * pi;
             curvePoints.push_back({ std::cos(angle) * 0.3f - 0.1f, std::sin(angle) * 0.3f - 0.8f, 0.0f });
         }
-        // Inner long side
         for (int i = 0; i <= segments / 2; ++i) {
             float t = (float)i / (segments / 2);
             curvePoints.push_back({ 0.2f, -0.8f + t * 1.2f, 0.0f });
         }
-        // Inner top loop
         for (int i = 0; i <= segments / 2; ++i) {
             float t = (float)i / (segments / 2);
             float angle = t * pi;
             curvePoints.push_back({ std::cos(angle) * 0.2f, std::sin(angle) * 0.2f + 0.4f, 0.0f });
         }
 
-        // Extrude tubular wire along curve
         int ringSegments = 8;
         for (size_t i = 0; i + 1 < curvePoints.size(); ++i) {
             auto p0 = curvePoints[i];
@@ -80,17 +74,14 @@ public:
                 float ny1 = 0.0f;
                 float nz1 = std::sin(phi1);
 
-                // Quad vertices for tube segment
                 RenderVertex3D v0 = { p0[0] + nx0 * wireRadius, p0[1] + ny0 * wireRadius, p0[2] + nz0 * wireRadius, nx0, 0.5f, nz0, 0.9f, 0.92f, 0.96f, 1.0f, 0.0f, 0.0f };
                 RenderVertex3D v1 = { p1[0] + nx0 * wireRadius, p1[1] + ny0 * wireRadius, p1[2] + nz0 * wireRadius, nx0, 0.5f, nz0, 0.9f, 0.92f, 0.96f, 1.0f, 1.0f, 0.0f };
                 RenderVertex3D v2 = { p1[0] + nx1 * wireRadius, p1[1] + ny1 * wireRadius, p1[2] + nz1 * wireRadius, nx1, 0.5f, nz1, 0.9f, 0.92f, 0.96f, 1.0f, 1.0f, 1.0f };
                 RenderVertex3D v3 = { p0[0] + nx1 * wireRadius, p0[1] + ny1 * wireRadius, p0[2] + nz1 * wireRadius, nx1, 0.5f, nz1, 0.9f, 0.92f, 0.96f, 1.0f, 0.0f, 1.0f };
 
-                // Triangle 1
                 vertices.push_back(v0);
                 vertices.push_back(v1);
                 vertices.push_back(v2);
-                // Triangle 2
                 vertices.push_back(v0);
                 vertices.push_back(v2);
                 vertices.push_back(v3);
@@ -102,7 +93,7 @@ public:
     /// <summary>
     /// Generates the 3D Factory Floor (concrete tiles with grid markings).
     /// </summary>
-    static std::vector<RenderVertex3D> BuildFactoryFloorMesh(float size = 20.0f, int divisions = 20) {
+    static std::vector<RenderVertex3D> BuildFactoryFloorMesh(float size = 24.0f, int divisions = 24) {
         std::vector<RenderVertex3D> vertices;
         float step = size / divisions;
         float halfSize = size * 0.5f;
@@ -136,6 +127,52 @@ public:
     }
 
     /// <summary>
+    /// Generates 3D Machine Mesh according to Factory Tile Type.
+    /// </summary>
+    static std::vector<RenderVertex3D> BuildMachineMesh(FactoryTileType type, float x, float z, float tileSize = 1.0f) {
+        std::vector<RenderVertex3D> vertices;
+        float hx = x + tileSize * 0.5f;
+        float hz = z + tileSize * 0.5f;
+        float half = tileSize * 0.35f;
+
+        float r = 0.8f, g = 0.8f, b = 0.8f, height = 0.5f;
+        if (type == FactoryTileType::WireExtruder) {
+            r = 0.3f; g = 0.6f; b = 0.9f; height = 0.6f; // Cyan spool
+        } else if (type == FactoryTileType::HydraulicStamper) {
+            r = 0.9f; g = 0.7f; b = 0.2f; height = 0.9f; // Gold hydraulic piston
+        } else if (type == FactoryTileType::LaserSinterer) {
+            r = 0.9f; g = 0.2f; b = 0.8f; height = 0.4f; // Magenta laser diode
+        } else if (type == FactoryTileType::CoolingTower) {
+            r = 0.2f; g = 0.8f; b = 0.6f; height = 0.8f; // Emerald cooling tower
+        } else {
+            return vertices;
+        }
+
+        // Cube representation of machine unit
+        float x0 = hx - half, x1 = hx + half;
+        float z0 = hz - half, z1 = hz + half;
+        float y0 = -1.0f, y1 = -1.0f + height;
+
+        // Top face
+        vertices.push_back({ x0, y1, z0, 0.0f, 1.0f, 0.0f, r*1.2f, g*1.2f, b*1.2f, 1.0f, 0.0f, 0.0f });
+        vertices.push_back({ x1, y1, z0, 0.0f, 1.0f, 0.0f, r*1.2f, g*1.2f, b*1.2f, 1.0f, 1.0f, 0.0f });
+        vertices.push_back({ x1, y1, z1, 0.0f, 1.0f, 0.0f, r*1.2f, g*1.2f, b*1.2f, 1.0f, 1.0f, 1.0f });
+        vertices.push_back({ x0, y1, z0, 0.0f, 1.0f, 0.0f, r*1.2f, g*1.2f, b*1.2f, 1.0f, 0.0f, 0.0f });
+        vertices.push_back({ x1, y1, z1, 0.0f, 1.0f, 0.0f, r*1.2f, g*1.2f, b*1.2f, 1.0f, 1.0f, 1.0f });
+        vertices.push_back({ x0, y1, z1, 0.0f, 1.0f, 0.0f, r*1.2f, g*1.2f, b*1.2f, 1.0f, 0.0f, 1.0f });
+
+        // Front face
+        vertices.push_back({ x0, y0, z1, 0.0f, 0.0f, 1.0f, r, g, b, 1.0f, 0.0f, 0.0f });
+        vertices.push_back({ x1, y0, z1, 0.0f, 0.0f, 1.0f, r, g, b, 1.0f, 1.0f, 0.0f });
+        vertices.push_back({ x1, y1, z1, 0.0f, 0.0f, 1.0f, r, g, b, 1.0f, 1.0f, 1.0f });
+        vertices.push_back({ x0, y0, z1, 0.0f, 0.0f, 1.0f, r, g, b, 1.0f, 0.0f, 0.0f });
+        vertices.push_back({ x1, y1, z1, 0.0f, 0.0f, 1.0f, r, g, b, 1.0f, 1.0f, 1.0f });
+        vertices.push_back({ x0, y1, z1, 0.0f, 0.0f, 1.0f, r, g, b, 1.0f, 0.0f, 1.0f });
+
+        return vertices;
+    }
+
+    /// <summary>
     /// Generates a 3D Granular Paperclip Mound with 32 degree slope.
     /// </summary>
     static std::vector<RenderVertex3D> BuildPaperclipMoundMesh(float pileRadius, float pileHeight, int rings = 12, int sectors = 24) {
@@ -149,7 +186,6 @@ public:
             float rad0 = rNorm0 * pileRadius;
             float rad1 = rNorm1 * pileRadius;
 
-            // Parabolic / 32 degree cone height profile
             float y0 = -1.0f + (1.0f - rNorm0) * pileHeight;
             float y1 = -1.0f + (1.0f - rNorm1) * pileHeight;
 
@@ -157,7 +193,7 @@ public:
                 float phi0 = (float)s / sectors * 2.0f * pi;
                 float phi1 = (float)(s + 1) / sectors * 2.0f * pi;
 
-                float x00 = std::cos(phi0) * rad0 + 2.5f; // Offset to right side of floor
+                float x00 = std::cos(phi0) * rad0 + 2.5f;
                 float z00 = std::sin(phi0) * rad0;
                 float x10 = std::cos(phi0) * rad1 + 2.5f;
                 float z10 = std::sin(phi0) * rad1;
@@ -167,7 +203,6 @@ public:
                 float x11 = std::cos(phi1) * rad1 + 2.5f;
                 float z11 = std::sin(phi1) * rad1;
 
-                // Shiny metallic silver chrome tint with slight wire specular jitter
                 float metallicGlint = 0.85f + 0.15f * std::sin((float)(r * s));
                 float cr = 0.88f * metallicGlint;
                 float cg = 0.90f * metallicGlint;
