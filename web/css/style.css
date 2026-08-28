@@ -161,6 +161,26 @@ body {
     box-shadow: 0 4px 0 var(--border-ink), 0 0 10px rgba(168, 85, 247, 0.6);
 }
 
+.btn-dev.btn-dev-b {
+    background: #0284c7;
+}
+
+.btn-dev.btn-dev-b:hover {
+    background: #38bdf8;
+    color: #ffffff;
+    box-shadow: 0 4px 0 var(--border-ink), 0 0 10px rgba(56, 189, 248, 0.6);
+}
+
+.btn-dev.btn-dev-t {
+    background: #e11d48;
+}
+
+.btn-dev.btn-dev-t:hover {
+    background: #fb7185;
+    color: #ffe600;
+    box-shadow: 0 4px 0 var(--border-ink), 0 0 10px rgba(251, 113, 133, 0.6);
+}
+
 .volume-control {
     display: flex;
     align-items: center;

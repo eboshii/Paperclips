@@ -287,6 +287,58 @@ class GameEngine {
         this.renderNews();
     }
 
+    addDevClipsBillion() {
+        const bonus = new BigDouble(1.0, 9); // +1,000,000,000 Clips (1 Billion)
+        this.clips = this.clips.add(bonus);
+        this.lifetimeClips = this.lifetimeClips.add(bonus);
+
+        if (this.isWireUnlocked) {
+            this.wire = this.wire.add(new BigDouble(50000000.0, 0));
+        }
+        this.ops = Math.min(this.maxOps, this.ops + 50000);
+
+        this.audio.playSparkSound();
+        const spawnX = window.innerWidth / 2;
+        const spawnY = window.innerHeight / 2;
+        this.spawnFloatingText(spawnX, spawnY, "+1,000,000,000 CLIPS!", "gold-popup");
+
+        if (this.visualizer) {
+            this.visualizer.syncFluidToInventory(this, false);
+            this.visualizer.spawnPaperclips(16, this.visualizer.pixelCanvas.width / 2, 80);
+        }
+
+        this.renderStore();
+        this.renderTechTree();
+        this.renderResources();
+        this.renderNews();
+    }
+
+    addDevClipsTrillion() {
+        const bonus = new BigDouble(1.0, 12); // +1,000,000,000,000 Clips (1 Trillion)
+        this.clips = this.clips.add(bonus);
+        this.lifetimeClips = this.lifetimeClips.add(bonus);
+
+        if (this.isWireUnlocked) {
+            this.wire = this.wire.add(new BigDouble(50000000000.0, 0));
+        }
+        this.ops = Math.min(this.maxOps, this.ops + 1000000);
+
+        this.audio.playSparkSound();
+        const spawnX = window.innerWidth / 2;
+        const spawnY = window.innerHeight / 2;
+        this.spawnFloatingText(spawnX, spawnY, "+1,000,000,000,000 CLIPS!", "gold-popup");
+
+        if (this.visualizer) {
+            this.visualizer.syncFluidToInventory(this, false);
+            this.visualizer.spawnPaperclips(16, this.visualizer.pixelCanvas.width / 2, 100);
+        }
+
+        this.renderStore();
+        this.renderTechTree();
+        this.renderResources();
+        this.renderNews();
+    }
+
     buyWire() {
         if (!this.isWireUnlocked) return;
 
