@@ -277,6 +277,7 @@ class GameEngine {
         this.spawnFloatingText(spawnX, spawnY, "+1,000,000 CLIPS!", "gold-popup");
 
         if (this.visualizer) {
+            this.visualizer.syncFluidToInventory(this, false);
             this.visualizer.spawnPaperclips(16, this.visualizer.pixelCanvas.width / 2, 60);
         }
 
@@ -804,6 +805,9 @@ class GameEngine {
                         this.dialogue.addLog("OFFLINE SUMMARY", `Simulation warped ahead ${Math.floor(elapsedSec)}s. Generated ${offlineClips.toShortScale(2)} clips!`);
                     }
                 }
+            }
+            if (this.visualizer) {
+                this.visualizer.syncFluidToInventory(this, true);
             }
         } catch (e) {
             console.error("Load save error:", e);

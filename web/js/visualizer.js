@@ -217,6 +217,30 @@ class CosmicVisualizer {
         }
     }
 
+    syncFluidToInventory(state, instant = false) {
+        if (!state || !state.clips) return;
+        const pw = this.pixelCanvas.width || 200;
+        const ph = this.pixelCanvas.height || 150;
+        const c = state.clips.toDouble();
+        const capacity = c > 0 ? Math.min(ph * 0.55, Math.log10(Math.max(1, c)) * 8.5 + Math.min(16.0, c * 0.3)) : 0.0;
+
+        for (let i = 0; i < this.numColumns; ++i) {
+            const centerFactor = 0.70 + 0.30 * Math.sin(Math.PI * (i / (this.numColumns - 1)));
+            const targetH = capacity * centerFactor;
+            if (instant) {
+                this.pileHeights[i] = targetH;
+                this.waveOffsets[i] = 0.0;
+                this.waveVelocities[i] = 0.0;
+            } else {
+                this.waveVelocities[i] += 1.8;
+                this.internalFlowVelocity = Math.min(2.5, this.internalFlowVelocity + 0.5);
+            }
+        }
+        if (instant) {
+            this.settledClips = [];
+        }
+    }
+
     determineAutoTier(lifetimeClips) {
         if (lifetimeClips.gte(new BigDouble(1.0, 78))) return 4; // Multiverse
         if (lifetimeClips.gte(new BigDouble(1.0, 45))) return 3; // Galactic Penrose
@@ -254,7 +278,7 @@ class CosmicVisualizer {
         const ph = this.pixelCanvas.height || 150;
         const floorY = ph - 2;
 
-        // Inventory-based maximum mound height capacity:
+        // Inventory-based target fluid capacity:
         // 0 clips -> 0px (strict real floor)
         // 1 to 25 clips -> up to 3 - 6px peak
         // 100 clips -> up to 14px peak
@@ -268,12 +292,22 @@ class CosmicVisualizer {
             }
         }
 
-        // Smooth Viscous Fluid Draining: columns slowly drain towards inventory capacity
+        // Bidirectional Continuous Fluid Dynamics: Smoothly surge upwards on gain, smoothly drain on spend
         for (let i = 0; i < this.numColumns; ++i) {
-            const excess = this.pileHeights[i] - inventoryCapacity;
-            if (excess > 0.01) {
-                // Natural viscous fluid draining speed (~15-25% height decay per second)
-                const drainRate = Math.min(excess, (1.2 + excess * 0.5) * dt);
+            const centerFactor = 0.70 + 0.30 * Math.sin(Math.PI * (i / (this.numColumns - 1)));
+            const targetHeight = inventoryCapacity * centerFactor;
+            const diff = targetHeight - this.pileHeights[i];
+
+            if (diff > 0.05) {
+                // Smooth upward surge when inventory increases (e.g. +1M clips, CPS production, clicks)
+                const riseRate = Math.min(diff, (1.8 + diff * 3.0) * dt);
+                this.pileHeights[i] += riseRate;
+                this.waveVelocities[i] += Math.min(0.6, riseRate * 0.1);
+                this.internalFlowVelocity = Math.min(2.0, this.internalFlowVelocity + riseRate * 0.06);
+            } else if (diff < -0.05) {
+                // Smooth viscous fluid draining when spending
+                const excess = -diff;
+                const drainRate = Math.min(excess, (1.2 + excess * 1.8) * dt);
                 this.pileHeights[i] -= drainRate;
 
                 // Suction tug on wave velocity towards drain
