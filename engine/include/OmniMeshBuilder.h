@@ -148,7 +148,6 @@ public:
             return vertices;
         }
 
-        // Cube representation of machine unit
         float x0 = hx - half, x1 = hx + half;
         float z0 = hz - half, z1 = hz + half;
         float y0 = -1.0f, y1 = -1.0f + height;
@@ -183,8 +182,8 @@ public:
             float rNorm0 = (float)r / rings;
             float rNorm1 = (float)(r + 1) / rings;
 
-            float rad0 = rNorm0 * pileRadius;
-            float rad1 = rNorm1 * pileRadius;
+            float radius0 = rNorm0 * pileRadius;
+            float radius1 = rNorm1 * pileRadius;
 
             float y0 = -1.0f + (1.0f - rNorm0) * pileHeight;
             float y1 = -1.0f + (1.0f - rNorm1) * pileHeight;
@@ -193,15 +192,15 @@ public:
                 float phi0 = (float)s / sectors * 2.0f * pi;
                 float phi1 = (float)(s + 1) / sectors * 2.0f * pi;
 
-                float x00 = std::cos(phi0) * rad0 + 2.5f;
-                float z00 = std::sin(phi0) * rad0;
-                float x10 = std::cos(phi0) * rad1 + 2.5f;
-                float z10 = std::sin(phi0) * rad1;
+                float x00 = std::cos(phi0) * radius0 + 2.5f;
+                float z00 = std::sin(phi0) * radius0;
+                float x10 = std::cos(phi0) * radius1 + 2.5f;
+                float z10 = std::sin(phi0) * radius1;
 
-                float x01 = std::cos(phi1) * rad0 + 2.5f;
-                float z01 = std::sin(phi1) * rad0;
-                float x11 = std::cos(phi1) * rad1 + 2.5f;
-                float z11 = std::sin(phi1) * rad1;
+                float x01 = std::cos(phi1) * radius0 + 2.5f;
+                float z01 = std::sin(phi1) * radius0;
+                float x11 = std::cos(phi1) * radius1 + 2.5f;
+                float z11 = std::sin(phi1) * radius1;
 
                 float metallicGlint = 0.85f + 0.15f * std::sin((float)(r * s));
                 float cr = 0.88f * metallicGlint;

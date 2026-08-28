@@ -2,6 +2,12 @@
 #include <cstdint>
 
 #ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <conio.h>
 #include <windows.h>
 #else
@@ -66,12 +72,7 @@ public:
     }
 
     static void ClearScreen() {
-#ifdef _WIN32
-        // ANSI escape clear screen (Supported in Windows 11 Windows Terminal)
         std::cout << "\033[2J\033[H";
-#else
-        std::cout << "\033[2J\033[H";
-#endif
     }
 };
 
