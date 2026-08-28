@@ -49,15 +49,6 @@
 
 using namespace OmniEngine;
 
-// Bulk Purchase Math Helper for 1.15x geometric progression
-static BigDouble CalculateBulkCost(double baseCost, int currentOwned, int multiplier) {
-    if (multiplier <= 1) {
-        return BigDouble(baseCost, 0) * std::pow(1.15, currentOwned);
-    }
-    double factor = (std::pow(1.15, multiplier) - 1.0) / 0.15;
-    return BigDouble(baseCost, 0) * std::pow(1.15, currentOwned) * factor;
-}
-
 static std::string FormatWithCommas(int64_t value) {
     std::string s = std::to_string(value);
     int n = static_cast<int>(s.length()) - 3;
@@ -66,6 +57,47 @@ static std::string FormatWithCommas(int64_t value) {
         n -= 3;
     }
     return s;
+}
+
+static std::string FormatClipsCount(const BigDouble& val) {
+    if (val < BigDouble(1000.0, 0)) {
+        return std::to_string(static_cast<int64_t>(val.toDouble()));
+    }
+    if (val < BigDouble(1000000.0, 0)) {
+        return FormatWithCommas(static_cast<int64_t>(val.toDouble()));
+    }
+    return val.toShortScale();
+}
+
+static std::string FormatCurrency(const BigDouble& val) {
+    if (val < BigDouble(1000.0, 0)) {
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "$%.2f", val.toDouble());
+        return std::string(buf);
+    }
+    if (val < BigDouble(1000000.0, 0)) {
+        return "$" + FormatWithCommas(static_cast<int64_t>(val.toDouble()));
+    }
+    return "$" + val.toShortScale();
+}
+
+static std::string FormatRate(double cps, int multiplier = 1) {
+    double total = cps * multiplier;
+    if (total < 1000.0) {
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "+%.1f/s", total);
+        return std::string(buf);
+    }
+    return "+" + BigDouble(total, 0).toShortScale() + " CPS";
+}
+
+// Bulk Purchase Math Helper for 1.15x geometric progression
+static BigDouble CalculateBulkCost(double baseCost, int currentOwned, int multiplier) {
+    if (multiplier <= 1) {
+        return BigDouble(baseCost, 0) * std::pow(1.15, currentOwned);
+    }
+    double factor = (std::pow(1.15, multiplier) - 1.0) / 0.15;
+    return BigDouble(baseCost, 0) * std::pow(1.15, currentOwned) * factor;
 }
 
 int main() {
@@ -308,8 +340,8 @@ int main() {
             BigDouble clipperBulkCost = CalculateBulkCost(10.0, autoClippers, mult);
             bool canAffordClipper = (playerFunds >= clipperBulkCost);
             uiManager.AddBuildingRow("bld_clipper", 910.0f, startRowY, 344.0f, 62.0f,
-                "Auto-Clipper", "$" + clipperBulkCost.toShortScale(),
-                "+" + std::to_string(1.0 * mult) + " CPS", autoClippers, canAffordClipper,
+                "Auto-Clipper", FormatCurrency(clipperBulkCost) + " | " + FormatRate(1.0, mult),
+                "", autoClippers, canAffordClipper,
                 "Auto-Clipper", "Automated desktop wire bending arm.\nProduces +1.00 paperclip per second.",
                 [&, clipperBulkCost, mult]() {
                     if (playerFunds >= clipperBulkCost) {
@@ -325,8 +357,8 @@ int main() {
             BigDouble stamperBulkCost = CalculateBulkCost(150.0, stampers, mult);
             bool canAffordStamper = (playerFunds >= stamperBulkCost);
             uiManager.AddBuildingRow("bld_stamper", 910.0f, startRowY, 344.0f, 62.0f,
-                "Hydraulic Stamper", "$" + stamperBulkCost.toShortScale(),
-                "+" + std::to_string(15.0 * mult) + " CPS", stampers, canAffordStamper,
+                "Hydraulic Stamper", FormatCurrency(stamperBulkCost) + " | " + FormatRate(15.0, mult),
+                "", stampers, canAffordStamper,
                 "Hydraulic Stamper", "High-pressure dual-action pneumatic press.\nProduces +15.00 paperclips per second.",
                 [&, stamperBulkCost, mult]() {
                     if (playerFunds >= stamperBulkCost) {
@@ -342,8 +374,8 @@ int main() {
             BigDouble sintererBulkCost = CalculateBulkCost(2500.0, sinterers, mult);
             bool canAffordSinterer = (playerFunds >= sintererBulkCost);
             uiManager.AddBuildingRow("bld_sinterer", 910.0f, startRowY, 344.0f, 62.0f,
-                "Laser Sinterer", "$" + sintererBulkCost.toShortScale(),
-                "+" + std::to_string(120.0 * mult) + " CPS", sinterers, canAffordSinterer,
+                "Laser Sinterer", FormatCurrency(sintererBulkCost) + " | " + FormatRate(120.0, mult),
+                "", sinterers, canAffordSinterer,
                 "Laser Sinterer", "Multi-axis laser welding and sintered iron forge.\nProduces +120.00 paperclips per second.",
                 [&, sintererBulkCost, mult]() {
                     if (playerFunds >= sintererBulkCost) {
@@ -359,8 +391,8 @@ int main() {
             BigDouble megamillBulkCost = CalculateBulkCost(50000.0, megamills, mult);
             bool canAffordMegamill = (playerFunds >= megamillBulkCost);
             uiManager.AddBuildingRow("bld_megamill", 910.0f, startRowY, 344.0f, 62.0f,
-                "Industrial Megamill", "$" + megamillBulkCost.toShortScale(),
-                "+" + std::to_string(1500.0 * mult) + " CPS", megamills, canAffordMegamill,
+                "Industrial Megamill", FormatCurrency(megamillBulkCost) + " | " + FormatRate(1500.0, mult),
+                "", megamills, canAffordMegamill,
                 "Industrial Megamill", "Continuous-feed heavy industrial foundry assembly.\nProduces +1,500 paperclips per second.",
                 [&, megamillBulkCost, mult]() {
                     if (playerFunds >= megamillBulkCost) {
@@ -376,8 +408,8 @@ int main() {
                 BigDouble bioBulkCost = CalculateBulkCost(1000000.0, bioConverters, mult);
                 bool canAffordBio = (playerClips >= bioBulkCost);
                 uiManager.AddBuildingRow("bld_bio", 910.0f, startRowY, 344.0f, 62.0f,
-                    "Bio-Converter", bioBulkCost.toShortScale() + " Clips",
-                    "+100k CPS", bioConverters, canAffordBio,
+                    "Bio-Converter", FormatClipsCount(bioBulkCost) + " Clips | " + FormatRate(100000.0, mult),
+                    "", bioConverters, canAffordBio,
                     "Planetary Bio-Converter", "Deconstructs planetary biomass into high-tensile wire.\nProduces +100,000 paperclips per second.",
                     [&, bioBulkCost, mult]() {
                         if (playerClips >= bioBulkCost) {
@@ -396,8 +428,8 @@ int main() {
                 BigDouble dysonBulkCost = CalculateBulkCost(10000000.0, dysonSiphons, mult);
                 bool canAffordDyson = (playerFunds >= dysonBulkCost);
                 uiManager.AddBuildingRow("bld_dyson", 910.0f, startRowY, 344.0f, 62.0f,
-                    "Solar Dyson Siphon", "$" + dysonBulkCost.toShortScale(),
-                    "+5.0M CPS", dysonSiphons, canAffordDyson,
+                    "Solar Dyson Siphon", FormatCurrency(dysonBulkCost) + " | " + FormatRate(5000000.0, mult),
+                    "", dysonSiphons, canAffordDyson,
                     "Solar Dyson Siphon", "Concentric orbital solar mirrors siphoning stellar corona power.\nProduces +5,000,000 paperclips per second.",
                     [&, dysonBulkCost, mult]() {
                         if (playerFunds >= dysonBulkCost) {
@@ -414,8 +446,8 @@ int main() {
                 BigDouble penroseBulkCost = CalculateBulkCost(1000000000.0, penroseLooms, mult);
                 bool canAffordPenrose = (playerFunds >= penroseBulkCost);
                 uiManager.AddBuildingRow("bld_penrose", 910.0f, startRowY, 344.0f, 62.0f,
-                    "Galactic Penrose Loom", "$" + penroseBulkCost.toShortScale(),
-                    "+500M CPS", penroseLooms, canAffordPenrose,
+                    "Galactic Penrose Loom", FormatCurrency(penroseBulkCost) + " | " + FormatRate(500000000.0, mult),
+                    "", penroseLooms, canAffordPenrose,
                     "Galactic Penrose Loom", "Extracts ergosphere rotational energy from supermassive black holes.\nProduces +500,000,000 paperclips per second.",
                     [&, penroseBulkCost, mult]() {
                         if (playerFunds >= penroseBulkCost) {
@@ -610,21 +642,20 @@ int main() {
             window.DrawMesh3D(sparkMesh, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
         }
         else if (activeTier == CosmicVisualTier::PlanetaryEarth) {
-            window.DrawMesh3D(earthMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 0.5f, 1.0f);
-            window.DrawMesh3D(orbitalRingMesh, 0.0f, 0.0f, 0.0f, -cosmicRotation * 0.2f, 1.0f);
-            window.DrawMesh3D(heroClipMesh, -3.2f, 1.2f, 0.0f, cosmicRotation, 0.8f);
+            window.DrawMesh3D(earthMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 0.5f, 0.55f);
+            window.DrawMesh3D(orbitalRingMesh, 0.0f, 0.0f, 0.0f, -cosmicRotation * 0.2f, 0.65f);
         }
         else if (activeTier == CosmicVisualTier::SolarDysonSwarm) {
-            window.DrawMesh3D(sunMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 0.3f, 1.0f);
-            window.DrawMesh3D(orbitalRingMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 0.8f, 1.2f);
-            window.DrawMesh3D(orbitalRingMesh, 0.0f, 0.0f, 0.0f, -cosmicRotation * 0.5f, 1.5f);
+            window.DrawMesh3D(sunMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 0.3f, 0.45f);
+            window.DrawMesh3D(orbitalRingMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 0.8f, 0.85f);
+            window.DrawMesh3D(orbitalRingMesh, 0.0f, 0.0f, 0.0f, -cosmicRotation * 0.5f, 1.15f);
         }
         else if (activeTier == CosmicVisualTier::GalacticPenrose) {
-            window.DrawMesh3D(blackHoleMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 1.2f, 1.0f);
-            window.DrawMesh3D(orbitalRingMesh, 0.0f, 0.0f, 0.0f, -cosmicRotation * 0.6f, 1.8f);
+            window.DrawMesh3D(blackHoleMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 1.2f, 0.50f);
+            window.DrawMesh3D(orbitalRingMesh, 0.0f, 0.0f, 0.0f, -cosmicRotation * 0.6f, 1.0f);
         }
         else {
-            window.DrawMesh3D(multiverseFoamMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 0.4f, 1.0f);
+            window.DrawMesh3D(multiverseFoamMesh, 0.0f, 0.0f, 0.0f, cosmicRotation * 0.4f, 0.50f);
         }
 
         // ----------------------------------------------------
@@ -634,74 +665,85 @@ int main() {
 
         // 1. Center Column News Ticker (X: 350, Y: 16, W: 540, H: 36)
         window.DrawHUDCard(350.0f, 16.0f, 540.0f, 36.0f,
-            0.08f, 0.10f, 0.14f, 0.88f,
+            0.08f, 0.10f, 0.14f, 0.90f,
             0.22f, 0.28f, 0.38f, 0.60f);
 
+        std::string displayNews = "News: " + currentNewsText;
+        if (displayNews.length() > 58) displayNews = displayNews.substr(0, 55) + "...";
+
         if (breakingNewsTimer > 0.0f) {
-            window.DrawHUDText(364.0f, 26.0f, "News: " + currentNewsText, 1.05f, 1.0f, 0.85f, 0.30f, 1.0f);
+            window.DrawHUDText(364.0f, 28.0f, displayNews, 1.0f, 1.0f, 0.85f, 0.30f, 1.0f);
         } else {
-            window.DrawHUDText(364.0f, 26.0f, "News: " + currentNewsText, 1.05f, 0.90f, 0.92f, 0.96f, 0.95f);
+            window.DrawHUDText(364.0f, 28.0f, displayNews, 1.0f, 0.90f, 0.92f, 0.96f, 0.95f);
         }
 
         // 2. Left Column Panel (X: 16 to 340, Y: 16 to 704)
         window.DrawHUDCard(16.0f, 16.0f, 324.0f, 688.0f,
-            0.09f, 0.11f, 0.15f, 0.92f,
+            0.08f, 0.10f, 0.14f, 0.94f,
             0.20f, 0.24f, 0.32f, 0.65f);
 
         // Header / Logo
-        window.DrawHUDTextCentered(178.0f, 28.0f, "PAPERCLIPS", 1.25f, 1.0f, 0.82f, 0.28f, 1.0f);
+        window.DrawHUDTextCentered(178.0f, 28.0f, "PAPERCLIPS", 1.0f, 1.0f, 0.82f, 0.28f, 1.0f);
 
         // Big Numbers Odometer
-        window.DrawHUDTextCentered(178.0f, 50.0f, lifetimeClips.toShortScale(), 2.2f, 1.0f, 0.95f, 0.85f, 1.0f);
-        window.DrawHUDTextCentered(178.0f, 72.0f, "paperclips", 1.0f, 0.70f, 0.75f, 0.82f, 1.0f);
+        std::string clipStr = FormatClipsCount(lifetimeClips);
+        window.DrawHUDTextCentered(178.0f, 48.0f, clipStr, 2.0f, 1.0f, 0.95f, 0.85f, 1.0f);
+        window.DrawHUDTextCentered(178.0f, 70.0f, "paperclips", 1.0f, 0.70f, 0.75f, 0.82f, 1.0f);
         
-        std::string cpsLabel = "per second: " + (currentCPS > BigDouble::zero() ? currentCPS.toShortScale() : "0");
-        window.DrawHUDTextCentered(178.0f, 88.0f, cpsLabel, 1.15f, 0.35f, 0.90f, 0.55f, 1.0f);
+        std::string cpsLabel = "per second: " + (currentCPS > BigDouble::zero() ? FormatClipsCount(currentCPS) : "0");
+        window.DrawHUDTextCentered(178.0f, 88.0f, cpsLabel, 1.0f, 0.35f, 0.90f, 0.55f, 1.0f);
 
         // Hairline Divider
-        window.DrawHUDQuad(36.0f, 110.0f, 284.0f, 1.0f, 0.25f, 0.30f, 0.40f, 0.40f);
+        window.DrawHUDQuad(36.0f, 108.0f, 284.0f, 1.0f, 0.25f, 0.30f, 0.40f, 0.40f);
 
         // Hero Clicker Pedestal Backdrop
-        window.DrawHUDCard(36.0f, 122.0f, 284.0f, 284.0f,
-            0.06f, 0.08f, 0.11f, 0.80f,
+        window.DrawHUDCard(36.0f, 120.0f, 284.0f, 284.0f,
+            0.05f, 0.07f, 0.10f, 0.85f,
             0.22f, 0.28f, 0.38f, 0.50f);
 
         // Flywheel Momentum Boost Bar
         float flywheelPercent = flywheel.GetChargePercent();
         if (flywheelPercent > 0.0f) {
             float boostWidth = 260.0f * (flywheelPercent / 100.0f);
-            window.DrawHUDQuad(48.0f, 416.0f, 260.0f, 6.0f, 0.15f, 0.18f, 0.24f, 0.8f);
-            window.DrawHUDQuad(48.0f, 416.0f, boostWidth, 6.0f, 0.35f, 0.85f, 0.95f, 1.0f);
-            window.DrawHUDTextCentered(178.0f, 426.0f, "Overclock Boost Active", 0.95f, 0.4f, 0.85f, 1.0f, 0.9f);
+            window.DrawHUDQuad(48.0f, 414.0f, 260.0f, 6.0f, 0.15f, 0.18f, 0.24f, 0.8f);
+            window.DrawHUDQuad(48.0f, 414.0f, boostWidth, 6.0f, 0.35f, 0.85f, 0.95f, 1.0f);
+            window.DrawHUDTextCentered(178.0f, 424.0f, "Overclock Boost Active", 1.0f, 0.4f, 0.85f, 1.0f, 0.9f);
         }
 
-        // Secondary Stockpile Card (Y: 450..692)
-        window.DrawHUDCard(28.0f, 450.0f, 300.0f, 242.0f,
-            0.07f, 0.09f, 0.12f, 0.90f,
+        // Secondary Stockpile Card (Y: 448..692)
+        window.DrawHUDCard(28.0f, 448.0f, 300.0f, 244.0f,
+            0.07f, 0.09f, 0.12f, 0.92f,
             0.18f, 0.22f, 0.28f, 0.50f);
 
-        window.DrawHUDText(42.0f, 462.0f, "RESOURCES", 1.05f, 0.60f, 0.68f, 0.78f, 1.0f);
+        window.DrawHUDText(42.0f, 460.0f, "RESOURCES", 1.0f, 0.60f, 0.68f, 0.78f, 1.0f);
 
         // Wire Stock
-        window.DrawHUDText(42.0f, 482.0f, "Wire: " + playerWire.toShortScale() + " kg", 1.2f, 0.95f, 0.95f, 0.95f, 1.0f);
+        window.DrawHUDText(42.0f, 480.0f, "Wire: " + FormatClipsCount(playerWire) + " kg", 1.0f, 0.95f, 0.95f, 0.95f, 1.0f);
 
         // Funds & Operations
-        window.DrawHUDText(42.0f, 554.0f, "Funds: $" + playerFunds.toShortScale(), 1.2f, 0.40f, 0.95f, 0.60f, 1.0f);
-        window.DrawHUDText(42.0f, 580.0f, "Ops: " + std::to_string(static_cast<int64_t>(playerOps)), 1.2f, 0.40f, 0.80f, 1.0f, 1.0f);
+        window.DrawHUDText(42.0f, 552.0f, "Funds: " + FormatCurrency(playerFunds), 1.0f, 0.40f, 0.95f, 0.60f, 1.0f);
+        window.DrawHUDText(42.0f, 576.0f, "Ops: " + FormatClipsCount(BigDouble(playerOps, 0)), 1.0f, 0.40f, 0.80f, 1.0f, 1.0f);
 
         if (lifetimeClips >= BigDouble(1.0, 6)) {
-            window.DrawHUDText(42.0f, 606.0f, "Human Pop: " + FormatWithCommas(humanPopulation), 1.0f, 0.95f, 0.45f, 0.45f, 1.0f);
+            window.DrawHUDText(42.0f, 600.0f, "Human Pop: " + FormatWithCommas(humanPopulation), 1.0f, 0.95f, 0.45f, 0.45f, 1.0f);
         }
-        window.DrawHUDText(42.0f, 630.0f, "Mass: " + equivalency.GetEquivalencyString(lifetimeClips), 0.95f, 0.70f, 0.75f, 0.80f, 0.9f);
+        
+        std::string eq = equivalency.GetEquivalencyString(lifetimeClips);
+        if (eq.length() > 34) eq = eq.substr(0, 32) + "..";
+        window.DrawHUDText(42.0f, 626.0f, "Mass: " + eq, 1.0f, 0.70f, 0.75f, 0.80f, 0.9f);
 
         // 3. Right Column Panel (Store & Upgrades) (X: 900 to 1264, Y: 16 to 704)
         window.DrawHUDCard(900.0f, 16.0f, 364.0f, 688.0f,
-            0.09f, 0.11f, 0.15f, 0.92f,
+            0.08f, 0.10f, 0.14f, 0.94f,
             0.20f, 0.24f, 0.32f, 0.65f);
 
         if (uiManager.activeTab == InteractiveTab::Store) {
-            window.DrawHUDText(916.0f, 72.0f, "Buy Multiplier:", 1.05f, 0.65f, 0.70f, 0.80f, 1.0f);
+            window.DrawHUDText(916.0f, 72.0f, "Buy Multiplier:", 1.0f, 0.65f, 0.70f, 0.80f, 1.0f);
         }
+
+        // Draw 3D Hero Paperclip inside Left Pedestal
+        float heroScale = ui.GetHeroClicker().GetState().scale * 1.25f;
+        window.DrawHeroPaperclip3D(heroClipMesh, cosmicRotation, heroScale);
 
         // Render all Interactive UI buttons, popups, and tooltips
         uiManager.RenderUI(window);

@@ -388,28 +388,39 @@ public:
 
 private:
     void RenderTooltip(OmniGLWindow& window) {
+        float titleWidth = OmniFont::GetTextWidth(m_hoveredTooltipTitle, 1.0f);
+        float bodyWidth = OmniFont::GetTextWidth(m_hoveredTooltipText, 1.0f);
+        float tipW = std::min(420.0f, std::max(240.0f, std::max(titleWidth, bodyWidth) + 28.0f));
+
+        int lineCount = 1;
+        for (char c : m_hoveredTooltipText) {
+            if (c == '\n') lineCount++;
+        }
+        float tipH = (m_hoveredTooltipTitle.empty() ? 16.0f : 30.0f) + lineCount * 14.0f + 10.0f;
+
         float tipX = m_tooltipMouseX + 16.0f;
         float tipY = m_tooltipMouseY + 16.0f;
-        float tipW = 300.0f;
-        float tipH = 75.0f;
 
         // Keep tooltip on screen
         if (tipX + tipW > 1260.0f) tipX = m_tooltipMouseX - tipW - 8.0f;
         if (tipY + tipH > 700.0f) tipY = m_tooltipMouseY - tipH - 8.0f;
+        if (tipX < 10.0f) tipX = 10.0f;
+        if (tipY < 10.0f) tipY = 10.0f;
 
-        // Background card
+        // Glowing background card
         window.DrawHUDCard(tipX, tipY, tipW, tipH,
             0.07f, 0.09f, 0.13f, 0.98f,
-            0.35f, 0.65f, 0.85f, 0.85f);
+            0.35f, 0.65f, 0.85f, 0.90f);
 
         // Tooltip Title
         if (!m_hoveredTooltipTitle.empty()) {
-            window.DrawHUDText(tipX + 10.0f, tipY + 10.0f, m_hoveredTooltipTitle, 1.15f, 1.0f, 0.90f, 0.35f, 1.0f);
+            window.DrawHUDText(tipX + 12.0f, tipY + 10.0f, m_hoveredTooltipTitle, 1.0f, 1.0f, 0.88f, 0.35f, 1.0f);
         }
 
         // Tooltip Text (Supports multiline)
         if (!m_hoveredTooltipText.empty()) {
-            window.DrawHUDText(tipX + 10.0f, tipY + 30.0f, m_hoveredTooltipText, 0.95f, 0.85f, 0.90f, 0.95f, 0.95f);
+            float textY = m_hoveredTooltipTitle.empty() ? (tipY + 10.0f) : (tipY + 28.0f);
+            window.DrawHUDText(tipX + 12.0f, textY, m_hoveredTooltipText, 1.0f, 0.85f, 0.90f, 0.95f, 0.95f);
         }
     }
 

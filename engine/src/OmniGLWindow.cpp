@@ -194,11 +194,10 @@ void OmniGLWindow::Close() {
 }
 
 void OmniGLWindow::BeginFrame(float r, float g, float b) {
+    m_rasterizer.Clear(r, g, b, 1.0f);
 #ifdef _WIN32
     glClearColor(r, g, b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-#else
-    (void)r; (void)g; (void)b;
 #endif
 }
 
@@ -234,6 +233,7 @@ void OmniGLWindow::ApplyCamera3D() {
 }
 
 void OmniGLWindow::DrawMesh3D(const std::vector<RenderVertex3D>& mesh, float posX, float posY, float posZ, float rotDeg, float scale) {
+    m_rasterizer.DrawMesh3D(mesh, posX, posY, posZ, rotDeg, scale, m_curDistance, m_curPitch, m_curYaw);
 #ifdef _WIN32
     glPushMatrix();
     glTranslatef(posX, posY, posZ);
@@ -249,8 +249,26 @@ void OmniGLWindow::DrawMesh3D(const std::vector<RenderVertex3D>& mesh, float pos
     glEnd();
 
     glPopMatrix();
-#else
-    (void)mesh; (void)posX; (void)posY; (void)posZ; (void)rotDeg; (void)scale;
+#endif
+}
+
+void OmniGLWindow::DrawHeroPaperclip3D(const std::vector<RenderVertex3D>& mesh, float rotDeg, float scale) {
+    m_rasterizer.DrawHeroPaperclip3D(mesh, rotDeg, scale);
+#ifdef _WIN32
+    glPushMatrix();
+    glTranslatef(-1.8f, 0.8f, 0.0f);
+    glRotatef(rotDeg, 0.0f, 1.0f, 0.0f);
+    glScalef(scale, scale, scale);
+
+    glBegin(GL_TRIANGLES);
+    for (const auto& v : mesh) {
+        glNormal3f(v.nx, v.ny, v.nz);
+        glColor4f(v.r, v.g, v.b, v.a);
+        glVertex3f(v.x, v.y, v.z);
+    }
+    glEnd();
+
+    glPopMatrix();
 #endif
 }
 
@@ -283,6 +301,7 @@ void OmniGLWindow::BeginHUD2D() {
 }
 
 void OmniGLWindow::DrawHUDQuad(float x, float y, float w, float h, float r, float g, float b, float a) {
+    m_rasterizer.DrawHUDQuad(x, y, w, h, r, g, b, a);
 #ifdef _WIN32
     glColor4f(r, g, b, a);
     glBegin(GL_QUADS);
@@ -291,12 +310,11 @@ void OmniGLWindow::DrawHUDQuad(float x, float y, float w, float h, float r, floa
     glVertex2f(x + w, y + h);
     glVertex2f(x, y + h);
     glEnd();
-#else
-    (void)x; (void)y; (void)w; (void)h; (void)r; (void)g; (void)b; (void)a;
 #endif
 }
 
 void OmniGLWindow::DrawHUDBorder(float x, float y, float w, float h, float thickness, float r, float g, float b, float a) {
+    m_rasterizer.DrawHUDBorder(x, y, w, h, thickness, r, g, b, a);
 #ifdef _WIN32
     // Top
     DrawHUDQuad(x, y, w, thickness, r, g, b, a);
@@ -306,25 +324,21 @@ void OmniGLWindow::DrawHUDBorder(float x, float y, float w, float h, float thick
     DrawHUDQuad(x, y + thickness, thickness, h - 2.0f * thickness, r, g, b, a);
     // Right
     DrawHUDQuad(x + w - thickness, y + thickness, thickness, h - 2.0f * thickness, r, g, b, a);
-#else
-    (void)x; (void)y; (void)w; (void)h; (void)thickness; (void)r; (void)g; (void)b; (void)a;
 #endif
 }
 
 void OmniGLWindow::DrawHUDCard(float x, float y, float w, float h, float bgR, float bgG, float bgB, float bgA, float borderR, float borderG, float borderB, float borderA) {
+    m_rasterizer.DrawHUDCard(x, y, w, h, bgR, bgG, bgB, bgA, borderR, borderG, borderB, borderA);
 #ifdef _WIN32
     DrawHUDQuad(x, y, w, h, bgR, bgG, bgB, bgA);
     DrawHUDBorder(x, y, w, h, 1.0f, borderR, borderG, borderB, borderA);
-#else
-    (void)x; (void)y; (void)w; (void)h; (void)bgR; (void)bgG; (void)bgB; (void)bgA; (void)borderR; (void)borderG; (void)borderB; (void)borderA;
 #endif
 }
 
 void OmniGLWindow::DrawHUDText(float x, float y, const std::string& text, float scale, float r, float g, float b, float a, bool dropShadow) {
+    m_rasterizer.DrawHUDText(x, y, text, scale, r, g, b, a, dropShadow);
 #ifdef _WIN32
     OmniFont::DrawString2D(x, y, text, scale, r, g, b, a, dropShadow);
-#else
-    (void)x; (void)y; (void)text; (void)scale; (void)r; (void)g; (void)b; (void)a; (void)dropShadow;
 #endif
 }
 
@@ -349,6 +363,10 @@ void OmniGLWindow::EndHUD2D() {
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 #endif
+}
+
+bool OmniGLWindow::SaveScreenshot(const std::string& filepath) const {
+    return m_rasterizer.SavePNG(filepath);
 }
 
 } // namespace OmniEngine

@@ -7,6 +7,7 @@
 #include "OmniMath.h"
 #include "OmniFont.h"
 #include "OmniParticles.h"
+#include "OmniSoftwareRasterizer.h"
 
 namespace OmniEngine {
 
@@ -46,6 +47,7 @@ public:
     void UpdateCameraInterpolation(float targetDistance, float targetPitchDeg, float targetYawDeg, float dt);
     void ApplyCamera3D();
     void DrawMesh3D(const std::vector<RenderVertex3D>& mesh, float posX, float posY, float posZ, float rotDeg, float scale = 1.0f);
+    void DrawHeroPaperclip3D(const std::vector<RenderVertex3D>& mesh, float rotDeg, float scale = 1.0f);
     void DrawPaperclipMound(float pileClipsCount);
     
     // 2D Graphical HUD Overlay
@@ -57,6 +59,10 @@ public:
     void DrawHUDTextCentered(float centerX, float y, const std::string& text, float scale = 1.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f, bool dropShadow = true);
     void DrawHUDTextRight(float rightX, float y, const std::string& text, float scale = 1.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f, bool dropShadow = true);
     void EndHUD2D();
+
+    bool SaveScreenshot(const std::string& filepath) const;
+    OmniSoftwareRasterizer& GetRasterizer() { return m_rasterizer; }
+    const OmniSoftwareRasterizer& GetRasterizer() const { return m_rasterizer; }
 
     float GetCameraDistance() const { return m_curDistance; }
     void SetCameraDistance(float d) { m_curDistance = d; m_targetDistance = d; }
@@ -76,6 +82,8 @@ private:
     float m_targetPitch = 25.0f;
     float m_curYaw = -20.0f;
     float m_targetYaw = -20.0f;
+
+    mutable OmniSoftwareRasterizer m_rasterizer;
 
 #ifdef _WIN32
     void* m_hwnd = nullptr;

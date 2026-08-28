@@ -53,6 +53,8 @@ public:
 #endif
     }
 
+    static const uint8_t* GetGlyphBitmap(char c);
+
 private:
 #ifdef _WIN32
     static void RenderGlyphString(float startX, float startY, const std::string& text, float scale,
@@ -95,8 +97,6 @@ private:
         }
         glEnd();
     }
-
-    static const uint8_t* GetGlyphBitmap(char c);
 #endif
 };
 
