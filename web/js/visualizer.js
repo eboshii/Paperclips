@@ -889,6 +889,10 @@ class CosmicVisualizer {
                 return (h ^ (h >>> 16)) >>> 0;
             };
 
+            const stepX = 6.0;
+            const stepY = 5.0;
+            const numCols = Math.floor((w - 6) / stepX);
+
             for (let c = 0; c < numCols; ++c) {
                 const fx = 3 + c * stepX;
                 const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((fx / w) * this.numColumns)));
