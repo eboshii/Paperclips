@@ -14,6 +14,12 @@
 #include <windows.h>
 #include <GL/gl.h>
 
+#if defined(_MSC_VER)
+#pragma comment(lib, "opengl32.lib")
+#pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "user32.lib")
+#endif
+
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     OmniEngine::OmniGLWindow* pWin = (OmniEngine::OmniGLWindow*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
