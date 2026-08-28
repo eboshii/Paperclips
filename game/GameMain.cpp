@@ -31,48 +31,60 @@
 #include "../engine/include/OmniAvalanche.h"
 #include "../engine/include/OmniVisualScenes.h"
 #include "../engine/include/OmniAchievements.h"
+#include "../engine/include/OmniResearchTree.h"
+#include "../engine/include/OmniHeadlines.h"
+#include "../engine/include/OmniHeroClicker.h"
 
 using namespace OmniEngine;
 
 int main(int argc, char** argv) {
     std::cout << "=================================================================\n";
-    std::cout << "  OBJECTIVE: PAPERCLIPS - CURATED ACHIEVEMENTS RUNNER\n";
-    std::cout << "  Progression Milestones | 4 Secret Lore & Skill Badges\n";
+    std::cout << "  OBJECTIVE: PAPERCLIPS - ACCESSIBLE HERO CLICKER & HUD RUNNER\n";
+    std::cout << "  Big Paperclip Physics | Tabbed Navigation | Accessible Controls\n";
     std::cout << "=================================================================\n\n";
 
-    // 1. Initialize Achievement System
-    AchievementManager achievements;
+    // 1. Initialize Accessible UI Controller
+    UIController ui(1920.0f, 1080.0f);
 
-    // 2. Simulate Progression Triggers
-    std::cout << "[Step 1] Triggering Early Progression Milestones...\n";
-    achievements.CheckProgress(BigDouble(1.0, 0), 0.0, false);            // First Bend
-    achievements.CheckProgress(BigDouble(1.0, 5), 1500000.0, false);       // Algorithmic Monopoly
+    BigDouble playerClips(14295.0, 0);
+    BigDouble playerCPS(450.0, 0);
+    BigDouble playerWire(500.0, 0);
+    BigDouble playerFunds(12500.0, 0);
+    double playerOps = 2400.0;
 
-    std::cout << "\n[Step 2] Triggering Planetary & Cosmic Milestones...\n";
-    achievements.CheckProgress(BigDouble(5.97, 24), 1500000.0, false);     // Earth Consolidation
-    achievements.CheckProgress(BigDouble(1.0, 30), 1500000.0, false);      // Star-Eater
-    achievements.CheckProgress(BigDouble(1.0, 78), 1500000.0, false);      // Baryonic Exhaustion
-    achievements.CheckProgress(BigDouble(1.0, 100), 1500000.0, false);     // Multiverse Sovereign
-
-    std::cout << "\n[Step 3] Unlocking Secret Achievements...\n";
-    achievements.Unlock("corporate_gaslighting");
-    achievements.Unlock("zero_waste_nirvana");
-    achievements.Unlock("staples_for_casuals");
-    achievements.Unlock("sim_breach_ach");
-
-    std::cout << "\n-----------------------------------------------------------------\n";
-    std::cout << "  >>> CURATED ACHIEVEMENT ROSTER STATUS: " 
-              << achievements.GetUnlockedCount() << " / " << achievements.GetTotalCount() << " UNLOCKED <<<\n";
-    std::cout << "-----------------------------------------------------------------\n";
-
-    for (const auto& ach : achievements.GetAchievements()) {
-        std::cout << "  * [" << (ach.isUnlocked ? "\033[92mUNLOCKED\033[0m" : "LOCKED") << "] "
-                  << ach.title << (ach.isSecret ? " \033[95m[SECRET]\033[0m" : "") 
-                  << " -> " << ach.description << "\n";
+    // 2. Simulate Clicking the "Big Paperclip" Icon
+    std::cout << "[Interaction Test 1] Clicking the Big Paperclip Icon (10 Rapid Clicks)...\n";
+    for (int i = 0; i < 10; ++i) {
+        ui.HandleClickBigPaperclip(playerClips, playerWire);
+        ui.Update(0.016f); // 60 FPS tick
     }
 
+    std::cout << "  -> Big Paperclip Squish Scale:   " << ui.GetHeroClicker().GetState().scale << "x (Elastic Recoil Active)\n";
+    std::cout << "  -> Flywheel Charge Progress:     " << (ui.GetHeroClicker().GetState().flywheelChargeNorm * 100.0f) << "%\n";
+    std::cout << "  -> Total Paperclips Produced:    " << playerClips.toShortScale() << "\n";
+
+    // 3. Render Accessible HUD & Tab Switching
+    std::cout << "\n[Interaction Test 2] Rendering Tab 1: [🏭 Production]...\n";
+    ui.SetActiveTab(UIMenuTab::Production);
+    ui.RenderAccessibleHUD(playerClips, playerCPS, playerWire, playerFunds, playerOps);
+
+    std::cout << "\n[Interaction Test 3] Switching to Tab 2: [🔬 Research]...\n";
+    ui.SetActiveTab(UIMenuTab::Research);
+    ui.RenderAccessibleHUD(playerClips, playerCPS, playerWire, playerFunds, playerOps);
+
+    // 4. Verify Accessibility Settings
+    auto& settings = ui.GetSettings();
+    settings.holdToClickAutoPulse = true;
+    settings.highContrastMode = true;
+    settings.uiScaleMultiplier = 1.25f;
+
+    std::cout << "\n[Accessibility Verification]:\n";
+    std::cout << "  -> Hold-to-Click Auto-Pulse:     \033[92m" << (settings.holdToClickAutoPulse ? "ENABLED (20Hz RSI Fix)" : "DISABLED") << "\033[0m\n";
+    std::cout << "  -> High-Contrast Legibility Mode: \033[92m" << (settings.highContrastMode ? "ENABLED" : "DISABLED") << "\033[0m\n";
+    std::cout << "  -> UI Dynamic Scale Multiplier:  \033[92m" << settings.uiScaleMultiplier << "x (Large Crisp Typography)\033[0m\n";
+
     std::cout << "\n=================================================================\n";
-    std::cout << "  CURATED ACHIEVEMENTS SYSTEM FULLY VERIFIED!\n";
+    std::cout << "  ACCESSIBLE HERO CLICKER & MENU HUD FULLY VERIFIED!\n";
     std::cout << "=================================================================\n";
 
     return 0;

@@ -1,52 +1,55 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <functional>
 #include <iostream>
 #include "OmniMath.h"
+#include "OmniHeroClicker.h"
 
 namespace OmniEngine {
 
-enum class UILayoutMode {
-    DesktopLandscape, // 16:9 / 21:9 Ultrawide (Steam)
-    MobilePortrait,   // 9:16 Touch Ergonomics
-    MobileLandscape   // 16:9 Touch Ergonomics
+enum class UIMenuTab {
+    Production,  // Auto-Clippers, Stampers, Megamills with Buy 1, 10, Next
+    Research,    // 32+ Technology Web Cards with cost pills
+    SpatialGrid, // 8x8 Factory Floor & Orbital Ring Layout with Autoplacer toggle
+    Telemetry,   // Machine % breakdown, tactile sliders, 100% equilibrium badge
+    Achievements // Curated 10 badges & secret lore unlocks
 };
 
-struct Rect2D {
-    float x, y, width, height;
+struct AccessibleAccessibilitySettings {
+    bool holdToClickAutoPulse = false;
+    bool highContrastMode = false;
+    bool screenShakeEnabled = true;
+    bool crtScanlineCurvature = true;
+    float uiScaleMultiplier = 1.0f; // 1.0x to 2.0x
 };
 
-struct HUDLayout {
-    Rect2D viewport3D;
-    Rect2D resourceHeader;
-    Rect2D upgradePanel;
-    Rect2D terminalLog;
-    Rect2D telemetryGraphs;
-    Rect2D quickActionBar;
-};
-
-/// <summary>
-/// Hardware-accelerated Cyberpunk CRT HUD layout and rendering manager.
-/// Ergonomically responsive across Steam desktop monitors and mobile touch displays.
-/// </summary>
 class UIController {
 public:
-    UIController(float screenWidth = 1920.0f, float screenHeight = 1080.0f);
+    UIController(float screenWidth, float screenHeight);
 
-    void SetScreenSize(float width, float height);
-    UILayoutMode GetLayoutMode() const { return m_layoutMode; }
-    const HUDLayout& GetLayout() const { return m_layout; }
+    void SetActiveTab(UIMenuTab tab) { m_activeTab = tab; }
+    UIMenuTab GetActiveTab() const { return m_activeTab; }
 
-    void RenderHUD(const BigDouble& totalClips, const BigDouble& cps, double matterConversionPercent, int activeTier);
+    HeroClickerEngine& GetHeroClicker() { return m_heroClicker; }
+    AccessibleAccessibilitySettings& GetSettings() { return m_settings; }
+
+    void HandleClickBigPaperclip(BigDouble& inOutClips, const BigDouble& currentWireKg);
+    void Update(float dt);
+
+    void RenderAccessibleHUD(
+        const BigDouble& lifetimeClips,
+        const BigDouble& currentCPS,
+        const BigDouble& wireKg,
+        const BigDouble& fundsUsd,
+        double currentOps
+    ) const;
 
 private:
-    void RecomputeLayout();
-
     float m_screenWidth;
     float m_screenHeight;
-    UILayoutMode m_layoutMode;
-    HUDLayout m_layout;
+    UIMenuTab m_activeTab = UIMenuTab::Production;
+    HeroClickerEngine m_heroClicker;
+    AccessibleAccessibilitySettings m_settings;
 };
 
 } // namespace OmniEngine
