@@ -1033,11 +1033,11 @@ body {
     100% { transform: translateY(-50px) scale(1.15); opacity: 0; }
 }
 
-/* Toast Container */
+/* Toast Container (Achievement Notifications - Anchored Top-Right to Never Overlap Bottom Dialogue) */
 #toast-container {
     position: fixed;
-    bottom: 20px;
-    right: 380px; /* Just to the left of the right pedestal */
+    top: 68px;
+    right: 380px; /* Top right corner of center arena */
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -1048,20 +1048,20 @@ body {
 .toast {
     background: #1c0e3a;
     border: 2px solid var(--neon-yellow);
-    border-radius: 10px;
-    padding: 10px 14px;
+    border-radius: 12px;
+    padding: 10px 16px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    gap: 12px;
+    box-shadow: 0 4px 0 var(--border-ink), 0 8px 20px rgba(0, 0, 0, 0.6);
     color: #ffffff;
     font-family: var(--font-cartoon);
     font-weight: 700;
-    font-size: 14px;
+    font-size: 15px;
     animation: toastSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 @keyframes toastSlideIn {
-    0% { transform: translateX(50px); opacity: 0; }
+    0% { transform: translateX(60px); opacity: 0; }
     100% { transform: translateX(0); opacity: 1; }
 }

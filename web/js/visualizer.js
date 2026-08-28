@@ -1,11 +1,12 @@
 /**
  * visualizer.js - Vibrant Cartoon Pixel Art Cosmic Visualizer
  * Features:
- * - Thick, sticky, viscous fluid & steep granular paperclip mound simulation
+ * - Viscous fluid & steep granular paperclip mound simulation synchronized with inventory
  * - Central drop clustering at start, smoothly expanding across screen at higher CPS
+ * - Collision strictly matches visible fluid surface and inventory floor (no imaginary floating surfaces)
  * - Fluid suction & drain effect out the bottom of the screen on purchases
  * - Tiny falling paperclips with tumbling, bouncing, and slope-sliding physics
- * - Jutting paperclip texture poking out along the dynamic fluid terrain
+ * - Volumetric multi-layer paperclip texture inside the fluid
  * - Internal pixelation buffer pass for crisp retro pixel art
  * - 5 Cosmic scale tiers (Factory, Earth, Dyson, Galaxy, Multiverse)
  */
@@ -165,83 +166,27 @@ class CosmicVisualizer {
                 life: 8.0
             });
         }
-
-        // Only add direct volume if mass production (> 15 clips produced per frame)
-        if (count > 15) {
-            const feedPoints = Math.min(count, 8);
-            for (let k = 0; k < feedPoints; ++k) {
-                const targetX = centerX + (Math.random() - 0.5) * (currentSpread * 2);
-                const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((targetX / pw) * this.numColumns)));
-                this.pileHeights[colIdx] = Math.min(pw * 0.55, this.pileHeights[colIdx] + 0.35);
-                this.waveVelocities[colIdx] += 0.15;
-            }
-        }
     }
 
     /**
-     * Drains paperclip fluid out the bottom of the screen upon purchases.
+     * Triggers fluid dynamic draining upon spending paperclips.
+     * Fluid slumps and drains away smoothly over time.
      * @param {number} ratio - Fractional cost of purchase (0.1 to 1.0)
      */
     drainPaperclips(ratio = 0.5) {
-        const pw = this.pixelCanvas.width || 200;
-        const ph = this.pixelCanvas.height || 150;
-        const colors = ['#00f0ff', '#ffe600', '#ffffff', '#ff2a85', '#7fe0ff'];
         const clampedRatio = Math.max(0.2, Math.min(1.0, ratio));
 
-        // 1. Lower mound heights across columns with suction dip
+        // Induce downward suction whirlpool waves in the fluid (strongest at center)
         for (let i = 0; i < this.numColumns; ++i) {
-            const colRatio = 1.0 + Math.sin((i / (this.numColumns - 1)) * Math.PI) * 0.5; // Stronger in middle
-            const drainH = Math.max(0.6, this.pileHeights[i] * clampedRatio * 0.65 * colRatio);
-            this.pileHeights[i] = Math.max(0, this.pileHeights[i] - drainH);
-            this.waveVelocities[i] -= (1.2 + Math.random() * 1.8); // Downward suction impulse
+            const centerFactor = 1.0 - Math.abs((i / (this.numColumns - 1)) - 0.5) * 1.5;
+            const suctionStrength = Math.max(0.2, centerFactor) * clampedRatio * 2.2;
+            this.waveVelocities[i] -= (0.8 + suctionStrength + Math.random() * 0.8);
         }
 
-        // 2. Remove settled clips proportionally
-        const removeCount = Math.floor(this.settledClips.length * clampedRatio * 0.75);
+        // Settled clips slowly release into the fluid flow
+        const removeCount = Math.floor(this.settledClips.length * clampedRatio * 0.4);
         if (removeCount > 0) {
             this.settledClips.splice(0, removeCount);
-        }
-
-        // 3. Spawn rapidly draining / swirling paperclips sucked downwards out the bottom of the screen!
-        const spawnCount = Math.floor(8 + clampedRatio * 18);
-        for (let k = 0; k < spawnCount; ++k) {
-            if (this.drainingClips.length >= this.maxDrainingClips) {
-                this.drainingClips.shift();
-            }
-
-            const x = Math.random() * (pw - 16) + 8;
-            const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((x / pw) * this.numColumns)));
-            const currentMound = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
-            const startY = ph - currentMound + Math.random() * Math.max(4, currentMound);
-
-            // Whirlpool suction towards bottom center/exit
-            const toCenter = (pw / 2 - x) * 0.04;
-
-            this.drainingClips.push({
-                x: x,
-                y: Math.min(ph - 1, startY),
-                vx: toCenter + (Math.random() - 0.5) * 1.5,
-                vy: 2.2 + Math.random() * 3.5, // Rapid downward suction velocity
-                rot: Math.random() * Math.PI * 2,
-                vRot: (Math.random() - 0.5) * 0.6,
-                size: 5 + Math.random() * 2,
-                color: colors[Math.floor(Math.random() * colors.length)],
-                life: 1.5
-            });
-        }
-
-        // 4. Downward suction sparks
-        for (let s = 0; s < 10; ++s) {
-            this.sparks.push({
-                x: Math.random() * pw,
-                y: ph - 2,
-                vx: (Math.random() - 0.5) * 2.0,
-                vy: 1.5 + Math.random() * 3.0,
-                life: 0.7,
-                decay: 0.04 + Math.random() * 0.04,
-                size: 2,
-                color: Math.random() > 0.5 ? '#00f0ff' : '#ffe600'
-            });
         }
     }
 
@@ -289,7 +234,54 @@ class CosmicVisualizer {
 
         const pw = this.pixelCanvas.width || 200;
         const ph = this.pixelCanvas.height || 150;
-        const maxAllowedPile = ph * 0.55; // Tall peak capacity (up to 55% of screen)
+        const floorY = ph - 2;
+
+        // Inventory-based maximum mound height capacity:
+        // 0 clips -> 0px (strict real floor)
+        // 1 to 25 clips -> up to 3 - 6px peak
+        // 100 clips -> up to 14px peak
+        // 1,000 clips -> up to 26px peak
+        // 10,000+ clips -> up to ph * 0.55
+        let inventoryCapacity = 0.0;
+        if (state && state.clips) {
+            const c = state.clips.toDouble();
+            if (c > 0) {
+                inventoryCapacity = Math.min(ph * 0.55, Math.log10(Math.max(1, c)) * 8.5 + Math.min(16.0, c * 0.3));
+            }
+        }
+
+        // Smooth Viscous Fluid Draining: columns slowly drain towards inventory capacity
+        for (let i = 0; i < this.numColumns; ++i) {
+            const excess = this.pileHeights[i] - inventoryCapacity;
+            if (excess > 0.01) {
+                // Natural viscous fluid draining speed (~15-25% height decay per second)
+                const drainRate = Math.min(excess, (1.2 + excess * 0.5) * dt);
+                this.pileHeights[i] -= drainRate;
+
+                // Suction tug on wave velocity towards drain
+                this.waveVelocities[i] -= drainRate * 0.35;
+
+                // Spawn draining paperclips pulled into bottom drains
+                if (Math.random() < 0.12 && this.drainingClips.length < this.maxDrainingClips) {
+                    const x = (i / (this.numColumns - 1)) * pw;
+                    const moundH = Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
+                    const startY = floorY - moundH;
+                    const toCenter = ((pw / 2) - x) * 0.04;
+
+                    this.drainingClips.push({
+                        x: x + (Math.random() - 0.5) * 6,
+                        y: startY + Math.random() * 3,
+                        vx: toCenter + (Math.random() - 0.5) * 1.2,
+                        vy: 1.8 + Math.random() * 2.5,
+                        rot: Math.random() * Math.PI * 2,
+                        vRot: (Math.random() - 0.5) * 0.5,
+                        size: 4.5 + Math.random() * 2,
+                        color: Math.random() > 0.5 ? '#00f0ff' : '#ffe600',
+                        life: 1.4
+                    });
+                }
+            }
+        }
 
         // 1. UPDATE FALLING PAPERCLIPS & IMPACT ON PILES
         for (let i = this.fallingClips.length - 1; i >= 0; --i) {
@@ -306,15 +298,17 @@ class CosmicVisualizer {
                 else if (p.x > pw - 4) { p.x = pw - 4; p.vx = -Math.abs(p.vx) * 0.7; }
 
                 const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((p.x / pw) * this.numColumns)));
-                const currentMoundHeight = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
-                const surfaceY = ph - currentMoundHeight;
+                const currentMoundHeight = Math.max(0, Math.min(inventoryCapacity, this.pileHeights[colIdx] + this.waveOffsets[colIdx]));
+                const surfaceY = floorY - currentMoundHeight;
 
                 // Collision with floor or fluid mound surface!
                 if (p.y >= surfaceY) {
                     p.y = surfaceY;
 
-                    // Deposit paperclip mass into the mound at this specific drop point!
-                    this.pileHeights[colIdx] = Math.min(maxAllowedPile, this.pileHeights[colIdx] + 0.45);
+                    // Deposit paperclip mass into the mound at this specific drop point if inventory allows
+                    if (currentMoundHeight < inventoryCapacity) {
+                        this.pileHeights[colIdx] = Math.min(inventoryCapacity, this.pileHeights[colIdx] + 0.45);
+                    }
                     this.waveVelocities[colIdx] += Math.min(1.5, p.vy * 0.2);
 
                     // Calculate local slope to slide down the mound!
@@ -414,8 +408,8 @@ class CosmicVisualizer {
                 continue;
             }
             if (s.colIdx !== undefined) {
-                const moundH = Math.max(0, this.pileHeights[s.colIdx] + this.waveOffsets[s.colIdx]);
-                s.y = ph - moundH;
+                const moundH = Math.max(0, Math.min(inventoryCapacity, this.pileHeights[s.colIdx] + this.waveOffsets[s.colIdx]));
+                s.y = floorY - moundH;
             }
         }
 
@@ -777,6 +771,8 @@ class CosmicVisualizer {
     }
 
     renderFlowingPaperclipSea(ctx, w, h) {
+        const floorY = h - 2;
+
         // Check if any significant pile exists (> 0.5px)
         let maxPile = 0;
         for (let i = 0; i < this.numColumns; ++i) {
@@ -789,7 +785,7 @@ class CosmicVisualizer {
 
         // If a fluid mound has formed, draw thick viscous mass
         if (maxPile > 0.5) {
-            const fluidGrad = ctx.createLinearGradient(0, h - maxPile, 0, h);
+            const fluidGrad = ctx.createLinearGradient(0, floorY - maxPile, 0, h);
             fluidGrad.addColorStop(0, '#26385c');
             fluidGrad.addColorStop(0.3, '#1a2742');
             fluidGrad.addColorStop(1, '#0c1221');
@@ -801,20 +797,20 @@ class CosmicVisualizer {
             for (let i = 0; i < this.numColumns; ++i) {
                 const moundH = Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
                 const x = i * colWidth;
-                const y = h - moundH;
+                const y = floorY - moundH;
                 if (i === 0) {
                     ctx.lineTo(x, y);
                 } else {
                     const prevMound = Math.max(0, this.pileHeights[i - 1] + this.waveOffsets[i - 1]);
                     const prevX = (i - 1) * colWidth;
-                    const prevY = h - prevMound;
+                    const prevY = floorY - prevMound;
                     const midX = (prevX + x) / 2;
                     const midY = (prevY + y) / 2;
                     ctx.quadraticCurveTo(prevX, prevY, midX, midY);
                 }
             }
             const lastMound = Math.max(0, this.pileHeights[this.numColumns - 1] + this.waveOffsets[this.numColumns - 1]);
-            ctx.lineTo(w, h - lastMound);
+            ctx.lineTo(w, floorY - lastMound);
             ctx.lineTo(w, h);
             ctx.closePath();
             ctx.fill();
@@ -826,41 +822,57 @@ class CosmicVisualizer {
             for (let i = 0; i < this.numColumns; ++i) {
                 const moundH = Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
                 const x = i * colWidth;
-                const y = h - moundH;
+                const y = floorY - moundH;
                 if (i === 0) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
             }
             ctx.stroke();
 
-            // Rich, dense paperclip texture throughout the entire depth of the fluid
-            const stepX = 9;
-            const stepY = 8;
-            const colors = ['#00f0ff', '#ffe600', '#ffffff', '#7fe0ff', '#ff66aa'];
+            // Dense, overlapping, irregularly spaced paperclip texture field
+            const colors = ['#00f0ff', '#ffe600', '#ffffff', '#7fe0ff', '#ff66aa', '#38bdf8'];
+            const stepX = 6.0;
+            const stepY = 5.0;
 
-            for (let fx = 4; fx < w - 3; fx += stepX) {
+            for (let fx = 3; fx < w - 2; fx += stepX) {
                 const colIdx = Math.floor((fx / w) * this.numColumns);
                 const moundH = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
-                if (moundH > 1.5) {
-                    const topY = h - moundH;
+                if (moundH > 1.2) {
+                    const topY = floorY - moundH;
 
-                    for (let fy = topY + 3; fy < h; fy += stepY) {
-                        const seed = (fx * 47 + fy * 23);
-                        const sway = Math.sin(time * 1.5 + (seed % 10)) * 1.0;
-                        const rot = ((seed % 628) / 100) + Math.sin(time + seed) * 0.15;
-                        const size = 3.5 + ((seed % 30) / 15);
+                    for (let fy = topY + 2.5; fy < floorY; fy += stepY) {
+                        const seed = Math.floor((fx * 73 + fy * 37) % 10000);
 
-                        // Colors and opacity: brighter near surface, rich depth underneath
-                        const depthRatio = (fy - topY) / Math.max(1, moundH);
+                        // Organic irregular jitter on X and Y so clips are tangled and not on a grid
+                        const jitterX = (((seed * 19) % 100) / 100 - 0.5) * 6.5;
+                        const jitterY = (((seed * 31) % 100) / 100 - 0.5) * 4.5;
+                        const sway = Math.sin(time * 1.8 + (seed % 12)) * 1.2;
+
+                        const px = fx + jitterX + sway;
+                        const py = fy + jitterY;
+
+                        // Full 360° irregular rotation angles for tangled look
+                        const rot = (((seed * 137) % 628) / 100) + Math.sin(time * 0.9 + seed) * 0.2;
+                        const size = 3.6 + (((seed * 17) % 100) / 35.0); // 3.6 to 6.4 px
+
+                        // Depth coloring & opacity for 3D interlocking illusion
+                        const depthRatio = (py - topY) / Math.max(1, moundH);
                         let color;
-                        if (depthRatio < 0.25) {
+                        if (depthRatio < 0.22) {
                             color = colors[seed % colors.length];
-                        } else if (depthRatio < 0.65) {
-                            color = (seed % 2 === 0) ? 'rgba(0, 240, 255, 0.65)' : 'rgba(255, 230, 0, 0.6)';
+                        } else if (depthRatio < 0.60) {
+                            color = (seed % 2 === 0) ? 'rgba(0, 240, 255, 0.70)' : 'rgba(255, 230, 0, 0.65)';
                         } else {
-                            color = (seed % 3 === 0) ? 'rgba(120, 200, 255, 0.45)' : 'rgba(0, 240, 255, 0.35)';
+                            color = (seed % 3 === 0) ? 'rgba(120, 200, 255, 0.50)' : 'rgba(0, 240, 255, 0.38)';
                         }
 
-                        this.drawTinyPaperclip(ctx, fx + sway, fy, size, rot, color);
+                        this.drawTinyPaperclip(ctx, px, py, size, rot, color);
+
+                        // Tangled overlapping cluster clips at varied intersections
+                        if (seed % 4 === 0 && py + 3 < floorY) {
+                            const clusterRot = rot + 1.2 + (((seed * 7) % 100) / 50);
+                            const clusterColor = colors[(seed + 2) % colors.length];
+                            this.drawTinyPaperclip(ctx, px + 2.5, py + 1.5, size * 0.9, clusterRot, clusterColor);
+                        }
                     }
                 }
             }
@@ -870,7 +882,7 @@ class CosmicVisualizer {
                 const moundH = Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
                 if (moundH > 2.0) {
                     const x = i * colWidth;
-                    const y = h - moundH;
+                    const y = floorY - moundH;
                     const leftH = Math.max(0, this.pileHeights[i - 1] + this.waveOffsets[i - 1]);
                     const rightH = Math.max(0, this.pileHeights[i + 1] + this.waveOffsets[i + 1]);
                     const slopeAngle = Math.atan2(leftH - rightH, colWidth * 2);
@@ -885,7 +897,7 @@ class CosmicVisualizer {
 
         // Render Settled Resting Paperclips on floor / mounds
         this.settledClips.forEach(s => {
-            this.drawTinyPaperclip(ctx, s.x, s.y - 1, s.size, s.rot + (s.slopeAngle || 0), s.color);
+            this.drawTinyPaperclip(ctx, s.x, s.y, s.size, s.rot + (s.slopeAngle || 0), s.color);
         });
     }
 
