@@ -1,11 +1,10 @@
 /**
  * visualizer.js - Vibrant Cartoon Pixel Art Cosmic Visualizer
- * Renders retro pixel-art visuals with an internal pixelation buffer pass:
- * 1. Factory Floor (Bouncy conveyors, stampers, laser arcs, cartoon sparks)
- * 2. Planetary Earth (Pixel globe, cyan fissures, orbital railgun ring)
- * 3. Solar Dyson Swarm (Pixel sun, gold collector rings, plasma siphons)
- * 4. Galactic Penrose Loom (Black hole, purple accretion disk, relativistic jets)
- * 5. 11D Multiverse Foam (Rotating 4D hyper-cubes, candy universe bubbles)
+ * Features:
+ * - Tiny falling paperclips with tumbling physics
+ * - Dynamic fluid paperclip ocean with wave physics and jutting paperclip surface texture
+ * - Internal pixelation buffer pass for crisp retro pixel art
+ * - 5 Cosmic scale tiers (Factory, Earth, Dyson, Galaxy, Multiverse)
  */
 
 class CosmicVisualizer {
@@ -34,11 +33,35 @@ class CosmicVisualizer {
         this.heroRecoil = 1.0;
         this.heroRotation = 0;
 
+        // Falling Paperclips Simulation
+        this.fallingClips = [];
+        this.settledClips = [];
+        this.maxFallingClips = 100;
+        this.maxSettledClips = 60;
+
+        // Fluid Paperclip Sea Simulation
+        this.fluidColumns = [];
+        this.numColumns = 48;
+        this.fluidBaseRatio = 0.92; // Default bottom rest line
+        this.fluidTargetRatio = 0.92;
+        this.initFluidColumns();
+
         // Background Pixel Stars
         this.stars = [];
-        this.initStars(60);
+        this.initStars(50);
 
         this.initEvents();
+    }
+
+    initFluidColumns() {
+        this.fluidColumns = [];
+        for (let i = 0; i < this.numColumns; ++i) {
+            this.fluidColumns.push({
+                height: 100,
+                targetHeight: 100,
+                velocity: 0
+            });
+        }
     }
 
     initStars(count) {
@@ -46,7 +69,7 @@ class CosmicVisualizer {
         for (let i = 0; i < count; ++i) {
             this.stars.push({
                 x: Math.random(),
-                y: Math.random(),
+                y: Math.random() * 0.8, // keep in upper space
                 size: Math.random() > 0.8 ? 2 : 1,
                 color: Math.random() > 0.5 ? '#00f0ff' : (Math.random() > 0.5 ? '#ffe600' : '#ff2a85'),
                 twinkleSpeed: 1 + Math.random() * 3,
@@ -83,7 +106,51 @@ class CosmicVisualizer {
         this.heroRecoil = 0.7;
         this.heroRotation += 0.35;
         if (this.pixelCanvas.width > 0) {
-            this.emitClickSparks(this.pixelCanvas.width / 2, this.pixelCanvas.height / 2, 16);
+            this.emitClickSparks(this.pixelCanvas.width / 2, this.pixelCanvas.height / 2, 12);
+        }
+        this.spawnPaperclips(1);
+    }
+
+    spawnPaperclips(count = 1) {
+        const pw = this.pixelCanvas.width || 200;
+        const ph = this.pixelCanvas.height || 150;
+
+        const colors = ['#ffffff', '#00f0ff', '#d0e8ff', '#ffe600', '#7fe0ff'];
+        const spawnCount = Math.min(count, 20); // Cap per-frame particle spawn for performance
+
+        for (let i = 0; i < spawnCount; ++i) {
+            if (this.fallingClips.length >= this.maxFallingClips) {
+                this.fallingClips.shift();
+            }
+
+            const x = Math.random() * (pw - 20) + 10;
+            const vx = (Math.random() - 0.5) * 1.2;
+            const vy = 0.8 + Math.random() * 2.2;
+            const rot = Math.random() * Math.PI * 2;
+            const vRot = (Math.random() - 0.5) * 0.3;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+
+            this.fallingClips.push({
+                x: x,
+                y: -5 - Math.random() * 15,
+                vx: vx,
+                vy: vy,
+                rot: rot,
+                vRot: vRot,
+                color: color,
+                size: 5 + Math.random() * 3,
+                bounces: 0,
+                settled: false,
+                life: 6.0
+            });
+        }
+
+        // If high volume production, perturb fluid surface and add wave energy!
+        if (count > 5 && this.fluidColumns.length > 0) {
+            for (let k = 0; k < Math.min(count, 8); ++k) {
+                const colIdx = Math.floor(Math.random() * this.fluidColumns.length);
+                this.fluidColumns[colIdx].velocity += (Math.random() * 1.5 + 0.5);
+            }
         }
     }
 
@@ -129,7 +196,112 @@ class CosmicVisualizer {
         this.cosmicRotation += dt * 0.8;
         this.heroRecoil += (1.0 - this.heroRecoil) * (dt * 10.0);
 
-        // Update sparks
+        const pw = this.pixelCanvas.width || 200;
+        const ph = this.pixelCanvas.height || 150;
+
+        // Calculate Fluid Target Height based on production & clip volume (rises smoothly up to 30% screen height)
+        let fillRatio = 0.92;
+        if (state) {
+            const cpsVal = state.calculateTotalCPS ? state.calculateTotalCPS().toDouble() : 0;
+            const clipsVal = state.clips.toDouble();
+            const volumeBoost = Math.min(0.24, Math.log10(Math.max(1, clipsVal + cpsVal * 5)) * 0.035);
+            fillRatio = Math.max(0.68, 0.92 - volumeBoost);
+        }
+        this.fluidTargetRatio += (fillRatio - this.fluidTargetRatio) * (dt * 1.5);
+        const fluidBaseY = ph * this.fluidTargetRatio;
+
+        // 1. Update Fluid Wave Columns (Springs & Wave Diffusion)
+        const springK = 0.028;
+        const damping = 0.05;
+        const spread = 0.22;
+
+        for (let i = 0; i < this.fluidColumns.length; ++i) {
+            const col = this.fluidColumns[i];
+            col.targetHeight = fluidBaseY;
+            const diff = col.height - col.targetHeight;
+            col.velocity += (-springK * diff) - (damping * col.velocity);
+            col.height += col.velocity;
+        }
+
+        // Wave propagation passes
+        const leftDeltas = new Float32Array(this.fluidColumns.length);
+        const rightDeltas = new Float32Array(this.fluidColumns.length);
+        for (let p = 0; p < 4; ++p) {
+            for (let i = 0; i < this.fluidColumns.length; ++i) {
+                if (i > 0) {
+                    leftDeltas[i] = spread * (this.fluidColumns[i].height - this.fluidColumns[i - 1].height);
+                    this.fluidColumns[i - 1].velocity += leftDeltas[i];
+                }
+                if (i < this.fluidColumns.length - 1) {
+                    rightDeltas[i] = spread * (this.fluidColumns[i].height - this.fluidColumns[i + 1].height);
+                    this.fluidColumns[i + 1].velocity += rightDeltas[i];
+                }
+            }
+            for (let i = 0; i < this.fluidColumns.length; ++i) {
+                if (i > 0) this.fluidColumns[i - 1].height += leftDeltas[i];
+                if (i < this.fluidColumns.length - 1) this.fluidColumns[i + 1].height += rightDeltas[i];
+            }
+        }
+
+        // 2. Update Falling Paperclips Physics
+        for (let i = this.fallingClips.length - 1; i >= 0; --i) {
+            const p = this.fallingClips[i];
+
+            if (!p.settled) {
+                p.vy += 0.28; // Gravity
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rot += p.vRot;
+
+                // Find fluid surface at x position
+                const colIdx = Math.max(0, Math.min(this.fluidColumns.length - 1, Math.floor((p.x / pw) * this.fluidColumns.length)));
+                const surfaceY = this.fluidColumns[colIdx] ? this.fluidColumns[colIdx].height : fluidBaseY;
+
+                if (p.y >= surfaceY) {
+                    p.y = surfaceY;
+                    // Splash wave column
+                    if (this.fluidColumns[colIdx]) {
+                        this.fluidColumns[colIdx].velocity += p.vy * 0.35;
+                    }
+
+                    p.bounces++;
+                    if (p.bounces < 2 && Math.abs(p.vy) > 1.2) {
+                        p.vy = -p.vy * 0.3;
+                        p.vx *= 0.6;
+                        p.vRot *= 0.5;
+                    } else {
+                        p.settled = true;
+                        p.vy = 0;
+                        p.vx = 0;
+                        p.vRot = 0;
+                        p.settleColIdx = colIdx;
+                        // Move to settled clips
+                        if (this.settledClips.length >= this.maxSettledClips) {
+                            this.settledClips.shift();
+                        }
+                        this.settledClips.push(p);
+                        this.fallingClips.splice(i, 1);
+                        continue;
+                    }
+                }
+            }
+        }
+
+        // 3. Update Settled Clips on Fluid Surface
+        for (let i = this.settledClips.length - 1; i >= 0; --i) {
+            const s = this.settledClips[i];
+            s.life -= dt;
+            if (s.life <= 0) {
+                this.settledClips.splice(i, 1);
+                continue;
+            }
+            // Ride wave height
+            if (s.settleColIdx !== undefined && this.fluidColumns[s.settleColIdx]) {
+                s.y = this.fluidColumns[s.settleColIdx].height;
+            }
+        }
+
+        // 4. Update Sparks
         for (let i = this.sparks.length - 1; i >= 0; --i) {
             const p = this.sparks[i];
             p.x += p.vx;
@@ -156,6 +328,7 @@ class CosmicVisualizer {
         if (this.pixelCanvas.width !== pw || this.pixelCanvas.height !== ph) {
             this.pixelCanvas.width = pw;
             this.pixelCanvas.height = ph;
+            this.initFluidColumns();
         }
 
         const pctx = this.pixelCtx;
@@ -166,7 +339,7 @@ class CosmicVisualizer {
 
         // 2. Render Scale Scene
         pctx.save();
-        pctx.translate(pw / 2, ph / 2);
+        pctx.translate(pw / 2, ph / 2 - 10);
         pctx.scale(this.camZoom, this.camZoom);
 
         if (this.tier === 0) {
@@ -183,17 +356,22 @@ class CosmicVisualizer {
 
         pctx.restore();
 
-        // 3. Render Pixel Sparks
+        // 3. Render Fluid Paperclip Ocean & Falling Paperclips at the Bottom
+        this.renderPaperclipFluid(pctx, pw, ph);
+
+        // 4. Render Falling Paperclips
+        this.renderFallingPaperclips(pctx);
+
+        // 5. Render Pixel Sparks
         this.renderSparks(pctx);
 
-        // 4. Blit Pixel Canvas to Main Display Canvas with Crisp Nearest-Neighbor Scaling!
+        // 6. Blit Pixel Canvas to Main Display Canvas with Crisp Nearest-Neighbor Scaling!
         this.ctx.imageSmoothingEnabled = false;
         this.ctx.clearRect(0, 0, displayW, displayH);
         this.ctx.drawImage(this.pixelCanvas, 0, 0, pw, ph, 0, 0, displayW, displayH);
     }
 
     renderBackground(ctx, w, h) {
-        // Deep vibrant cartoon backdrop
         const grad = ctx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w * 0.7);
         if (this.tier === 0) {
             grad.addColorStop(0, '#1c1038');
@@ -248,7 +426,6 @@ class CosmicVisualizer {
                 ctx.lineWidth = 1;
                 ctx.strokeRect(px - tileSize / 2, py - tileSize / 2, tileSize, tileSize);
 
-                // Machine tiles if grid exists
                 if (grid) {
                     const tileType = grid.getTile(x + 3, y + 3);
                     if (tileType) {
@@ -342,7 +519,6 @@ class CosmicVisualizer {
         ctx.arc(0, 0, radius * 1.45, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Launching pixel packets
         for (let k = 0; k < 4; ++k) {
             const pAngle = (time * 3 + k * 1.5) % (Math.PI * 2);
             const px = Math.cos(pAngle) * (radius * 1.45);
@@ -357,7 +533,6 @@ class CosmicVisualizer {
         const time = this.cosmicRotation * 0.6;
         const sunR = 34;
 
-        // Bright Solar Corona
         ctx.fillStyle = '#ff3300';
         ctx.beginPath();
         ctx.arc(0, 0, sunR + 14, 0, Math.PI * 2);
@@ -373,7 +548,6 @@ class CosmicVisualizer {
         ctx.arc(0, 0, sunR, 0, Math.PI * 2);
         ctx.fill();
 
-        // Gold Mylar Dyson Ring Collector Sails
         const rings = [
             { r: 54, tilt: 0.35, speed: 1.0, color: '#ffe600' },
             { r: 72, tilt: -0.4, speed: -0.7, color: '#00f0ff' }
@@ -406,13 +580,11 @@ class CosmicVisualizer {
         const time = this.cosmicRotation * 0.9;
         const bhR = 24;
 
-        // Violet Accretion Glow
         ctx.fillStyle = 'rgba(255, 42, 133, 0.4)';
         ctx.beginPath();
         ctx.arc(0, 0, bhR * 2.6, 0, Math.PI * 2);
         ctx.fill();
 
-        // Swirling Accretion Disk
         ctx.save();
         ctx.rotate(this.camYaw - 0.2);
         ctx.scale(1, 0.38);
@@ -426,13 +598,11 @@ class CosmicVisualizer {
         }
         ctx.restore();
 
-        // Event Horizon Core
         ctx.fillStyle = '#0a0414';
         ctx.beginPath();
         ctx.arc(0, 0, bhR, 0, Math.PI * 2);
         ctx.fill();
 
-        // Relativistic Polar Jets
         ctx.strokeStyle = '#a855f7';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -446,7 +616,6 @@ class CosmicVisualizer {
     render11DMultiverse(ctx, state) {
         const time = this.cosmicRotation;
 
-        // Candy Universe Bubbles
         const bubbles = [
             { x: -55, y: -30, r: 22, color: 'rgba(0, 240, 255, 0.4)', border: '#00f0ff' },
             { x: 50, y: -35, r: 26, color: 'rgba(255, 42, 133, 0.4)', border: '#ff2a85' },
@@ -466,7 +635,6 @@ class CosmicVisualizer {
             ctx.stroke();
         });
 
-        // 4D Rotating Hyper-Cube
         ctx.save();
         ctx.rotate(time * 0.5);
         ctx.strokeStyle = '#ffffff';
@@ -488,13 +656,119 @@ class CosmicVisualizer {
         ctx.restore();
     }
 
+    renderPaperclipFluid(ctx, w, h) {
+        if (this.fluidColumns.length === 0) return;
+
+        const colWidth = w / (this.fluidColumns.length - 1);
+
+        // 1. Draw Metallic Fluid Body
+        const fluidGrad = ctx.createLinearGradient(0, h * 0.7, 0, h);
+        fluidGrad.addColorStop(0, '#1d2a44');
+        fluidGrad.addColorStop(0.5, '#151d30');
+        fluidGrad.addColorStop(1, '#0c111c');
+
+        ctx.fillStyle = fluidGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+
+        for (let i = 0; i < this.fluidColumns.length; ++i) {
+            const x = i * colWidth;
+            const y = this.fluidColumns[i].height;
+            if (i === 0) {
+                ctx.lineTo(x, y);
+            } else {
+                const prevX = (i - 1) * colWidth;
+                const prevY = this.fluidColumns[i - 1].height;
+                const midX = (prevX + x) / 2;
+                const midY = (prevY + y) / 2;
+                ctx.quadraticCurveTo(prevX, prevY, midX, midY);
+            }
+        }
+        ctx.lineTo(w, this.fluidColumns[this.fluidColumns.length - 1].height);
+        ctx.lineTo(w, h);
+        ctx.closePath();
+        ctx.fill();
+
+        // 2. Cyan Wave Highlight Rim
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for (let i = 0; i < this.fluidColumns.length; ++i) {
+            const x = i * colWidth;
+            const y = this.fluidColumns[i].height;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // 3. Dense Paperclip Texture Inside the Fluid Pool
+        ctx.strokeStyle = 'rgba(120, 180, 240, 0.25)';
+        ctx.lineWidth = 1;
+        const time = this.cosmicRotation;
+        for (let fx = 12; fx < w - 8; fx += 16) {
+            const colIdx = Math.floor((fx / w) * this.fluidColumns.length);
+            const topY = this.fluidColumns[colIdx] ? this.fluidColumns[colIdx].height : h * 0.9;
+            if (topY < h - 4) {
+                const fy = topY + 6 + (Math.sin(fx + time) * 3 + 4);
+                this.drawTinyPaperclip(ctx, fx, fy, 4, Math.sin(fx) * 1.5, 'rgba(0, 240, 255, 0.3)');
+            }
+        }
+
+        // 4. Jutting Paperclips Poking Out Along the Fluid Surface
+        for (let i = 1; i < this.fluidColumns.length - 1; i += 2) {
+            const x = i * colWidth;
+            const y = this.fluidColumns[i].height;
+            const rot = Math.sin(i * 1.7 + time * 0.5) * 0.6 - 0.2;
+            const colors = ['#ffffff', '#00f0ff', '#ffe600', '#7fe0ff'];
+            const color = colors[i % colors.length];
+            this.drawTinyPaperclip(ctx, x, y - 1, 5, rot, color);
+        }
+
+        // 5. Render Settled Resting Paperclips
+        this.settledClips.forEach(s => {
+            this.drawTinyPaperclip(ctx, s.x, s.y - 1, s.size, s.rot, s.color);
+        });
+    }
+
+    renderFallingPaperclips(ctx) {
+        this.fallingClips.forEach(p => {
+            this.drawTinyPaperclip(ctx, p.x, p.y, p.size, p.rot, p.color);
+        });
+    }
+
+    drawTinyPaperclip(ctx, x, y, size = 6, rot = 0, color = '#ffffff') {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rot);
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        const s = size / 6;
+        ctx.beginPath();
+        // Outer loop
+        ctx.moveTo(-2 * s, 3 * s);
+        ctx.lineTo(-2 * s, -3 * s);
+        ctx.arc(0, -3 * s, 2 * s, Math.PI, 0, false);
+        ctx.lineTo(2 * s, 3.5 * s);
+        ctx.arc(0, 3.5 * s, 2 * s, 0, Math.PI, false);
+        // Inner loop
+        ctx.lineTo(-0.8 * s, -1.5 * s);
+        ctx.arc(0, -1.5 * s, 0.8 * s, Math.PI, 0, false);
+        ctx.lineTo(0.8 * s, 1.8 * s);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
     drawCartoonPaperclip(ctx, x, y, scale = 1.0, rotation = 0) {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(rotation);
         ctx.scale(scale, scale);
 
-        // Cartoon Paperclip Outline
         ctx.strokeStyle = '#00f0ff';
         ctx.lineWidth = 4;
         ctx.lineCap = 'round';

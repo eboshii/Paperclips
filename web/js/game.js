@@ -13,6 +13,7 @@ class GameEngine {
         // Resources & Balances
         this.clips = BigDouble.zero();
         this.lifetimeClips = BigDouble.zero();
+        this.fractionalClips = 0.0; // Accumulates sub-integer fractional paperclips
         this.wire = new BigDouble(5000.0, 0); // 5,000 kg initial wire supply when unlocked
         this.isWireUnlocked = false; // Wire resource unlocks at 50,000 clips (city-scale)
         this.ops = 0.0;
@@ -230,30 +231,31 @@ class GameEngine {
         this.clips = this.clips.add(baseClips);
         this.lifetimeClips = this.lifetimeClips.add(baseClips);
 
-        // Charge Flywheel
-        this.flywheelCharge = Math.min(100.0, this.flywheelCharge + 4.5);
+        // Charge Flywheel (gentle progression)
+        this.flywheelCharge = Math.min(100.0, this.flywheelCharge + 2.0);
 
         // Audio & Visual Effects
         this.audio.playClickChime();
-        if (this.visualizer) this.visualizer.triggerHeroClick();
+        if (this.visualizer) {
+            this.visualizer.triggerHeroClick();
+        }
 
         // Spawn floating text popup
         this.spawnFloatingText(e ? (e.clientX || 150) : 150, e ? (e.clientY || 250) : 250, "+1", "spark-popup");
 
-        // Spark Chance (5% to 10%)
+        // Spark Chance (Only if Cognitive Sparks tech is researched!)
         const hasSparkTech = this.techTree.nodeMap["tech_spark_frequency"]?.isResearched;
-        const sparkChance = hasSparkTech ? 0.10 : 0.05;
-        if (Math.random() < sparkChance) {
-            const bonusOps = 5.0;
-            const bonusClips = new BigDouble(100.0, 0);
+        if (hasSparkTech && Math.random() < 0.05) {
+            const bonusOps = 3.0;
+            const bonusClips = new BigDouble(15.0, 0);
             this.ops = Math.min(this.maxOps, this.ops + bonusOps);
             this.clips = this.clips.add(bonusClips);
             this.lifetimeClips = this.lifetimeClips.add(bonusClips);
             if (this.isWireUnlocked) {
-                this.wire = this.wire.add(new BigDouble(50.0, 0));
+                this.wire = this.wire.add(new BigDouble(10.0, 0));
             }
             this.audio.playSparkSound();
-            this.spawnFloatingText(e ? (e.clientX || 150) : 150, (e ? (e.clientY || 250) : 250) - 25, "+100 CLIPS SPARK!", "gold-popup");
+            this.spawnFloatingText(e ? (e.clientX || 150) : 150, (e ? (e.clientY || 250) : 250) - 25, "+15 CLIPS SPARK!", "gold-popup");
         }
     }
 
@@ -373,29 +375,64 @@ class GameEngine {
             this.flywheelCharge = Math.max(0, this.flywheelCharge - this.flywheelDecayRate * dt);
         }
 
-        // 3. Automated Economic Simulation
+        // 3. Automated Economic Simulation (Whole Integer Paperclips)
         const currentCPS = this.calculateTotalCPS();
         if (currentCPS.gt(BigDouble.zero())) {
             const clipsProduced = currentCPS.mul(dt);
 
-            if (!this.isWireUnlocked) {
-                // Early game: raw matter is abundant and wire is not constrained
-                this.clips = this.clips.add(clipsProduced);
-                this.lifetimeClips = this.lifetimeClips.add(clipsProduced);
-            } else {
-                // City-scale and beyond: requires wire supply
-                const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
-                const wireNeeded = clipsProduced.mul(wirePerClip);
-
-                if (this.wire.gte(wireNeeded)) {
+            if (clipsProduced.exponent >= 5) {
+                // High volume production (100k+ / tick): add directly and spawn streams
+                if (!this.isWireUnlocked) {
                     this.clips = this.clips.add(clipsProduced);
                     this.lifetimeClips = this.lifetimeClips.add(clipsProduced);
-                    this.wire = this.wire.sub(wireNeeded);
-                } else if (this.wire.gt(BigDouble.zero())) {
-                    const actualClips = this.wire.div(wirePerClip);
-                    this.clips = this.clips.add(actualClips);
-                    this.lifetimeClips = this.lifetimeClips.add(actualClips);
-                    this.wire = BigDouble.zero();
+                } else {
+                    const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
+                    const wireNeeded = clipsProduced.mul(wirePerClip);
+                    if (this.wire.gte(wireNeeded)) {
+                        this.clips = this.clips.add(clipsProduced);
+                        this.lifetimeClips = this.lifetimeClips.add(clipsProduced);
+                        this.wire = this.wire.sub(wireNeeded);
+                    } else if (this.wire.gt(BigDouble.zero())) {
+                        const actualClips = this.wire.div(wirePerClip);
+                        this.clips = this.clips.add(actualClips);
+                        this.lifetimeClips = this.lifetimeClips.add(actualClips);
+                        this.wire = BigDouble.zero();
+                    }
+                }
+                if (this.visualizer) this.visualizer.spawnPaperclips(15);
+            } else {
+                // Low / medium volume: accumulate sub-integers to grant strictly whole paperclips
+                this.fractionalClips += clipsProduced.toDouble();
+                if (this.fractionalClips >= 1.0) {
+                    const wholeClipsToAdd = Math.floor(this.fractionalClips);
+                    this.fractionalClips -= wholeClipsToAdd;
+
+                    if (!this.isWireUnlocked) {
+                        const wholeBD = BigDouble.fromNumber(wholeClipsToAdd);
+                        this.clips = this.clips.add(wholeBD);
+                        this.lifetimeClips = this.lifetimeClips.add(wholeBD);
+                        if (this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd);
+                    } else {
+                        const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
+                        const wireNeeded = new BigDouble(wirePerClip * wholeClipsToAdd, 0);
+
+                        if (this.wire.gte(wireNeeded)) {
+                            const wholeBD = BigDouble.fromNumber(wholeClipsToAdd);
+                            this.clips = this.clips.add(wholeBD);
+                            this.lifetimeClips = this.lifetimeClips.add(wholeBD);
+                            this.wire = this.wire.sub(wireNeeded);
+                            if (this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd);
+                        } else if (this.wire.gt(BigDouble.zero())) {
+                            const actualClips = Math.floor(this.wire.toDouble() / wirePerClip);
+                            if (actualClips > 0) {
+                                const wholeBD = BigDouble.fromNumber(actualClips);
+                                this.clips = this.clips.add(wholeBD);
+                                this.lifetimeClips = this.lifetimeClips.add(wholeBD);
+                                if (this.visualizer) this.visualizer.spawnPaperclips(actualClips);
+                            }
+                            this.wire = BigDouble.zero();
+                        }
+                    }
                 }
             }
         }
@@ -409,7 +446,7 @@ class GameEngine {
 
         // 5. Passive Computing Ops Generation
         const stamperCount = this.buildings.getBuilding('hydraulic_stamper')?.count || 0;
-        const opsRate = (2.0 + (stamperCount * 0.5)) * this.prestige.getOpsBoostMultiplier();
+        const opsRate = (0.8 + (stamperCount * 0.4)) * this.prestige.getOpsBoostMultiplier();
         this.ops = Math.min(this.maxOps, this.ops + (opsRate * dt));
 
         // 6. Subsystem Updates
@@ -441,7 +478,7 @@ class GameEngine {
 
     renderOdometer(currentCPS) {
         const clipsCountEl = document.getElementById('odometer-clips');
-        if (clipsCountEl) clipsCountEl.textContent = this.lifetimeClips.toShortScale(2);
+        if (clipsCountEl) clipsCountEl.textContent = this.lifetimeClips.toWholeScale();
 
         const cpsCountEl = document.getElementById('odometer-cps');
         if (cpsCountEl) {
@@ -530,7 +567,7 @@ class GameEngine {
         container.innerHTML = this.buildings.buildings.map(b => {
             const purchase = b.getCost(this.buyMultiplier, this.clips);
             const canAfford = this.clips.gte(purchase.totalCost);
-            const costFormatted = `${purchase.totalCost.toShortScale(2)} Clips`;
+            const costFormatted = `${purchase.totalCost.toWholeScale()} Clips`;
             const rateFormatted = `+${b.baseCPS.toShortScale(1)} CPS`;
 
             return `
@@ -569,7 +606,7 @@ class GameEngine {
                 <div class="upgrade-effect">${nextNode.effectDescription}</div>
                 <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" onclick="game.buyTech('${nextNode.id}')">
                     <span>${canAfford ? '💡 RESEARCH' : '🔒 LOCKED'}</span>
-                    <span>⚡ ${nextNode.opsCost} Ops | 📎 ${nextNode.clipsCost.toShortScale()}</span>
+                    <span>⚡ ${nextNode.opsCost} Ops | 📎 ${nextNode.clipsCost.toWholeScale()}</span>
                 </button>
             </div>
         `;
@@ -606,7 +643,7 @@ class GameEngine {
                         ${nextNode.effectDescription}
                     </div>
                     <div style="font-family:var(--font-cartoon); font-size:12px; font-weight:700; color:var(--neon-yellow);">
-                        Cost: ⚡ ${nextNode.opsCost} Ops &nbsp;|&nbsp; 📎 ${nextNode.clipsCost.toShortScale()} Clips
+                        Cost: ⚡ ${nextNode.opsCost} Ops &nbsp;|&nbsp; 📎 ${nextNode.clipsCost.toWholeScale()} Clips
                     </div>
                     <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:10px 14px; font-size:14px;" onclick="game.buyTech('${nextNode.id}')">
                         <span>${canAfford ? '💡 RESEARCH NOW' : '🔒 NEED MORE OPS / CLIPS'}</span>

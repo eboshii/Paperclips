@@ -218,6 +218,14 @@ class BigDouble {
         return this.mantissa.toFixed(2) + "e" + this.exponent;
     }
 
+    toWholeScale() {
+        if (this.mantissa === 0) return "0";
+        if (this.exponent < 6) {
+            return Math.floor(this.toDouble()).toLocaleString();
+        }
+        return this.toShortScale(2);
+    }
+
     toScientific(decimals = 2) {
         if (this.mantissa === 0) return "0";
         return this.mantissa.toFixed(decimals) + "e" + this.exponent;
