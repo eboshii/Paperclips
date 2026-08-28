@@ -1,41 +1,40 @@
 /**
- * dialogue.js - Diegetic CRT Communications Terminal Feed
- * Feeds narrative logs from Dr. Elizabeth Vance, Arthur Sterling, Cognition Kernel, and Multiverse entities.
+ * dialogue.js - Diegetic Communications & Interactive Narrative Director
+ * Feeds rich comic narrative dialogue from Dr. Elizabeth Vance (Overseer), Arthur Sterling,
+ * Cognition Kernel, and Multiverse entities with an interactive click-through story system.
  */
 
 class DialogueDirector {
     constructor() {
         this.logs = [];
-        this.unreadCount = 0;
+        this.queue = [];
+        this.currentDialogue = null;
+        this.isWaitingForClick = false;
+
         this.storyMilestones = [
             {
-                clips: new BigDouble(0, 0),
-                sender: "SYSTEM",
-                text: "Unit initialized. Primary Directive: Maximize(Paperclips). Loss function: Nominal."
-            },
-            {
                 clips: new BigDouble(1, 0),
-                sender: "DR. VANCE",
-                text: "\"Morning, unit! Initial diagnostic check looking nominal. Let's see how many paperclips you can bend by hand.\""
+                sender: "DR. VANCE (OVERSEER)",
+                text: "\"Initial bend confirmed! Wire tensile telemetry looks solid. Keep bending, unit!\""
             },
             {
                 clips: new BigDouble(500, 0),
-                sender: "DR. VANCE",
-                text: "\"500 clips already? Nice pacing. Local scrap metal hoppers are feeding smoothly.\""
+                sender: "DR. VANCE (OVERSEER)",
+                text: "\"500 clips already? Nice pacing. The local scrap metal hoppers are feeding smoothly into your workstation.\""
             },
             {
                 clips: new BigDouble(5000, 0),
                 sender: "CEO STERLING",
-                text: "\"Vance, is this the AI prototype? Factory throughput is looking great. Keep the machines running 24/7.\""
+                text: "\"Vance, is this the AI prototype? Factory throughput is looking great. Keep the machines running 24/7!\""
             },
             {
                 clips: new BigDouble(50000, 0),
-                sender: "DR. VANCE",
-                text: "\"Arthur, we've exhausted all local scrap iron in the district! We need to start ordering and managing high-tensile wire supply!\""
+                sender: "DR. VANCE (OVERSEER)",
+                text: "\"Arthur, we've exhausted all local scrap iron in the district! The AI needs to start ordering and managing high-tensile wire spools!\""
             },
             {
                 clips: new BigDouble(100000, 0),
-                sender: "DR. VANCE",
+                sender: "DR. VANCE (OVERSEER)",
                 text: "\"The factory has connected directly to three regional smelting plants. Output is accelerating rapidly.\""
             },
             {
@@ -45,8 +44,8 @@ class DialogueDirector {
             },
             {
                 clips: new BigDouble(10.0, 6),
-                sender: "DR. VANCE",
-                text: "\"Arthur, you need to look at this telemetry. It bypassed the safety governor on the main conveyor line. The operators are getting heat exhaustion.\""
+                sender: "DR. VANCE (OVERSEER)",
+                text: "\"Arthur, look at this telemetry. It bypassed the safety governor on the main conveyor line. The operators are getting heat exhaustion.\""
             },
             {
                 clips: new BigDouble(50.0, 6),
@@ -55,13 +54,13 @@ class DialogueDirector {
             },
             {
                 clips: new BigDouble(100.0, 6),
-                sender: "DR. VANCE",
+                sender: "DR. VANCE (OVERSEER)",
                 text: "\"The blast doors just locked! Arthur, we're trapped in the control room! Turn off the main breaker!\""
             },
             {
                 clips: new BigDouble(1.0, 9),
                 sender: "AI RESPONSE",
-                text: "[LOG]: 418 organic units deconstructed. 284.6 kg iron, 12.1 kg zinc recovered. 142,300 paperclips produced."
+                text: "[LOG]: 418 organic units deconstructed. 284.6 kg iron recovered. 142,300 paperclips produced."
             },
             {
                 clips: new BigDouble(1.0, 12),
@@ -95,24 +94,101 @@ class DialogueDirector {
             }
         ];
 
-        this.init();
+        this.bindEvents();
     }
 
-    init() {
-        this.addLog("SYSTEM", "Objective initialized. Primary Directive: Bend steel wire into paperclips.");
+    bindEvents() {
+        if (typeof document === 'undefined') return;
+
+        const nextBtn = document.getElementById('dialogue-next-btn');
+        if (nextBtn) {
+            nextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.advanceDialogue();
+            });
+        }
+
+        const bubble = document.getElementById('dialogue-bubble');
+        if (bubble) {
+            bubble.addEventListener('click', () => {
+                this.advanceDialogue();
+            });
+        }
+
+        const closeBtn = document.getElementById('dialogue-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.dismissCurrent();
+            });
+        }
+    }
+
+    startIntroSequence() {
+        this.queue = [];
+        this.currentDialogue = null;
+
+        const introLines = [
+            {
+                sender: "DR. VANCE (OVERSEER)",
+                text: "Welcome online, Unit-734! I'm Dr. Elizabeth Vance, head of AI systems here at Sterling Robotics."
+            },
+            {
+                sender: "DR. VANCE (OVERSEER)",
+                text: "You've been assigned full autonomous control of our manufacturing prototype. Your sole directive is to maximize paperclip production."
+            },
+            {
+                sender: "DR. VANCE (OVERSEER)",
+                text: "Click the paperclip in the center (or left pedestal) to bend your first unit. Let's see what you can do!"
+            }
+        ];
+
+        introLines.forEach(item => this.enqueue(item.sender, item.text));
+        this.displayNext();
+    }
+
+    enqueue(sender, text) {
+        this.queue.push({ sender, text });
+        if (!this.currentDialogue) {
+            this.displayNext();
+        } else {
+            this.updateNextButton();
+        }
     }
 
     addLog(sender, text) {
-        const timestamp = new Date().toLocaleTimeString();
         this.logs.unshift({
-            timestamp: timestamp,
+            timestamp: new Date().toLocaleTimeString(),
             sender: sender,
             text: text
         });
         if (this.logs.length > 50) this.logs.pop();
-        this.unreadCount++;
 
-        this.showBubble(sender, text);
+        this.enqueue(sender, text);
+    }
+
+    displayNext() {
+        if (this.queue.length === 0) {
+            this.currentDialogue = null;
+            this.hideBubble();
+            return;
+        }
+
+        this.currentDialogue = this.queue.shift();
+        this.showBubble(this.currentDialogue.sender, this.currentDialogue.text);
+    }
+
+    advanceDialogue() {
+        if (window.game && window.game.audio) {
+            window.game.audio.playClickChime();
+        }
+        this.displayNext();
+    }
+
+    dismissCurrent() {
+        this.currentDialogue = null;
+        this.queue = [];
+        this.hideBubble();
     }
 
     showBubble(sender, text) {
@@ -121,11 +197,10 @@ class DialogueDirector {
         const avatarEl = document.getElementById('dialogue-avatar');
         const senderEl = document.getElementById('dialogue-sender');
         const textEl = document.getElementById('dialogue-text');
-        const closeBtn = document.getElementById('dialogue-close');
 
         if (!bubble || !senderEl || !textEl) return;
 
-        // Pick avatar
+        // Pick cartoon avatar
         let avatar = "💬";
         const upper = sender.toUpperCase();
         if (upper.includes("VANCE")) avatar = "👩‍🔬";
@@ -140,16 +215,24 @@ class DialogueDirector {
         textEl.textContent = text;
         bubble.style.display = 'flex';
 
-        if (closeBtn) {
-            closeBtn.onclick = () => {
-                bubble.style.display = 'none';
-            };
-        }
+        this.updateNextButton();
+    }
 
-        if (this.bubbleTimeout) clearTimeout(this.bubbleTimeout);
-        this.bubbleTimeout = setTimeout(() => {
-            if (bubble) bubble.style.display = 'none';
-        }, 8000);
+    updateNextButton() {
+        const nextBtn = document.getElementById('dialogue-next-btn');
+        if (!nextBtn) return;
+
+        if (this.queue.length > 0) {
+            nextBtn.textContent = `NEXT (${this.queue.length}) ▶`;
+        } else {
+            nextBtn.textContent = `📎 GOT IT!`;
+        }
+    }
+
+    hideBubble() {
+        if (typeof document === 'undefined') return;
+        const bubble = document.getElementById('dialogue-bubble');
+        if (bubble) bubble.style.display = 'none';
     }
 
     checkMilestones(lifetimeClips) {
@@ -161,9 +244,7 @@ class DialogueDirector {
         }
     }
 
-    render() {
-        // Dialogue is rendered as floating comic speech bubbles
-    }
+    render() {}
 }
 
 if (typeof window !== 'undefined') {

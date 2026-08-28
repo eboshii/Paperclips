@@ -28,7 +28,7 @@
         </div>
     </header>
 
-    <!-- Main Clean Symmetrical Workspace (Left: 320px, Center: Flex, Right: 320px) -->
+    <!-- Main Clean Symmetrical Workspace (Left: 360px, Center: Flex, Right: 360px) -->
     <main class="app-workspace">
         <!-- COLUMN 1: LEFT PEDESTAL (Paperclip Progress, Clicker & Resources) -->
         <section class="left-pedestal">
@@ -135,18 +135,19 @@
                 <canvas id="cosmic-canvas"></canvas>
             </div>
 
-            <!-- Comic Narrative Speech Bubble (Floating, Auto-dismissing) -->
-            <div id="dialogue-bubble" class="dialogue-bubble" style="display:none;">
-                <div class="bubble-avatar" id="dialogue-avatar">🤖</div>
+            <!-- Comic Narrative Speech Bubble (Floating, Click-through Story) -->
+            <div id="dialogue-bubble" class="dialogue-bubble" style="display:none;" title="Click to advance dialogue">
+                <div class="bubble-avatar" id="dialogue-avatar">👩‍🔬</div>
                 <div class="bubble-body">
-                    <div class="bubble-sender" id="dialogue-sender">SYSTEM</div>
-                    <div class="bubble-text" id="dialogue-text">Objective initialized. Ready to bend wire.</div>
+                    <div class="bubble-sender" id="dialogue-sender">DR. VANCE (OVERSEER)</div>
+                    <div class="bubble-text" id="dialogue-text">Welcome online, unit!</div>
                 </div>
-                <button class="bubble-close" id="dialogue-close">✖</button>
+                <button id="dialogue-next-btn" class="bubble-next-btn">NEXT ▶</button>
+                <button class="bubble-close" id="dialogue-close" title="Dismiss">✖</button>
             </div>
         </section>
 
-        <!-- COLUMN 3: RIGHT PEDESTAL (Exact same width as Left Pedestal: 320px) -->
+        <!-- COLUMN 3: RIGHT PEDESTAL (Store & Tech Views) -->
         <section class="right-pedestal">
             <!-- Symmetrical Tab Header (Store & Tech Switcher) -->
             <div class="right-tabs-bar">
@@ -162,7 +163,7 @@
                 </button>
             </div>
 
-            <!-- STORE VIEW (Multipliers, Next Upgrade, Machines) -->
+            <!-- STORE VIEW (Multipliers & Factory Automation Only) -->
             <div id="view-store" class="tab-content-view" style="display:flex;">
                 <!-- Multiplier Selector -->
                 <div class="multiplier-bar">
@@ -172,14 +173,6 @@
                         <button class="mult-btn" data-mult="10">10x</button>
                         <button class="mult-btn" data-mult="100">100x</button>
                         <button class="mult-btn" data-mult="max">MAX</button>
-                    </div>
-                </div>
-
-                <!-- Single Next Upgrade Card Shelf -->
-                <div class="single-upgrade-shelf">
-                    <div class="shelf-label">⚡ NEXT RESEARCH UPGRADE</div>
-                    <div id="upgrades-shelf" class="shelf-content">
-                        <!-- Injected dynamically: ONLY 1 single next unpurchased upgrade card -->
                     </div>
                 </div>
 

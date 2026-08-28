@@ -54,6 +54,7 @@ class GameEngine {
         this.visualizer = new CosmicVisualizer('cosmic-canvas');
 
         this.bindEvents();
+        const hasSave = localStorage.getItem('objective_paperclips_save') !== null;
         this.loadSave();
         this.renderAll();
 
@@ -62,12 +63,17 @@ class GameEngine {
             this.dialogue.addLog(sender, text);
         };
 
+        // If fresh session / new game, start interactive intro sequence from Dr. Vance
+        if (!hasSave) {
+            this.dialogue.startIntroSequence();
+        }
+
         // Start 60 FPS Game Loop
         requestAnimationFrame((t) => this.gameLoop(t));
     }
 
     bindEvents() {
-        // Hero Clicker Target
+        // Hero Clicker Target (Left Pedestal)
         const heroBtn = document.getElementById('hero-clicker-target');
         if (heroBtn) {
             heroBtn.addEventListener('mousedown', (e) => {
@@ -75,16 +81,33 @@ class GameEngine {
                 this.handleManualClick(e);
             });
 
-            window.addEventListener('mouseup', () => {
-                this.isMouseDown = false;
-            });
-
-            // Touch support
             heroBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 this.handleManualClick(e.touches[0]);
             }, { passive: false });
         }
+
+        // Center Cosmic Canvas Clicker
+        const cosmicCanvas = document.getElementById('cosmic-canvas');
+        if (cosmicCanvas) {
+            cosmicCanvas.addEventListener('mousedown', (e) => {
+                this.isMouseDown = true;
+                this.handleManualClick(e);
+            });
+
+            cosmicCanvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.handleManualClick(e.touches[0]);
+            }, { passive: false });
+        }
+
+        window.addEventListener('mouseup', () => {
+            this.isMouseDown = false;
+        });
+
+        window.addEventListener('touchend', () => {
+            this.isMouseDown = false;
+        });
 
         // Buy Wire Action Button
         const buyWireBtn = document.getElementById('btn-buy-wire');
@@ -252,8 +275,15 @@ class GameEngine {
         const wireGain = new BigDouble(1000.0 * mult, 0);
 
         if (this.clips.gte(cost)) {
+            const prevClips = this.clips;
             this.clips = this.clips.sub(cost);
             this.wire = this.wire.add(wireGain);
+
+            if (this.visualizer) {
+                const ratio = prevClips.gt(BigDouble.zero()) ? Math.min(1.0, cost.toDouble() / (prevClips.toDouble() + 1)) : 0.5;
+                this.visualizer.drainPaperclips(ratio);
+            }
+
             this.audio.playWireSound();
             this.renderResources();
             this.renderStore();
@@ -267,8 +297,14 @@ class GameEngine {
         const purchase = b.getCost(this.buyMultiplier, this.clips);
 
         if (this.clips.gte(purchase.totalCost)) {
+            const prevClips = this.clips;
             this.clips = this.clips.sub(purchase.totalCost);
             b.count += purchase.amount;
+
+            if (this.visualizer) {
+                const ratio = prevClips.gt(BigDouble.zero()) ? Math.min(1.0, purchase.totalCost.toDouble() / (prevClips.toDouble() + 1)) : 0.5;
+                this.visualizer.drainPaperclips(ratio);
+            }
 
             // Auto-place in spatial grid if applicable
             if (b.gridTileType) {
@@ -292,7 +328,15 @@ class GameEngine {
     }
 
     buyTech(techId) {
+        const node = this.techTree.nodeMap[techId];
+        const prevClips = this.clips;
+        const costClips = node ? node.clipsCost : BigDouble.zero();
+
         if (this.techTree.purchaseResearch(techId, this)) {
+            if (this.visualizer) {
+                const ratio = (prevClips.gt(BigDouble.zero()) && costClips.gt(BigDouble.zero())) ? Math.min(1.0, costClips.toDouble() / (prevClips.toDouble() + 1)) : 0.5;
+                this.visualizer.drainPaperclips(ratio);
+            }
             this.audio.playTechUnlockSound();
             this.renderStore();
             this.renderTechTree();
@@ -428,6 +472,12 @@ class GameEngine {
         this.renderResources();
         this.renderNews();
 
+        if (this.activeTab === 'store') {
+            this.updateStoreRealtime();
+        } else if (this.activeTab === 'tech') {
+            this.updateTechRealtime();
+        }
+
         // 8. Auto-Save Tick
         const now = Date.now();
         if (now - this.lastSaveTime >= this.saveInterval) {
@@ -440,7 +490,7 @@ class GameEngine {
 
     renderOdometer(currentCPS) {
         const clipsCountEl = document.getElementById('odometer-clips');
-        if (clipsCountEl) clipsCountEl.textContent = this.lifetimeClips.toWholeScale();
+        if (clipsCountEl) clipsCountEl.textContent = this.clips.toWholeScale();
 
         const cpsCountEl = document.getElementById('odometer-cps');
         if (cpsCountEl) {
@@ -497,7 +547,7 @@ class GameEngine {
             wireCostEl.textContent = `${(250 * mult).toLocaleString()} Clips`;
         }
 
-        // Notification Badges on Right Dock
+        // Notification Badges on Right Tabs
         const nextTech = this.techTree.getNextUnpurchasedNode();
         const canAffordTech = nextTech && this.techTree.canAfford(nextTech.id, this.ops, this.clips);
         const techBadge = document.getElementById('tech-badge-count');
@@ -522,10 +572,7 @@ class GameEngine {
         const container = document.getElementById('buildings-container');
         if (!container) return;
 
-        // Render Single Next Upgrade Shelf in Store
-        this.renderUpgradesShelf();
-
-        // Render Building Cards
+        // Render Building Cards (Factory Automation only - no research in store)
         container.innerHTML = this.buildings.buildings.map(b => {
             const purchase = b.getCost(this.buyMultiplier, this.clips);
             const canAfford = this.clips.gte(purchase.totalCost);
@@ -545,33 +592,58 @@ class GameEngine {
         }).join('');
     }
 
-    renderUpgradesShelf() {
-        const shelf = document.getElementById('upgrades-shelf');
-        if (!shelf) return;
+    updateStoreRealtime() {
+        const container = document.getElementById('buildings-container');
+        if (!container) return;
 
-        const nextNode = this.techTree.getNextUnpurchasedNode();
-        if (!nextNode) {
-            shelf.innerHTML = '<div class="no-upgrades-box">🎉 All Research Unlocked!</div>';
+        if (container.children.length === 0) {
+            this.renderStore();
             return;
         }
 
+        this.buildings.buildings.forEach((b, idx) => {
+            const card = container.children[idx];
+            if (!card) return;
+
+            const purchase = b.getCost(this.buyMultiplier, this.clips);
+            const canAfford = this.clips.gte(purchase.totalCost);
+
+            if (card.classList.contains('affordable') !== canAfford) {
+                card.classList.toggle('affordable', canAfford);
+                card.classList.toggle('locked', !canAfford);
+            }
+
+            const costEl = card.querySelector('.building-cost');
+            const countEl = card.querySelector('.building-count');
+            if (countEl && countEl.textContent !== String(b.count)) {
+                countEl.textContent = b.count;
+            }
+            if (costEl && (this.buyMultiplier === 'max' || card.dataset.cost !== purchase.totalCost.toWholeScale())) {
+                card.dataset.cost = purchase.totalCost.toWholeScale();
+                const costFormatted = `${purchase.totalCost.toWholeScale()} Clips`;
+                const rateFormatted = `+${b.baseCPS.toShortScale(1)} CPS`;
+                costEl.innerHTML = `${costFormatted} <span class="building-rate">| ${rateFormatted}</span>`;
+            }
+        });
+    }
+
+    updateTechRealtime() {
+        const container = document.getElementById('tech-tree-container');
+        if (!container) return;
+
+        const nextNode = this.techTree.getNextUnpurchasedNode();
+        if (!nextNode) return;
+
+        const btn = container.querySelector('.btn-buy-upgrade');
+        if (!btn) return;
+
         const canAfford = this.techTree.canAfford(nextNode.id, this.ops, this.clips);
-        shelf.innerHTML = `
-            <div class="next-upgrade-card">
-                <div class="upgrade-top-row">
-                    <div class="upgrade-icon-box">${nextNode.icon}</div>
-                    <div class="upgrade-header-info">
-                        <div class="upgrade-title">${nextNode.title}</div>
-                        <div class="upgrade-discipline">${nextNode.discipline}</div>
-                    </div>
-                </div>
-                <div class="upgrade-effect">${nextNode.effectDescription}</div>
-                <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" onclick="game.buyTech('${nextNode.id}')">
-                    <span>${canAfford ? '💡 RESEARCH' : '🔒 LOCKED'}</span>
-                    <span>⚡ ${nextNode.opsCost} Ops | 📎 ${nextNode.clipsCost.toWholeScale()}</span>
-                </button>
-            </div>
-        `;
+        if (btn.classList.contains('affordable') !== canAfford) {
+            btn.classList.toggle('affordable', canAfford);
+            btn.classList.toggle('unaffordable', !canAfford);
+            const span = btn.querySelector('span:first-child');
+            if (span) span.textContent = canAfford ? '💡 RESEARCH NOW' : '🔒 NEED MORE OPS / CLIPS';
+        }
     }
 
     renderTechTree() {
@@ -732,6 +804,7 @@ class GameEngine {
         this.spatialGrid = new SpatialGridEngine();
         this.achievements = new AchievementManager();
         this.dialogue = new DialogueDirector();
+        this.dialogue.startIntroSequence();
         this.news = new NewsTickerEngine();
 
         if (this.visualizer) {
@@ -741,6 +814,12 @@ class GameEngine {
             this.visualizer.tier = 0;
             this.visualizer.autoTier = true;
         }
+
+        // Clear active toasts and popups
+        const toastContainer = document.getElementById('toast-container');
+        if (toastContainer) toastContainer.innerHTML = '';
+        const popupsContainer = document.getElementById('floating-popups');
+        if (popupsContainer) popupsContainer.innerHTML = '';
 
         this.renderAll();
     }

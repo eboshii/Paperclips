@@ -159,13 +159,25 @@ class BigDouble {
     lt(other) {
         other = (other instanceof BigDouble) ? other : BigDouble.fromNumber(other);
         if (this.mantissa === 0 && other.mantissa === 0) return false;
+        if (this.mantissa === 0) return other.mantissa > 0;
+        if (other.mantissa === 0) return this.mantissa < 0;
+
         if (this.mantissa < 0 && other.mantissa > 0) return true;
         if (this.mantissa > 0 && other.mantissa < 0) return false;
 
-        if (this.exponent !== other.exponent) {
-            return this.mantissa > 0 ? this.exponent < other.exponent : this.exponent > other.exponent;
+        // Both positive
+        if (this.mantissa > 0) {
+            if (this.exponent !== other.exponent) {
+                return this.exponent < other.exponent;
+            }
+            return this.mantissa < other.mantissa;
+        } else {
+            // Both negative
+            if (this.exponent !== other.exponent) {
+                return this.exponent > other.exponent;
+            }
+            return this.mantissa < other.mantissa;
         }
-        return this.mantissa < other.mantissa;
     }
 
     lte(other) {
@@ -185,7 +197,8 @@ class BigDouble {
     eq(other) {
         other = (other instanceof BigDouble) ? other : BigDouble.fromNumber(other);
         if (this.mantissa === 0 && other.mantissa === 0) return true;
-        return this.exponent === other.exponent && Math.abs(this.mantissa - other.mantissa) < 1e-10;
+        if (this.mantissa === 0 || other.mantissa === 0) return false;
+        return this.exponent === other.exponent && Math.abs(this.mantissa - other.mantissa) < 1e-9;
     }
 
     toShortScale(decimals = 2) {
