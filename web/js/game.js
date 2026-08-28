@@ -92,32 +92,16 @@ class GameEngine {
             buyWireBtn.addEventListener('click', () => this.buyWire());
         }
 
-        // Right Menu Dock Buttons
-        const btnStore = document.getElementById('btn-open-store');
-        if (btnStore) {
-            btnStore.addEventListener('click', () => this.toggleDrawer('store'));
+        // Right Panel Tabs (Store & Tech)
+        const tabStore = document.getElementById('tab-btn-store');
+        if (tabStore) {
+            tabStore.addEventListener('click', () => this.switchTab('store'));
         }
 
-        const btnTech = document.getElementById('btn-open-tech');
-        if (btnTech) {
-            btnTech.addEventListener('click', () => this.toggleDrawer('tech'));
+        const tabTech = document.getElementById('tab-btn-tech');
+        if (tabTech) {
+            tabTech.addEventListener('click', () => this.switchTab('tech'));
         }
-
-        // Close Drawer Button & Backdrop
-        const btnClose = document.getElementById('btn-close-drawer');
-        if (btnClose) {
-            btnClose.addEventListener('click', () => this.closeDrawer());
-        }
-
-        const backdrop = document.getElementById('menu-drawer-backdrop');
-        if (backdrop) {
-            backdrop.addEventListener('click', () => this.closeDrawer());
-        }
-
-        // Escape Key Closes Drawer
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') this.closeDrawer();
-        });
 
         // Multiplier Buttons
         const multButtons = document.querySelectorAll('.mult-btn');
@@ -170,48 +154,26 @@ class GameEngine {
         if (wipeBtn) wipeBtn.addEventListener('click', () => this.wipeSave());
     }
 
-    toggleDrawer(tab) {
-        if (this.isDrawerOpen && this.activeTab === tab) {
-            this.closeDrawer();
-        } else {
-            this.openDrawer(tab);
-        }
-    }
-
-    openDrawer(tab) {
-        this.isDrawerOpen = true;
+    switchTab(tab) {
         this.activeTab = tab;
-
-        const drawer = document.getElementById('menu-drawer');
-        const backdrop = document.getElementById('menu-drawer-backdrop');
-        const iconEl = document.getElementById('drawer-icon');
-        const headingEl = document.getElementById('drawer-heading');
-
-        if (drawer) drawer.classList.add('open');
-        if (backdrop) backdrop.classList.add('open');
+        const btnStore = document.getElementById('tab-btn-store');
+        const btnTech = document.getElementById('tab-btn-tech');
+        const viewStore = document.getElementById('view-store');
+        const viewTech = document.getElementById('view-tech');
 
         if (tab === 'store') {
-            if (iconEl) iconEl.textContent = '🛒';
-            if (headingEl) headingEl.textContent = 'FACTORY STORE';
-            document.getElementById('view-store').style.display = 'block';
-            document.getElementById('view-tech').style.display = 'none';
+            if (btnStore) btnStore.classList.add('active');
+            if (btnTech) btnTech.classList.remove('active');
+            if (viewStore) viewStore.style.display = 'flex';
+            if (viewTech) viewTech.style.display = 'none';
             this.renderStore();
-        } else if (tab === 'tech') {
-            if (iconEl) iconEl.textContent = '🔬';
-            if (headingEl) headingEl.textContent = 'RESEARCH LAB';
-            document.getElementById('view-store').style.display = 'none';
-            document.getElementById('view-tech').style.display = 'block';
+        } else {
+            if (btnTech) btnTech.classList.add('active');
+            if (btnStore) btnStore.classList.remove('active');
+            if (viewStore) viewStore.style.display = 'none';
+            if (viewTech) viewTech.style.display = 'flex';
             this.renderTechTree();
         }
-    }
-
-    closeDrawer() {
-        this.isDrawerOpen = false;
-        const drawer = document.getElementById('menu-drawer');
-        const backdrop = document.getElementById('menu-drawer-backdrop');
-
-        if (drawer) drawer.classList.remove('open');
-        if (backdrop) backdrop.classList.remove('open');
     }
 
     handleManualClick(e) {
@@ -629,23 +591,23 @@ class GameEngine {
 
         const canAfford = this.techTree.canAfford(nextNode.id, this.ops, this.clips);
         container.innerHTML = `
-            <div class="single-upgrade-shelf" style="padding:16px;">
-                <div class="shelf-label" style="font-size:9px; margin-bottom:12px;">🔬 NEXT RESEARCH OBJECTIVE</div>
-                <div class="next-upgrade-card" style="padding:16px; gap:12px;">
+            <div class="single-upgrade-shelf" style="padding:14px;">
+                <div class="shelf-label" style="font-size:10px; margin-bottom:12px;">🔬 NEXT RESEARCH OBJECTIVE</div>
+                <div class="next-upgrade-card" style="padding:14px; gap:12px;">
                     <div class="upgrade-top-row" style="gap:12px;">
-                        <div class="upgrade-icon-box" style="width:48px; height:48px; font-size:28px;">${nextNode.icon}</div>
+                        <div class="upgrade-icon-box" style="width:48px; height:48px; font-size:26px;">${nextNode.icon}</div>
                         <div class="upgrade-header-info">
-                            <div class="upgrade-title" style="font-size:16px;">${nextNode.title}</div>
-                            <div class="upgrade-discipline" style="font-size:9px; margin-top:3px;">${nextNode.discipline}</div>
+                            <div class="upgrade-title" style="font-size:18px;">${nextNode.title}</div>
+                            <div class="upgrade-discipline" style="font-size:10px; margin-top:3px;">${nextNode.discipline}</div>
                         </div>
                     </div>
-                    <div class="upgrade-effect" style="font-size:13px; color:#ffffff; background:#190c33; padding:10px; border-radius:8px; border:2px solid var(--border-ink);">
+                    <div class="upgrade-effect" style="font-size:14px; color:#ffffff; background:#190c33; padding:12px; border-radius:8px; border:2px solid var(--border-ink); line-height:1.4;">
                         ${nextNode.effectDescription}
                     </div>
-                    <div style="font-family:var(--font-cartoon); font-size:12px; font-weight:700; color:var(--neon-yellow);">
+                    <div style="font-family:var(--font-cartoon); font-size:14px; font-weight:700; color:var(--neon-yellow);">
                         Cost: ⚡ ${nextNode.opsCost} Ops &nbsp;|&nbsp; 📎 ${nextNode.clipsCost.toWholeScale()} Clips
                     </div>
-                    <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:10px 14px; font-size:14px;" onclick="game.buyTech('${nextNode.id}')">
+                    <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:12px 16px; font-size:15px;" onclick="game.buyTech('${nextNode.id}')">
                         <span>${canAfford ? '💡 RESEARCH NOW' : '🔒 NEED MORE OPS / CLIPS'}</span>
                         <span>⚡ ${nextNode.opsCost} Ops</span>
                     </button>

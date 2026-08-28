@@ -28,9 +28,9 @@
         </div>
     </header>
 
-    <!-- Main Clean Cartoon Workspace -->
+    <!-- Main Clean Symmetrical Workspace (Left: 320px, Center: Flex, Right: 320px) -->
     <main class="app-workspace">
-        <!-- COLUMN 1: LEFT HERO PEDESTAL (Clean, Vibrant, Minimal) -->
+        <!-- COLUMN 1: LEFT PEDESTAL (Paperclip Progress, Clicker & Resources) -->
         <section class="left-pedestal">
             <!-- Big Chunky Cartoon Odometer -->
             <div class="odometer-card">
@@ -87,7 +87,7 @@
 
             <!-- Clean Essential Resource Badges (No Money!) -->
             <div class="resources-card">
-                <!-- Computing Ops Badge (Always Active) -->
+                <!-- Computing Ops Badge -->
                 <div class="res-badge ops-badge">
                     <span class="res-icon">⚡</span>
                     <div class="res-details">
@@ -96,7 +96,7 @@
                     </div>
                 </div>
 
-                <!-- Wire Row: Unlocks part-way through at city-level production capacity (50,000 clips) -->
+                <!-- Wire Row: Unlocks at city-level production capacity (50,000 clips) -->
                 <div id="row-wire" class="res-badge wire-badge" style="display:none;">
                     <div class="res-info">
                         <span class="res-icon">🧵</span>
@@ -122,7 +122,7 @@
             </div>
         </section>
 
-        <!-- COLUMN 2: CENTER ARENA (Vibrant Pixel Art Canvas & News & Comic Dialogue) -->
+        <!-- COLUMN 2: CENTER ARENA (Vibrant Pixel Art Canvas & Spilling Fluid Paperclips) -->
         <section class="center-arena">
             <!-- Cute Floating News Pill -->
             <div id="news-ticker" class="news-ticker-pill" title="Click to cycle headline">
@@ -146,68 +146,58 @@
             </div>
         </section>
 
-        <!-- COLUMN 3: RIGHT MENU DOCK (Only Store & Tech Buttons!) -->
-        <section class="right-menu-dock">
-            <button id="btn-open-store" class="menu-dock-btn store-btn" data-tab="store">
-                <span class="btn-dock-icon">🛒</span>
-                <span class="btn-dock-label">STORE</span>
-                <span id="store-badge-count" class="btn-dock-badge" style="display:none;">!</span>
-            </button>
+        <!-- COLUMN 3: RIGHT PEDESTAL (Exact same width as Left Pedestal: 320px) -->
+        <section class="right-pedestal">
+            <!-- Symmetrical Tab Header (Store & Tech Switcher) -->
+            <div class="right-tabs-bar">
+                <button id="tab-btn-store" class="right-tab-btn active" data-tab="store">
+                    <span class="tab-icon">🛒</span>
+                    <span class="tab-label">STORE</span>
+                    <span id="store-badge-count" class="tab-badge" style="display:none;">!</span>
+                </button>
+                <button id="tab-btn-tech" class="right-tab-btn" data-tab="tech">
+                    <span class="tab-icon">🔬</span>
+                    <span class="tab-label">TECH</span>
+                    <span id="tech-badge-count" class="tab-badge" style="display:none;">!</span>
+                </button>
+            </div>
 
-            <button id="btn-open-tech" class="menu-dock-btn tech-btn" data-tab="tech">
-                <span class="btn-dock-icon">🔬</span>
-                <span class="btn-dock-label">TECH</span>
-                <span id="tech-badge-count" class="btn-dock-badge" style="display:none;">!</span>
-            </button>
+            <!-- STORE VIEW (Multipliers, Next Upgrade, Machines) -->
+            <div id="view-store" class="tab-content-view" style="display:flex;">
+                <!-- Multiplier Selector -->
+                <div class="multiplier-bar">
+                    <span class="mult-label">Buy Amount:</span>
+                    <div class="mult-group">
+                        <button class="mult-btn active" data-mult="1">1x</button>
+                        <button class="mult-btn" data-mult="10">10x</button>
+                        <button class="mult-btn" data-mult="100">100x</button>
+                        <button class="mult-btn" data-mult="max">MAX</button>
+                    </div>
+                </div>
+
+                <!-- Single Next Upgrade Card Shelf -->
+                <div class="single-upgrade-shelf">
+                    <div class="shelf-label">⚡ NEXT RESEARCH UPGRADE</div>
+                    <div id="upgrades-shelf" class="shelf-content">
+                        <!-- Injected dynamically: ONLY 1 single next unpurchased upgrade card -->
+                    </div>
+                </div>
+
+                <!-- Buildings / Machines Catalog -->
+                <div class="buildings-section-title">🏭 FACTORY AUTOMATION</div>
+                <div id="buildings-container" class="buildings-container">
+                    <!-- Building cards injected dynamically -->
+                </div>
+            </div>
+
+            <!-- TECH VIEW (Single Next Research Objective) -->
+            <div id="view-tech" class="tab-content-view" style="display:none;">
+                <div id="tech-tree-container" class="tech-tree-container">
+                    <!-- Single Next Tech Card injected dynamically -->
+                </div>
+            </div>
         </section>
     </main>
-
-    <!-- SLIDE-OUT MENU DRAWER (Appears only when Store or Tech button is pressed) -->
-    <div id="menu-drawer-backdrop" class="drawer-backdrop"></div>
-    <aside id="menu-drawer" class="menu-drawer">
-        <div class="drawer-header">
-            <div class="drawer-title" id="drawer-title">
-                <span id="drawer-icon">🛒</span>
-                <span id="drawer-heading">FACTORY STORE</span>
-            </div>
-            <button id="btn-close-drawer" class="btn-drawer-close" title="Close Menu">✖</button>
-        </div>
-
-        <!-- STORE VIEW IN DRAWER -->
-        <div id="view-store" class="drawer-content-view" style="display:block;">
-            <!-- Multiplier Selector -->
-            <div class="multiplier-bar">
-                <span class="mult-label">Buy Amount:</span>
-                <div class="mult-group">
-                    <button class="mult-btn active" data-mult="1">1x</button>
-                    <button class="mult-btn" data-mult="10">10x</button>
-                    <button class="mult-btn" data-mult="100">100x</button>
-                    <button class="mult-btn" data-mult="max">MAX</button>
-                </div>
-            </div>
-
-            <!-- Single Next Upgrade Card Shelf (Only shows NEXT unpurchased upgrade!) -->
-            <div class="single-upgrade-shelf">
-                <div class="shelf-label">⚡ NEXT RESEARCH UPGRADE</div>
-                <div id="upgrades-shelf" class="shelf-content">
-                    <!-- Injected dynamically: ONLY 1 single next unpurchased upgrade card -->
-                </div>
-            </div>
-
-            <!-- Buildings / Machines Catalog -->
-            <div class="buildings-section-title">🏭 FACTORY AUTOMATION</div>
-            <div id="buildings-container" class="buildings-container">
-                <!-- Building cards injected dynamically -->
-            </div>
-        </div>
-
-        <!-- TECH VIEW IN DRAWER (Only shows NEXT unpurchased research node!) -->
-        <div id="view-tech" class="drawer-content-view" style="display:none;">
-            <div id="tech-tree-container" class="tech-tree-container">
-                <!-- Single Next Tech Card injected dynamically -->
-            </div>
-        </div>
-    </aside>
 
     <!-- Floating Popups & Toast Notifications -->
     <div id="floating-popups"></div>
