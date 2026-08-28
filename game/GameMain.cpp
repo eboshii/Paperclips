@@ -212,7 +212,7 @@ int main() {
             if (playerClips >= cost) {
                 playerClips = playerClips - cost;
                 bioConverters++;
-                humanPopulation = std::max(static_cast<int64_t>(0), humanPopulation - 5000000LL);
+                humanPopulation = std::max<int64_t>(0, humanPopulation - 5000000LL);
                 playerWire = playerWire + BigDouble(5000.0, 0);
                 lastActionMessage = "Deconstructed 5M biomass into 5,000kg wire.";
             }
