@@ -1,0 +1,24 @@
+{
+  "name": "objective-paperclips-web",
+  "version": "3.8.0",
+  "description": "Objective: Paperclips (Universal Paperclips 3D) - Web & Electron Edition",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "serve": "python3 serve_web.py"
+  },
+  "keywords": [
+    "clicker",
+    "incremental",
+    "cookie-clicker-clone",
+    "paperclips",
+    "sci-fi",
+    "simulation",
+    "electron"
+  ],
+  "author": "Objective Paperclips Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^29.0.0"
+  }
+}

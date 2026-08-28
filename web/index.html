@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Objective: Paperclips (Universal Paperclips 3D - Web Edition)</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Google Fonts for JetBrains Mono & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Top Header Bar -->
+    <header class="app-header">
+        <div class="brand-section">
+            <span class="app-logo">📎 OBJECTIVE: PAPERCLIPS</span>
+            <span class="app-badge">OMNICLIP WEB v3.8.0</span>
+        </div>
+        <div class="header-controls">
+            <div class="volume-control">
+                <button id="btn-mute" class="hdr-btn">🔊 Sound On</button>
+                <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.6">
+            </div>
+            <button id="btn-save" class="hdr-btn">💾 Save</button>
+            <button id="btn-export" class="hdr-btn">📤 Export</button>
+            <button id="btn-import" class="hdr-btn">📥 Import</button>
+            <button id="btn-wipe" class="hdr-btn" style="color:var(--accent-red);">⚠️ Wipe</button>
+        </div>
+    </header>
+
+    <!-- 3-Column Workspace -->
+    <main class="app-workspace">
+        <!-- COLUMN 1: LEFT PEDESTAL (Clicker & Resources) -->
+        <section class="left-pedestal">
+            <div class="unit-tagline">COGNITION KERNEL: ACTIVE</div>
+
+            <!-- Big Number Odometer -->
+            <div class="odometer-card">
+                <div id="odometer-clips" class="odometer-number">0</div>
+                <div class="odometer-sub">paperclips</div>
+                <div id="odometer-cps" class="odometer-cps">per second: 0</div>
+            </div>
+
+            <!-- Hero Clicker Target Pedestal -->
+            <div id="hero-clicker-target" class="hero-clicker-wrapper" title="Click to manually bend steel wire into a paperclip!">
+                <svg class="hero-paperclip-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M35,25 L35,75 A15,15 0 0,0 65,75 L65,15 A12,12 0 0,0 41,15 L41,70 A7,7 0 0,0 55,70 L55,30" 
+                          stroke="url(#clipGrad)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                    <defs>
+                        <linearGradient id="clipGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="30%" stop-color="#d0e2ff"/>
+                            <stop offset="70%" stop-color="#738da9"/>
+                            <stop offset="100%" stop-color="#eaf2ff"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+
+            <!-- Flywheel Momentum Overclock Meter -->
+            <div class="flywheel-container">
+                <div class="flywheel-label-row">
+                    <span id="flywheel-label">KINETIC FLYWHEEL READY</span>
+                    <span>OVERCLOCK</span>
+                </div>
+                <div class="flywheel-track">
+                    <div id="flywheel-progress" class="flywheel-fill"></div>
+                </div>
+            </div>
+
+            <!-- Secondary Resources Stockpile -->
+            <div class="stockpile-card">
+                <div class="stockpile-title">RESOURCE STOCKPILE</div>
+                
+                <div class="resource-row">
+                    <span class="res-name">Wire Supply:</span>
+                    <span id="res-wire" class="res-val">100.0 kg</span>
+                </div>
+
+                <div class="resource-row">
+                    <span class="res-name">Available Funds:</span>
+                    <span id="res-funds" class="res-val funds">$50.00</span>
+                </div>
+
+                <div class="resource-row">
+                    <span class="res-name">Computing Ops:</span>
+                    <span id="res-ops" class="res-val ops">0 / 1000 FLOPs</span>
+                </div>
+
+                <div id="row-population" class="resource-row" style="display:none;">
+                    <span class="res-name">Human Pop:</span>
+                    <span id="res-population" class="res-val pop">8,000,000,000</span>
+                </div>
+
+                <div class="resource-row">
+                    <span class="res-name">Mass Equiv:</span>
+                    <span id="res-mass-equiv" class="res-val" style="font-size:11px; color:#8fa2b8;">1 Paperclip (1g)</span>
+                </div>
+
+                <!-- Buy Wire Action Pill -->
+                <button id="btn-buy-wire" class="wire-action-btn" title="Purchase fresh high-tensile steel wire spools">
+                    <span id="wire-btn-gain" class="wire-btn-text">+ Buy 1,000 kg Wire</span>
+                    <span id="wire-btn-cost" class="wire-btn-sub">Cost: $15.00</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- COLUMN 2: CENTER VIEWPORT (Cosmic 3D Canvas & News & CRT Dialogue) -->
+        <section class="center-viewport">
+            <!-- News Ticker Marquee -->
+            <div id="news-ticker" class="news-marquee-bar" title="Click to cycle headlines">
+                <span class="news-badge">NEWS</span>
+                <span id="news-text" class="news-content">Sterling Robotics deploys autonomous desktop bending prototype.</span>
+            </div>
+
+            <!-- 3D Cosmic Canvas Viewport -->
+            <div class="canvas-container">
+                <canvas id="cosmic-canvas"></canvas>
+
+                <!-- Cosmic Scale Viewport Tier Switcher -->
+                <div class="tier-switcher-bar">
+                    <button class="tier-pill active" data-tier="-1">Auto</button>
+                    <button class="tier-pill" data-tier="0">Factory</button>
+                    <button class="tier-pill" data-tier="1">Earth</button>
+                    <button class="tier-pill" data-tier="2">Dyson</button>
+                    <button class="tier-pill" data-tier="3">Galaxy</button>
+                    <button class="tier-pill" data-tier="4">11D Void</button>
+                </div>
+            </div>
+
+            <!-- CRT Communications Terminal Feed -->
+            <div class="terminal-feed-card">
+                <div class="terminal-header">
+                    <span>ANALOG CRT COMMS LINK // CHANNEL 01</span>
+                    <span>STATUS: 9600 BAUD SYNC</span>
+                </div>
+                <div id="terminal-logs" class="terminal-logs">
+                    <!-- Logs injected dynamically by DialogueDirector -->
+                </div>
+            </div>
+        </section>
+
+        <!-- COLUMN 3: RIGHT SIDEBAR (Store, Tech Web, Spatial Grid, Stats, Prestige) -->
+        <section class="right-sidebar">
+            <!-- Navigation Tabs -->
+            <nav class="tab-navigation">
+                <button class="nav-tab active" data-tab="store">Store</button>
+                <button class="nav-tab" data-tab="tech">Tech Web</button>
+                <button class="nav-tab" data-tab="grid">Grid</button>
+                <button class="nav-tab" data-tab="stats">Stats</button>
+                <button class="nav-tab" data-tab="prestige">Epoch</button>
+            </nav>
+
+            <!-- Store Tab View -->
+            <div id="view-store" class="tab-view-container" style="display:block;">
+                <!-- Multiplier Selector -->
+                <div class="multiplier-bar">
+                    <span>Buy Quantity:</span>
+                    <div class="mult-group">
+                        <button class="mult-btn active" data-mult="1">1x</button>
+                        <button class="mult-btn" data-mult="10">10x</button>
+                        <button class="mult-btn" data-mult="100">100x</button>
+                        <button class="mult-btn" data-mult="next">Next</button>
+                        <button class="mult-btn" data-mult="max">Max</button>
+                    </div>
+                </div>
+
+                <!-- Upgrades Quick Shelf -->
+                <div class="upgrades-shelf-wrapper">
+                    <div class="upgrades-shelf-title">RESEARCH UPGRADE SHELF</div>
+                    <div id="upgrades-shelf" class="upgrades-shelf">
+                        <!-- Upgrades icons injected dynamically -->
+                    </div>
+                </div>
+
+                <!-- Building Rows Container -->
+                <div id="buildings-container" class="buildings-container" style="margin-top:10px;">
+                    <!-- Buildings injected dynamically -->
+                </div>
+            </div>
+
+            <!-- Tech Web Tab View -->
+            <div id="view-tech" class="tab-view-container" style="display:none;">
+                <div id="tech-tree-container">
+                    <!-- Full Tech Web injected dynamically -->
+                </div>
+            </div>
+
+            <!-- Spatial Grid Tab View -->
+            <div id="view-grid" class="tab-view-container" style="display:none;">
+                <div id="spatial-grid-view">
+                    <!-- Spatial 8x8 Grid injected dynamically -->
+                </div>
+            </div>
+
+            <!-- Stats Tab View -->
+            <div id="view-stats" class="tab-view-container" style="display:none;">
+                <div id="stats-view-container">
+                    <!-- Telemetry & Achievements injected dynamically -->
+                </div>
+            </div>
+
+            <!-- Prestige Tab View -->
+            <div id="view-prestige" class="tab-view-container" style="display:none;">
+                <div id="prestige-view-container">
+                    <!-- Quantum Epoch Reboot injected dynamically -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Floating Number Popups Overlay -->
+    <div id="floating-popups"></div>
+
+    <!-- Achievement Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Core Game Scripts in Dependency Order -->
+    <script src="js/bigDouble.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/buildings.js"></script>
+    <script src="js/techTree.js"></script>
+    <script src="js/spatialGrid.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/news.js"></script>
+    <script src="js/dialogue.js"></script>
+    <script src="js/prestige.js"></script>
+    <script src="js/visualizer.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

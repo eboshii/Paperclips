@@ -73,8 +73,17 @@ g++ -std=c++20 -O2 engine/src/OmniAudio.cpp game/GameMain.cpp -o ObjectivePaperc
 ./ObjectivePaperclips
 ```
 
-### Option C: Mobile & Web (Android NDK / iOS Metal / WebAssembly)
-* Targetable via `CMakeLists.txt` with Emscripten (`emcmake cmake`) or Android NDK toolchains.
+### Option C: Web & Electron Desktop Edition
+* **Run in any Browser:**
+  ```bash
+  python3 serve_web.py
+  ```
+  Then open `http://localhost:8080` in your web browser, or directly open [`web/index.html`](web/index.html).
+* **Run as Electron Desktop App:**
+  ```bash
+  npm install
+  npm start
+  ```
 
 ---
 
@@ -85,3 +94,4 @@ You can run the Python economy simulator immediately on any machine with Python 
 ```bash
 python3 tools/economy_simulator.py --speed 10 --target 1000000000
 ```
+
