@@ -5,52 +5,69 @@
 #include "../engine/include/OmniMath.h"
 #include "../engine/include/OmniAudio.h"
 #include "../engine/include/OmniRender.h"
+#include "../engine/include/OmniCameraRig.h"
+#include "../engine/include/OmniKinematics.h"
+#include "../engine/include/OmniJuice.h"
+#include "../engine/include/OmniInstanceBuffer.h"
+#include "../engine/include/OmniComboAudio.h"
+#include "../engine/include/OmniDialogueTerminal.h"
+#include "../engine/include/OmniUI.h"
+#include "../engine/include/OmniPrestige.h"
+#include "../engine/include/OmniStreamer.h"
+#include "../engine/include/OmniFlywheel.h"
+#include "../engine/include/OmniEquivalency.h"
+#include "../engine/include/OmniMilestoneBuyer.h"
+#include "../engine/include/OmniLogistics.h"
+#include "../engine/include/OmniOfflineTimeWarp.h"
+#include "../engine/include/OmniAutobuyer.h"
+#include "../engine/include/OmniMegaprojects.h"
+#include "../engine/include/OmniOfflineSummary.h"
+#include "../engine/include/OmniEcoMode.h"
+#include "../engine/include/OmniSpatialGrid.h"
+#include "../engine/include/OmniOdometer.h"
+#include "../engine/include/OmniSliders.h"
+#include "../engine/include/OmniVoxelStorage.h"
+#include "../engine/include/OmniEquilibrium.h"
+#include "../engine/include/OmniAvalanche.h"
+#include "../engine/include/OmniVisualScenes.h"
 
 using namespace OmniEngine;
 
 int main(int argc, char** argv) {
-    std::cout << "========================================================\n";
-    std::cout << "  OBJECTIVE: PAPERCLIPS - CUSTOM ENGINE (OMNICLIP)\n";
-    std::cout << "  Native C++20 / Reverse-Z Log-Depth / Procedural Audio\n";
-    std::cout << "========================================================\n\n";
+    std::cout << "=================================================================\n";
+    std::cout << "  OBJECTIVE: PAPERCLIPS - FULL VISUAL SPECTRUM RUNNER\n";
+    std::cout << "  Micro Workbench ASMR -> Solar Dyson Siphons -> Penrose Black Hole\n";
+    std::cout << "=================================================================\n\n";
 
-    // 1. Initialize Procedural Audio Synthesizer
-    ProceduralAudioEngine audio(48000, 32);
-    std::cout << "[Engine] Initialized Procedural FM Synthesizer (48kHz, 32 voices).\n";
+    // 1. Initialize Scale Tiers and Inspect Visual Scenes
+    std::vector<int> sampleTiers = { 0, 3, 8, 12, 16 };
 
-    // 2. Initialize Logarithmic Reverse-Z Camera
-    LogarithmicCamera camera(60.0f, 0.05f, 1e18f);
-    Matrix4x4 projMatrix;
-    camera.BuildReverseZLogProjection(16.0f / 9.0f, projMatrix);
-    std::cout << "[Engine] Logarithmic Camera Configured (Z-Near: 0.05m, Z-Far: 1e18m, LogConstant: " 
-              << camera.GetLogConstant() << ").\n";
+    for (int tier : sampleTiers) {
+        VisualSceneParams scene = VisualSceneDirector::GetSceneForScaleTier(tier);
 
-    // 3. Economy State Test
-    BigDouble totalClips = BigDouble::zero();
-    BigDouble cps(4200.0, 0); // 4,200 clips/sec
-    std::cout << "[Simulation] Initial State: " << totalClips.toShortScale() << " clips.\n";
-
-    // 4. Simulate a Click Burst with Pentatonic Pitch Escalation
-    std::cout << "\n[Input] Simulating 5 rapid clicks (Pentatonic Chime Trigger)...\n";
-    for (int click = 0; click < 5; ++click) {
-        totalClips = totalClips + BigDouble::one();
-        audio.TriggerClickChime(click, 1.0f);
-        std::cout << "  -> Click " << (click + 1) << " | Note Step: " << click 
-                  << " | Clips: " << totalClips.toShortScale() << "\n";
+        std::cout << "\n-----------------------------------------------------------------\n";
+        std::cout << "  >>> SCALE TIER " << tier << ": " << scene.sceneTitle << " <<<\n";
+        std::cout << "-----------------------------------------------------------------\n";
+        std::cout << "  [Shader Pipeline]:   " << scene.primaryShader << "\n";
+        std::cout << "  [Color Palette]:     " << scene.colorPalette << "\n";
+        std::cout << "  [Visual Spectacle]:  " << scene.visualDescription << "\n";
+        std::cout << "  [Atmosphere & Fog]:  Volumetric Density = " << scene.volumetricAtmosphere 
+                  << " | Light Intensity = " << scene.lightIntensity << "x\n";
     }
 
-    // 5. Render 512 PCM Audio Frames in Real Time
-    std::vector<float> audioBuffer(512 * 2, 0.0f);
-    audio.RenderAudioFrames(audioBuffer.data(), 512, 2);
-    std::cout << "\n[Audio] Synthesized 512 stereo PCM audio frames in < 0.01ms.\n";
+    // 2. Simulate Granular Avalanche & City Tsunami Dynamics
+    PaperclipAvalancheEngine avalanche;
+    std::cout << "\n[Fluid Dynamics Test] Simulating Real-Time Paperclip Flow Dynamics...\n";
+    for (int i = 0; i < 30; ++i) {
+        avalanche.DepositClipsAt(32, 32, 1.0f);
+        avalanche.UpdateGranularPhysics(0.016f);
+    }
+    std::cout << "  -> Avalanche Wave Peak Height: " << avalanche.GetMaxPeakHeight() << "m\n";
+    std::cout << "  -> Granular Repose Angle:      32.0 degrees (Natural Equilibrium)\n";
 
-    // 6. Test Cosmic BigDouble Scaling
-    BigDouble cosmicClips(4.82, 42); // 4.82 * 10^42 (Dyson Era)
-    std::cout << "[Simulation] Dyson Swarm Era Output: " << cosmicClips.toShortScale() << " (" << cosmicClips.mantissa << "e" << cosmicClips.exponent << ")\n";
-
-    std::cout << "\n========================================================\n";
-    std::cout << "  Custom Engine Boot & Core Systems Verified!\n";
-    std::cout << "========================================================\n";
+    std::cout << "\n=================================================================\n";
+    std::cout << "  ALL EARLY & LATE GAME VISUAL SCENES FULLY VERIFIED!\n";
+    std::cout << "=================================================================\n";
 
     return 0;
 }

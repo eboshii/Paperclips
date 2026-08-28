@@ -1,0 +1,57 @@
+#version 450 core
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+struct GranularCellGPU {
+    float height;
+    float velocityX;
+    float velocityZ;
+    uint isObstacle;
+};
+
+layout(std430, binding = 0) buffer HeightfieldBuffer {
+    GranularCellGPU cells[];
+};
+
+uniform float uDeltaTime;
+uniform uint uGridDimX;
+uniform uint uGridDimZ;
+uniform float uCellSize;
+
+const float c_TanRepose = 0.6248; // tan(32 degrees angle of repose)
+
+void main() {
+    uint x = gl_GlobalInvocationID.x;
+    uint z = gl_GlobalInvocationID.y;
+
+    if (x <= 0 || x >= uGridDimX - 1 || z <= 0 || z >= uGridDimZ - 1) return;
+
+    uint idx = z * uGridDimX + x;
+    if (cells[idx].isObstacle > 0 || cells[idx].height <= 0.001) return;
+
+    float currentHeight = cells[idx].height;
+    float maxDelta = c_TanRepose * uCellSize;
+
+    // Check 4 neighbors
+    uint neighbors[4] = {
+        z * uGridDimX + (x + 1),
+        z * uGridDimX + (x - 1),
+        (z + 1) * uGridDimX + x,
+        (z - 1) * uGridDimX + x
+    };
+
+    float totalOutflow = 0.0;
+
+    for (int i = 0; i < 4; ++i) {
+        uint nIdx = neighbors[i];
+        if (cells[nIdx].isObstacle > 0) continue;
+
+        float slope = currentHeight - cells[nIdx].height;
+        if (slope > maxDelta) {
+            float excess = (slope - maxDelta) * 0.25 * 4.5 * uDeltaTime;
+            totalOutflow += excess;
+            atomicAdd(cells[nIdx].height, excess);
+        }
+    }
+
+    cells[idx].height = max(0.0, currentHeight - totalOutflow);
+}

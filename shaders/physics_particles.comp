@@ -1,0 +1,66 @@
+#version 450 core
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+struct ClipPhysics {
+    vec4 position; // xyz = pos, w = isSettled
+    vec4 velocity; // xyz = vel, w = padding
+    vec4 rotation; // xyz = euler, w = padding
+    vec4 rotVel;   // xyz = rotVel, w = padding
+};
+
+layout(std430, binding = 0) buffer ClipBuffer {
+    ClipPhysics clips[];
+};
+
+uniform float uDeltaTime;
+uniform uint uActiveCount;
+
+const vec3 c_Gravity = vec3(0.0, -9.81, 0.0);
+const float c_BinFloorY = 0.02;
+const float c_BinMinX = 0.8;
+const float c_BinMaxX = 2.2;
+const float c_BinMinZ = -0.6;
+const float c_BinMaxZ = 0.6;
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    if (index >= uActiveCount) return;
+
+    if (clips[index].position.w > 0.5) return; // Settled
+
+    vec3 pos = clips[index].position.xyz;
+    vec3 vel = clips[index].velocity.xyz;
+    vec3 rot = clips[index].rotation.xyz;
+    vec3 rotVel = clips[index].rotVel.xyz;
+
+    // Apply gravity
+    vel += c_Gravity * uDeltaTime;
+    pos += vel * uDeltaTime;
+    rot += rotVel * uDeltaTime;
+
+    // Collisions with bin boundaries
+    if (pos.x > c_BinMaxX) { pos.x = c_BinMaxX; vel.x = -vel.x * 0.4; }
+    if (pos.x < c_BinMinX && pos.y < 0.3) { pos.x = c_BinMinX; vel.x = -vel.x * 0.4; }
+    if (pos.z > c_BinMaxZ) { pos.z = c_BinMaxZ; vel.z = -vel.z * 0.4; }
+    if (pos.z < c_BinMinZ) { pos.z = c_BinMinZ; vel.z = -vel.z * 0.4; }
+
+    // Bin Floor Collision
+    if (pos.y <= c_BinFloorY) {
+        pos.y = c_BinFloorY;
+        vel.y = -vel.y * 0.25; // Inelastic damping
+        vel.x *= 0.6;
+        vel.z *= 0.6;
+        rotVel *= 0.5;
+
+        // Check if settled
+        if (dot(vel, vel) < 0.05) {
+            clips[index].position.w = 1.0; // Mark settled
+            vel = vec3(0.0);
+        }
+    }
+
+    clips[index].position.xyz = pos;
+    clips[index].velocity.xyz = vel;
+    clips[index].rotation.xyz = rot;
+    clips[index].rotVel.xyz = rotVel;
+}
