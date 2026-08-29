@@ -60,6 +60,7 @@ public:
     void Update(float dt, const BigDouble& lifetimeClips);
     void PushMessage(const std::string& sender, const std::string& text, LogSeverity severity, bool hasChoices = false, const std::vector<TerminalChoice>& choices = {});
     void SelectChoice(size_t messageIndex, size_t choiceIndex);
+    void OnBuildingPurchased(const std::string& buildingId);
 
     const std::vector<TerminalMessage>& GetHistory() const { return m_history; }
     size_t GetUnreadCount() const { return m_unreadCount; }

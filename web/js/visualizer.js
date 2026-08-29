@@ -93,6 +93,12 @@ class CosmicVisualizer {
             [63, 31, 55, 23, 61, 29, 53, 21]
         ];
 
+        // Screen Shake & Scene Transition Animation State
+        this.shakeTimer = 0.0;
+        this.shakeIntensity = 0.0;
+        this.transitionBanner = null;
+        this.transitionBannerTimer = 0.0;
+
         this.initEvents();
     }
 
@@ -269,26 +275,73 @@ class CosmicVisualizer {
         }
     }
 
+    getTierScale(tier = this.tier) {
+        const scales = [1.0, 0.72, 0.52, 0.38, 0.28, 0.20, 0.15];
+        return scales[Math.max(0, Math.min(6, tier))] || 1.0;
+    }
+
     computeTargetCapacity(state, ph) {
         if (!state || !state.clips) return 0.0;
         let cLog = 0;
+        let numVal = 0;
         if (state.clips instanceof BigDouble) {
             if (state.clips.mantissa <= 0) return 0.0;
             cLog = state.clips.exponent + Math.log10(Math.max(1e-9, state.clips.mantissa));
+            if (state.clips.exponent < 6) numVal = state.clips.toDouble();
         } else {
-            const num = Number(state.clips) || 0;
-            if (num <= 0) return 0.0;
-            cLog = Math.log10(num);
+            numVal = Number(state.clips) || 0;
+            if (numVal <= 0) return 0.0;
+            cLog = Math.log10(numVal);
         }
 
-        const log25 = Math.log10(25.0); // ~1.39794
-        if (cLog <= log25) {
-            const linearClips = Math.pow(10, cLog);
-            return Math.max(0, linearClips * 0.08);
+        const tier = (this.tier !== undefined) ? this.tier : 0;
+        const maxFillHeight = ph * 0.65;
+
+        let fillFraction = 0.0;
+
+        if (tier === 0) {
+            const logMax = Math.log10(5000.0); // ~3.69897 (burst threshold)
+            if (numVal > 0 && numVal <= 25.0) {
+                fillFraction = (numVal / 25.0) * 0.08;
+            } else if (cLog > Math.log10(25.0)) {
+                const logMin = Math.log10(25.0);
+                const progress = Math.min(1.0, (cLog - logMin) / (logMax - logMin));
+                fillFraction = 0.08 + progress * 0.92;
+            }
         } else {
-            const logVal = cLog - log25;
-            return Math.min(ph * 0.55, 2.0 + logVal * 8.5);
+            let logMin = 3.699;
+            let logMax = 5.699;
+            if (tier === 1) {
+                logMin = 3.699;    // 5k (Town entry)
+                logMax = 5.699;    // 500k (Town submerged)
+            } else if (tier === 2) {
+                logMin = 5.699;    // 500k (Megacity entry)
+                logMax = 9.000;    // 1B (Metropolis submerged)
+            } else if (tier === 3) {
+                logMin = 9.000;    // 1B (Planetary Earth entry)
+                logMax = 24.776;   // 5.97e24 (Earth mass converted)
+            } else if (tier === 4) {
+                logMin = 24.776;   // 5.97e24 (Solar Dyson entry)
+                logMax = 45.000;   // 1e45 (Solar system matter)
+            } else if (tier === 5) {
+                logMin = 45.000;   // 1e45 (Galactic Penrose entry)
+                logMax = 78.000;   // 1e78 (Milky Way galaxy matter)
+            } else if (tier === 6) {
+                logMin = 78.000;   // 1e78 (11D Multiverse entry)
+                logMax = 150.000;  // 1e150 (Multiverse quantum foam)
+            }
+
+            if (cLog <= logMin) {
+                const subRatio = Math.max(0.0, Math.min(1.0, Math.pow(10, cLog - logMin)));
+                fillFraction = subRatio * 0.06;
+            } else {
+                const progress = Math.min(1.0, (cLog - logMin) / (logMax - logMin));
+                fillFraction = 0.06 + progress * 0.94;
+            }
         }
+
+        fillFraction = Math.max(0.0, Math.min(1.0, fillFraction));
+        return fillFraction * maxFillHeight;
     }
 
     syncFluidToInventory(state, instant = false) {
@@ -334,6 +387,35 @@ class CosmicVisualizer {
         }
     }
 
+    triggerTransition(fromTier, toTier, bannerText) {
+        if (this.autoTier) {
+            this.tier = Math.max(0, Math.min(6, toTier));
+        }
+        this.shakeTimer = 1.2;
+        this.shakeIntensity = 12.0;
+        this.transitionBanner = bannerText || `⚡ ENTERING ${this.getTierName(toTier).toUpperCase()}`;
+        this.transitionBannerTimer = 4.0;
+        
+        // Spawn eruption of falling clips and sparks
+        for (let i = 0; i < 90; ++i) {
+            this.fallingClips.push({
+                x: Math.random() * 240,
+                y: -Math.random() * 80,
+                vx: (Math.random() - 0.5) * 55,
+                vy: 50 + Math.random() * 110,
+                rot: Math.random() * Math.PI * 2,
+                vrot: (Math.random() - 0.5) * 16,
+                size: 2.5 + Math.random() * 2.5,
+                colorScheme: Math.floor(Math.random() * 3)
+            });
+        }
+        this.spawnSparks(120, 75, 50);
+
+        if (window.game && window.game.audio) {
+            window.game.audio.playTechUnlockSound();
+        }
+    }
+
     setTier(tierIndex) {
         if (tierIndex === -1) {
             this.autoTier = true;
@@ -353,6 +435,14 @@ class CosmicVisualizer {
 
         if (this.autoTier && state) {
             this.tier = this.determineAutoTier(state.lifetimeClips);
+        }
+
+        if (this.shakeTimer > 0) {
+            this.shakeTimer = Math.max(0, this.shakeTimer - safeDt);
+        }
+        if (this.transitionBannerTimer > 0) {
+            this.transitionBannerTimer = Math.max(0, this.transitionBannerTimer - safeDt);
+            if (this.transitionBannerTimer <= 0) this.transitionBanner = null;
         }
 
         this.cosmicRotation += safeDt * 0.8;
@@ -601,10 +691,48 @@ class CosmicVisualizer {
             this.applyDitherFilter(pctx, pw, ph);
         }
 
-        // 9. Crisp Nearest-Neighbor Upscale Blit to Main Display Canvas
+        // 9. Crisp Nearest-Neighbor Upscale Blit to Main Display Canvas with Screen Shake
         this.ctx.imageSmoothingEnabled = false;
         this.ctx.clearRect(0, 0, displayW, displayH);
-        this.ctx.drawImage(this.pixelCanvas, 0, 0, pw, ph, 0, 0, displayW, displayH);
+
+        let shakeX = 0;
+        let shakeY = 0;
+        if (this.shakeTimer > 0) {
+            const mag = this.shakeIntensity * (this.shakeTimer / 1.2);
+            shakeX = (Math.random() - 0.5) * mag * pixelScale;
+            shakeY = (Math.random() - 0.5) * mag * pixelScale;
+        }
+
+        this.ctx.drawImage(this.pixelCanvas, 0, 0, pw, ph, shakeX, shakeY, displayW, displayH);
+
+        // 10. Render Transition Banner if active
+        if (this.transitionBanner && this.transitionBannerTimer > 0) {
+            this.renderTransitionBannerOverlay(this.ctx, displayW, displayH);
+        }
+    }
+
+    renderTransitionBannerOverlay(ctx, w, h) {
+        ctx.save();
+        const bannerH = 44;
+        const bannerY = h * 0.14;
+        const alpha = Math.min(1.0, this.transitionBannerTimer > 0.6 ? 1.0 : this.transitionBannerTimer * 1.6);
+
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = 'rgba(15, 8, 30, 0.90)';
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 3;
+
+        ctx.fillRect(16, bannerY, w - 32, bannerH);
+        ctx.strokeRect(16, bannerY, w - 32, bannerH);
+
+        ctx.font = "800 15px 'Fredoka', sans-serif";
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffe600';
+        ctx.shadowColor = '#ff2a85';
+        ctx.shadowBlur = 10;
+        ctx.fillText(this.transitionBanner, w / 2, bannerY + bannerH / 2);
+        ctx.restore();
     }
 
     // =========================================================================
@@ -857,12 +985,44 @@ class CosmicVisualizer {
             ctx.fill();
         });
 
-        // 6. Workshop Machinery / Isometric Floor Overlay
+        // 6. Overfill Emergency Alarm & Bulging Paperclips if high production
+        if (state && state.lifetimeClips && state.lifetimeClips.gte(new BigDouble(2500, 0))) {
+            // Flashing Red Emergency Siren on Center Tie-Beam
+            const sirenFlash = Math.sin(time * 12) > 0;
+            ctx.fillStyle = sirenFlash ? '#ff0033' : '#4a0515';
+            ctx.fillRect(w * 0.5 - 4, h * 0.08 - 7, 8, 7);
+
+            if (sirenFlash) {
+                const sirenGrad = ctx.createRadialGradient(w * 0.5, h * 0.08 - 4, 2, w * 0.5, h * 0.08 + 30, 70);
+                sirenGrad.addColorStop(0, 'rgba(255, 0, 50, 0.35)');
+                sirenGrad.addColorStop(1, 'rgba(255, 0, 50, 0.0)');
+                ctx.fillStyle = sirenGrad;
+                ctx.beginPath();
+                ctx.arc(w * 0.5, h * 0.08 + 15, 60, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Piles of overflowing paperclip wire bulging in the corners
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            ctx.quadraticCurveTo(w * 0.12, h - 25, w * 0.22, h);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(w * 0.78, h);
+            ctx.quadraticCurveTo(w * 0.88, h - 28, w, h);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // 7. Workshop Machinery / Isometric Floor Overlay
         this.renderFactoryFloor(ctx, state);
     }
 
     // =========================================================================
-    // SCENE 1: FACTORY IN TOWN (Muted Slate/Monochrome Dusk Townscape)
+    // SCENE 1: FACTORY IN TOWN (Muted Slate/Monochrome Dusk Townscape with Blown Doors)
     // =========================================================================
     renderFactoryTownVector(ctx, w, h, time, state) {
         // 1. Dark Muted Slate Sky
@@ -910,7 +1070,7 @@ class CosmicVisualizer {
 
         // Pine Tree Silhouettes
         ctx.fillStyle = '#0f1714';
-        for (let tx = 8; tx < w * 0.42; tx += 9) {
+        for (let tx = 8; tx < w * 0.35; tx += 9) {
             ctx.beginPath();
             ctx.moveTo(tx, h * 0.58);
             ctx.lineTo(tx + 4, h * 0.58 - 10);
@@ -919,23 +1079,37 @@ class CosmicVisualizer {
             ctx.fill();
         }
 
-        // 3. Quaint Townscape (Dark Silhouettes & Soft Dim Windows)
-        const townX = w * 0.08;
+        // 3. Quaint Townscape & Mayor Higgins' Town Hall (Left & Center)
+        const townX = w * 0.06;
         const townY = h * 0.56;
+
+        // Mayor Higgins' Town Hall with Clock Tower
+        ctx.fillStyle = '#121720';
+        ctx.fillRect(townX + 2, townY - 28, 26, 28);
+        ctx.fillStyle = '#1c2432';
+        ctx.fillRect(townX + 8, townY - 42, 14, 14);
+        // Clock face
+        ctx.fillStyle = '#ffe600';
+        ctx.beginPath();
+        ctx.arc(townX + 15, townY - 35, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        // Zoning Citation Sign
+        ctx.fillStyle = '#ff2a85';
+        ctx.fillRect(townX - 2, townY - 14, 6, 8);
 
         // Church Spire
         ctx.fillStyle = '#10141a';
-        ctx.fillRect(townX + 32, townY - 24, 10, 24);
+        ctx.fillRect(townX + 38, townY - 24, 10, 24);
         ctx.beginPath();
-        ctx.moveTo(townX + 31, townY - 24);
-        ctx.lineTo(townX + 37, townY - 42);
-        ctx.lineTo(townX + 43, townY - 24);
+        ctx.moveTo(townX + 37, townY - 24);
+        ctx.lineTo(townX + 43, townY - 42);
+        ctx.lineTo(townX + 49, townY - 24);
         ctx.closePath();
         ctx.fill();
 
         // Cottages & Houses
-        for (let i = 0; i < 5; ++i) {
-            const hx = townX + i * 16;
+        for (let i = 0; i < 3; ++i) {
+            const hx = townX + 54 + i * 16;
             const hy = townY + (i % 2) * 4;
             const hw = 13;
             const hh = 12;
@@ -955,28 +1129,27 @@ class CosmicVisualizer {
             // Subtle Dim Window
             ctx.fillStyle = '#cbb87a';
             ctx.fillRect(hx + 3, hy - hh + 4, 3, 3);
-            ctx.fillRect(hx + 7, hy - hh + 4, 3, 3);
         }
 
-        // Utility Telephone Poles & Drooping Wires
-        ctx.strokeStyle = '#1d232e';
-        ctx.lineWidth = 1;
-        for (let px = townX; px < w * 0.52; px += 24) {
-            ctx.fillStyle = '#0f131a';
-            ctx.fillRect(px, townY - 2, 2, 14);
-            ctx.fillRect(px - 3, townY + 1, 8, 2);
-        }
-        ctx.beginPath();
-        ctx.moveTo(townX, townY + 1);
-        ctx.quadraticCurveTo(townX + 12, townY + 4, townX + 24, townY + 1);
-        ctx.quadraticCurveTo(townX + 36, townY + 4, townX + 48, townY + 1);
-        ctx.stroke();
+        // Chief O'Malley's Police Cruiser Blockade
+        const copX = w * 0.44;
+        const copY = h * 0.72;
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(copX, copY, 18, 7);
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(copX + 3, copY - 4, 12, 4);
+        // Flashing Emergency Lightbar (Red Left, Blue Right)
+        const copFlash = Math.sin(time * 10) > 0;
+        ctx.fillStyle = copFlash ? '#ff0033' : '#1e3a8a';
+        ctx.fillRect(copX + 4, copY - 6, 4, 2);
+        ctx.fillStyle = copFlash ? '#1e3a8a' : '#00f0ff';
+        ctx.fillRect(copX + 10, copY - 6, 4, 2);
 
-        // 4. Standalone Factory Complex (Muted Charcoal Brick & Saw-Tooth Roof)
-        const facX = w * 0.52;
-        const facY = h * 0.54;
-        const facW = w * 0.40;
-        const facH = h * 0.28;
+        // 4. Standalone Factory Complex with Blown Open Double Doors
+        const facX = w * 0.55;
+        const facY = h * 0.52;
+        const facW = w * 0.42;
+        const facH = h * 0.32;
 
         ctx.fillStyle = '#26282e';
         ctx.fillRect(facX, facY, facW, facH);
@@ -1007,15 +1180,55 @@ class CosmicVisualizer {
 
         // Factory Windows (Dim amber)
         ctx.fillStyle = '#cbb87a';
-        for (let wy = facY + 8; wy < facY + facH - 10; wy += 10) {
+        for (let wy = facY + 8; wy < facY + facH - 18; wy += 10) {
             for (let wx = facX + 8; wx < facX + facW - 12; wx += 14) {
                 ctx.fillRect(wx, wy, 8, 5);
             }
         }
 
+        // Blown-Open Factory Doors & Silver Paperclip Spillage Torrent
+        const doorX = facX + 10;
+        const doorY = facY + facH - 18;
+        const doorW = 20;
+        const doorH = 18;
+
+        // Dark gaping doorway interior
+        ctx.fillStyle = '#06080c';
+        ctx.fillRect(doorX, doorY, doorW, doorH);
+
+        // Bent/blown open door panels dangling outward
+        ctx.fillStyle = '#475569';
+        ctx.save();
+        ctx.translate(doorX - 2, doorY + doorH);
+        ctx.rotate(-0.4);
+        ctx.fillRect(0, -doorH, 4, doorH);
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(doorX + doorW + 2, doorY + doorH);
+        ctx.rotate(0.4);
+        ctx.fillRect(-4, -doorH, 4, doorH);
+        ctx.restore();
+
+        // Gleaming River / Cascade of Paperclips pouring from the factory into the town road
+        const streamGrad = ctx.createLinearGradient(doorX + 10, doorY + 6, w * 0.1, h);
+        streamGrad.addColorStop(0, '#e2e8f0');
+        streamGrad.addColorStop(0.3, '#94a3b8');
+        streamGrad.addColorStop(1, '#475569');
+        ctx.fillStyle = streamGrad;
+        ctx.beginPath();
+        ctx.moveTo(doorX + 2, doorY + 8);
+        ctx.lineTo(doorX + doorW - 2, doorY + 8);
+        ctx.quadraticCurveTo(doorX - 20, h * 0.75, 0, h * 0.88);
+        ctx.lineTo(0, h);
+        ctx.lineTo(doorX + 40, h);
+        ctx.quadraticCurveTo(doorX + 15, h * 0.80, doorX + doorW - 2, doorY + 8);
+        ctx.closePath();
+        ctx.fill();
+
         // Smokestacks
-        const st1X = facX + facW * 0.25;
-        const st2X = facX + facW * 0.65;
+        const st1X = facX + facW * 0.35;
+        const st2X = facX + facW * 0.75;
         ctx.fillStyle = '#1d1f24';
         ctx.fillRect(st1X - 5, facY - 38, 10, 38);
         ctx.fillRect(st2X - 4, facY - 26, 8, 26);
@@ -1026,18 +1239,6 @@ class CosmicVisualizer {
         // Muted Steam Plumes
         this.renderSmokePlume(ctx, st1X, facY - 40, time, 1.0);
         this.renderSmokePlume(ctx, st2X, facY - 28, time + 1.5, 0.75);
-
-        // Water Tower
-        const wtX = facX + facW + 6;
-        ctx.strokeStyle = '#0f1114';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(wtX - 6, facY + facH); ctx.lineTo(wtX - 2, facY + 8);
-        ctx.moveTo(wtX + 6, facY + facH); ctx.lineTo(wtX + 2, facY + 8);
-        ctx.stroke();
-
-        ctx.fillStyle = '#1f2834';
-        ctx.fillRect(wtX - 7, facY - 4, 14, 12);
 
         // Big Cartoon Paperclip Hologram
         this.drawCartoonPaperclip(ctx, w / 2, h * 0.28, 0.85 * this.heroRecoil, this.heroRotation + time * 0.35);
@@ -1057,7 +1258,7 @@ class CosmicVisualizer {
     }
 
     // =========================================================================
-    // SCENE 2: INDUSTRIAL MEGACITY (Noir / Blueprint Monochrome Metropolis)
+    // SCENE 2: INDUSTRIAL MEGACITY (Noir Metropolis & President's Tower Deconstruction)
     // =========================================================================
     renderCityMetropolisVector(ctx, w, h, time, state) {
         // 1. Dark Blueprint/Noir Sky
@@ -1108,8 +1309,45 @@ class CosmicVisualizer {
             }
         }
 
+        // 4. Golden Trump Tower Parody (Being converted into cyan wire lattice)
+        const trX = w * 0.22;
+        const trW = 28;
+        const trH = 75;
+        const trY = h * 0.68 - trH;
+
+        ctx.fillStyle = '#997300';
+        ctx.fillRect(trX, trY, trW, trH);
+        ctx.fillStyle = '#d4af37';
+        ctx.fillRect(trX + 3, trY + 3, trW - 6, trH - 6);
+
+        // Animated Cyan Wire Deconstruction Grid across the tower
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 1;
+        for (let y = trY + 6; y < trY + trH - 6; y += 8) {
+            ctx.beginPath();
+            ctx.moveTo(trX + 3, y);
+            ctx.lineTo(trX + trW - 3, y + Math.sin(time * 6 + y) * 2);
+            ctx.stroke();
+        }
+
+        // 5. TV News Broadcast Antenna Tower with 500% Tariff Radio Waves
+        const antX = w * 0.72;
+        const antY = h * 0.68 - 65;
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(antX - 8, h * 0.68); ctx.lineTo(antX, antY); ctx.lineTo(antX + 8, h * 0.68);
+        ctx.stroke();
+
+        // Pulsing Broadcast Waves
+        const waveRadius = ((time * 25) % 35);
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+        ctx.beginPath();
+        ctx.arc(antX, antY, waveRadius, 0, Math.PI * 2);
+        ctx.stroke();
+
         // Cooling Towers
-        const ctX = w * 0.82;
+        const ctX = w * 0.88;
         const ctY = h * 0.68;
         ctx.fillStyle = '#1c222e';
         ctx.beginPath();
@@ -1122,7 +1360,7 @@ class CosmicVisualizer {
 
         this.renderSmokePlume(ctx, ctX, ctY - 34, time * 0.8, 1.2);
 
-        // 4. Foreground Monorail & Highway
+        // 6. Foreground Monorail & Highway
         const monoY = h * 0.62;
         ctx.strokeStyle = '#0a0c10';
         ctx.lineWidth = 3;
@@ -1605,7 +1843,7 @@ class CosmicVisualizer {
             }
             ctx.stroke();
 
-            // Overlapping Vibrant Paperclip Textures
+            // Overlapping Vibrant Paperclip Textures scaled by stage zoom
             const palette = ['#00f0ff', '#ffe600', '#ffffff', '#ff2a85', '#00ff88', '#ff7700', '#a855f7', '#38bdf8'];
             const getHash = (col, row, salt = 0) => {
                 let h = ((col * 374761393 + row * 668265263 + salt * 1013904223) ^ 0x5bf03635) >>> 0;
@@ -1613,15 +1851,27 @@ class CosmicVisualizer {
                 return (h ^ (h >>> 16)) >>> 0;
             };
 
-            const stepX = 6.0;
-            const stepY = 5.0;
+            // Stage-dependent zoom configurations: as the scale expands, paperclips render finer and smaller
+            const tierConfigs = [
+                { stepX: 6.0, stepY: 5.0, baseSize: 3.4, sizeVar: 1.4 },  // Tier 0: Factory Interior (close-up)
+                { stepX: 4.6, stepY: 3.8, baseSize: 2.4, sizeVar: 1.0 },  // Tier 1: Factory Town
+                { stepX: 3.6, stepY: 3.0, baseSize: 1.7, sizeVar: 0.7 },  // Tier 2: Industrial Megacity
+                { stepX: 2.8, stepY: 2.3, baseSize: 1.2, sizeVar: 0.5 },  // Tier 3: Planetary Earth
+                { stepX: 2.2, stepY: 1.8, baseSize: 0.85, sizeVar: 0.35 },// Tier 4: Solar Dyson Swarm
+                { stepX: 1.7, stepY: 1.4, baseSize: 0.60, sizeVar: 0.25 },// Tier 5: Galactic Penrose
+                { stepX: 1.3, stepY: 1.1, baseSize: 0.42, sizeVar: 0.18 } // Tier 6: 11D Multiverse
+            ];
+            const tierCfg = tierConfigs[Math.max(0, Math.min(6, this.tier))] || tierConfigs[0];
+
+            const stepX = tierCfg.stepX;
+            const stepY = tierCfg.stepY;
             const numCols = Math.floor((w - 6) / stepX);
 
             for (let c = 0; c < numCols; ++c) {
                 const fx = 3 + c * stepX;
                 const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((fx / w) * this.numColumns)));
                 const moundH = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
-                if (moundH > 1.2) {
+                if (moundH > 1.0) {
                     const topY = floorY - moundH;
                     const maxRows = Math.ceil(moundH / stepY);
                     const dir = (c < numCols / 2) ? -1.0 : 1.0;
@@ -1630,8 +1880,8 @@ class CosmicVisualizer {
                         const fy = floorY - 2.5 - (r * stepY);
                         if (fy < topY) break;
 
-                        const jitterX = (((getHash(c, r, 2) % 1000) / 1000.0) - 0.5) * 5.8;
-                        const jitterY = (((getHash(c, r, 3) % 1000) / 1000.0) - 0.5) * 3.8;
+                        const jitterX = (((getHash(c, r, 2) % 1000) / 1000.0) - 0.5) * (stepX * 0.9);
+                        const jitterY = (((getHash(c, r, 3) % 1000) / 1000.0) - 0.5) * (stepY * 0.7);
                         const depthFactor = Math.min(1.0, (r + 1) / Math.max(1, maxRows));
 
                         const flowX = dir * Math.sin(this.internalFlowPhase + r * 0.35 + c * 0.15) * (1.6 * depthFactor);
@@ -1654,7 +1904,7 @@ class CosmicVisualizer {
 
                         const baseRot = ((getHash(c, r, 1) % 6283) / 1000.0);
                         const rot = baseRot + flowRot + sinkTorque;
-                        const size = 3.6 + ((getHash(c, r, 4) % 1000) / 350.0);
+                        const size = tierCfg.baseSize + ((getHash(c, r, 4) % 1000) / 1000.0) * tierCfg.sizeVar;
                         const color = palette[getHash(c, r, 5) % palette.length];
 
                         this.drawTinyPaperclip(ctx, px, py, size, rot, color);
@@ -1665,26 +1915,30 @@ class CosmicVisualizer {
     }
 
     renderDrainingPaperclips(ctx) {
+        const tierScale = this.getTierScale();
         this.drainingClips.forEach(p => {
             const alpha = p.alpha !== undefined ? p.alpha : 0.6;
             if (alpha <= 0.01) return;
             ctx.save();
             ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
             ctx.strokeStyle = p.color;
-            ctx.lineWidth = 1.2;
+            ctx.lineWidth = Math.max(0.4, 1.2 * tierScale);
             ctx.beginPath();
             ctx.moveTo(p.x - p.vx * 2.2, p.y - p.vy * 2.0);
             ctx.quadraticCurveTo(p.x - p.vx, p.y - p.vy * 0.5, p.x, p.y);
             ctx.stroke();
 
-            this.drawTinyPaperclip(ctx, p.x, p.y, p.size, p.rot, p.color);
+            const clipSize = (p.size || 4.5) * tierScale;
+            this.drawTinyPaperclip(ctx, p.x, p.y, clipSize, p.rot, p.color);
             ctx.restore();
         });
     }
 
     renderFallingPaperclips(ctx) {
+        const tierScale = this.getTierScale();
         this.fallingClips.forEach(p => {
-            this.drawTinyPaperclip(ctx, p.x, p.y, p.size, p.rot, p.color);
+            const clipSize = (p.size || 4.5) * tierScale;
+            this.drawTinyPaperclip(ctx, p.x, p.y, clipSize, p.rot, p.color);
         });
     }
 
@@ -1694,11 +1948,11 @@ class CosmicVisualizer {
         ctx.rotate(rot);
 
         ctx.strokeStyle = color;
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = Math.max(0.45, Math.min(1.2, size * 0.28));
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
-        const s = size / 6;
+        const s = Math.max(0.1, size / 6);
         ctx.beginPath();
         ctx.moveTo(-2 * s, 3 * s);
         ctx.lineTo(-2 * s, -3 * s);

@@ -606,7 +606,7 @@ int main() {
         // ----------------------------------------------------
         CosmicVisualTier activeTier = (debugZoomTier >= 0) ? static_cast<CosmicVisualTier>(debugZoomTier) : OmniCosmicRenderer::DetermineTier(lifetimeClips);
 
-        if (activeTier == CosmicVisualTier::FactoryFloor) {
+        if (activeTier == CosmicVisualTier::FactoryInterior || activeTier == CosmicVisualTier::TownComplex || activeTier == CosmicVisualTier::CityMetropolis) {
             window.BeginFrame(0.06f, 0.07f, 0.09f);
         } else if (activeTier == CosmicVisualTier::PlanetaryEarth) {
             window.BeginFrame(0.02f, 0.04f, 0.07f);
@@ -621,7 +621,7 @@ int main() {
         window.UpdateCameraInterpolation(targetCamDistance, targetCamPitch, targetCamYaw, static_cast<float>(dt));
         window.ApplyCamera3D();
 
-        if (activeTier == CosmicVisualTier::FactoryFloor) {
+        if (activeTier == CosmicVisualTier::FactoryInterior || activeTier == CosmicVisualTier::TownComplex || activeTier == CosmicVisualTier::CityMetropolis) {
             window.DrawMesh3D(floorMesh, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
             for (int y = 0; y < 8; ++y) {
                 for (int x = 0; x < 8; ++x) {

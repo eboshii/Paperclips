@@ -401,9 +401,14 @@ class GameEngine {
         const purchase = b.getCost(this.buyMultiplier, this.clips);
 
         if (this.clips.gte(purchase.totalCost)) {
+            const isFirstPurchase = (b.count === 0);
             const prevClips = this.clips;
             this.clips = this.clips.sub(purchase.totalCost);
             b.count += purchase.amount;
+
+            if (isFirstPurchase) {
+                this.dialogue.onBuildingPurchased(buildingId, this);
+            }
 
             if (this.visualizer) {
                 const ratio = prevClips.gt(BigDouble.zero()) ? Math.min(1.0, Math.max(0.0, purchase.totalCost.div(prevClips).toDouble())) : 0.5;
@@ -819,6 +824,8 @@ class GameEngine {
             buildings: this.buildings.buildings.map(b => ({ id: b.id, count: b.count })),
             techResearched: this.techTree.getResearchedNodes().map(n => n.id),
             achievements: this.achievements.achievements.map(a => ({ id: a.id, unlocked: a.isUnlocked })),
+            dialogueSeenBuildings: Array.from(this.dialogue.seenBuildingDialogues),
+            dialogueSeenMilestones: Array.from(this.dialogue.seenMilestones),
             timestamp: Date.now()
         };
 
@@ -843,6 +850,13 @@ class GameEngine {
 
             if (data.ops !== undefined) this.ops = data.ops;
             if (data.humanPopulation !== undefined) this.humanPopulation = data.humanPopulation;
+
+            if (data.dialogueSeenBuildings && Array.isArray(data.dialogueSeenBuildings)) {
+                this.dialogue.seenBuildingDialogues = new Set(data.dialogueSeenBuildings);
+            }
+            if (data.dialogueSeenMilestones && Array.isArray(data.dialogueSeenMilestones)) {
+                this.dialogue.seenMilestones = new Set(data.dialogueSeenMilestones);
+            }
 
             if (data.buildings) {
                 data.buildings.forEach(savedBld => {

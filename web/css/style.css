@@ -685,6 +685,53 @@ body {
     color: var(--neon-pink);
 }
 
+.dialogue-choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.dialogue-choice-btn {
+    background: linear-gradient(180deg, #ff007b 0%, #a8004e 100%);
+    border: 3px solid var(--border-ink);
+    border-radius: 12px;
+    color: #ffffff;
+    font-family: var(--font-cartoon);
+    font-weight: 800;
+    font-size: 14px;
+    padding: 10px 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--border-ink);
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-shadow: 1px 1px 0 var(--border-ink);
+    line-height: 1.2;
+}
+
+.dialogue-choice-btn:nth-child(2) {
+    background: linear-gradient(180deg, #00d2ff 0%, #0066aa 100%);
+}
+
+.dialogue-choice-btn:nth-child(3) {
+    background: linear-gradient(180deg, #ffe600 0%, #d48800 100%);
+    color: #120524;
+    text-shadow: none;
+}
+
+.dialogue-choice-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 var(--border-ink);
+    filter: brightness(1.15);
+}
+
+.dialogue-choice-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--border-ink);
+}
+
 /* =========================================================================
    COLUMN 3: RIGHT PEDESTAL (Exact same width as Left: 360px)
    ========================================================================= */
