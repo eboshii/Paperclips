@@ -494,8 +494,8 @@ class GameEngine {
             const dt = Math.min(0.1, (timestamp - this.lastTickTime) / 1000.0);
             this.lastTickTime = timestamp;
 
-            // Check Wire Unlock Threshold: Municipal scrap exhausted (50 Million clips / 50 Tons)
-            if (!this.isWireUnlocked && this.lifetimeClips.gte(new BigDouble(50.0, 6))) {
+            // Check Wire Unlock Threshold: Municipal scrap exhausted (50,000 clips)
+            if (!this.isWireUnlocked && this.lifetimeClips.gte(new BigDouble(50000, 0))) {
                 this.isWireUnlocked = true;
                 this.dialogue.addLog("DR. VANCE", "Arthur, we've exhausted all local scrap metal in the district! We need to start ordering and managing industrial high-tensile wire supply!");
                 this.renderStore();
@@ -594,10 +594,13 @@ class GameEngine {
                 }
             }
 
-            // 6. Passive Computing Ops Generation
+            // 6. Passive Computing Ops Generation (only active when Ops / Tech is unlocked)
             const stamperCount = this.buildings.getBuilding('hydraulic_stamper')?.count || 0;
-            const opsRate = (0.8 + (stamperCount * 0.4)) * this.prestige.getOpsBoostMultiplier();
-            this.ops = Math.min(this.maxOps, this.ops + (opsRate * dt));
+            const isOpsUnlocked = this.lifetimeClips.gte(new BigDouble(80, 0)) || stamperCount > 0 || this.ops > 0;
+            if (isOpsUnlocked) {
+                const opsRate = (0.8 + (stamperCount * 0.4)) * this.prestige.getOpsBoostMultiplier();
+                this.ops = Math.min(this.maxOps, this.ops + (opsRate * dt));
+            }
 
             // 6. Subsystem Updates
             this.techTree.updateAvailability(this.ops, this.lifetimeClips);
@@ -615,6 +618,7 @@ class GameEngine {
             this.renderOdometer(currentCPS);
             this.renderResources();
             this.renderNews();
+            this.updateSceneNavButtons();
 
             if (this.activeTab === 'store') {
                 this.updateStoreRealtime();
@@ -635,6 +639,19 @@ class GameEngine {
         requestAnimationFrame((t) => this.gameLoop(t));
     }
 
+    updateSceneNavButtons() {
+        const maxUnlockedTier = this.visualizer ? this.visualizer.determineAutoTier(this.lifetimeClips) : 0;
+        const sceneButtons = document.querySelectorAll('.scene-nav-btn[data-tier]');
+        sceneButtons.forEach(btn => {
+            const tier = parseInt(btn.dataset.tier, 10);
+            if (tier === -1 || tier === 0) {
+                btn.style.display = 'inline-flex';
+            } else {
+                btn.style.display = (tier <= maxUnlockedTier) ? 'inline-flex' : 'none';
+            }
+        });
+    }
+
     renderOdometer(currentCPS) {
         const clipsCountEl = document.getElementById('odometer-clips');
         if (clipsCountEl) clipsCountEl.textContent = this.clips.toWholeScale();
@@ -644,9 +661,16 @@ class GameEngine {
             cpsCountEl.textContent = currentCPS.gt(BigDouble.zero()) ? `+${currentCPS.toShortScale(1)} / sec` : '+0 / sec';
         }
 
+        // Flywheel Overclock: Hidden until Kinetic Flywheel tech is researched
+        const flywheelCard = document.getElementById('flywheel-card');
+        const isFlywheelUnlocked = this.techTree.flywheelMaxBoost > 1.0;
+        if (flywheelCard) {
+            flywheelCard.style.display = isFlywheelUnlocked ? 'block' : 'none';
+        }
+
         const flywheelBar = document.getElementById('flywheel-progress');
         const flywheelText = document.getElementById('flywheel-label');
-        if (flywheelBar) {
+        if (flywheelBar && isFlywheelUnlocked) {
             flywheelBar.style.width = `${this.flywheelCharge}%`;
             if (flywheelText) {
                 flywheelText.textContent = this.flywheelCharge > 5.0 ? `⚡ OVERCLOCK +${Math.round(this.flywheelCharge)}%` : '⚡ OVERCLOCK BOOST';
@@ -655,7 +679,7 @@ class GameEngine {
     }
 
     renderResources() {
-        // Wire row visibility & amount
+        // Wire row visibility & amount (Hidden until unlocked at 50,000 clips)
         const wireRow = document.getElementById('row-wire');
         const wireEl = document.getElementById('res-wire');
         if (wireRow) {
@@ -670,9 +694,14 @@ class GameEngine {
             }
         }
 
-        // Ops amount
+        // Ops badge visibility & amount (Hidden until Ops / Tech is unlocked)
+        const opsRow = document.getElementById('row-ops');
+        const isOpsUnlocked = this.lifetimeClips.gte(new BigDouble(80, 0)) || this.ops > 0;
+        if (opsRow) {
+            opsRow.style.display = isOpsUnlocked ? 'flex' : 'none';
+        }
         const opsEl = document.getElementById('res-ops');
-        if (opsEl) opsEl.textContent = `${Math.floor(this.ops)} / ${Math.floor(this.maxOps)}`;
+        if (opsEl && isOpsUnlocked) opsEl.textContent = `${Math.floor(this.ops)} / ${Math.floor(this.maxOps)}`;
 
         // Population row (Unlocks at Megacity Scale: 500 Million Clips / 500 Tons)
         const popRow = document.getElementById('row-population');
@@ -699,9 +728,20 @@ class GameEngine {
             wireCostEl.textContent = `${(250 * mult).toLocaleString()} Clips`;
         }
 
+        // Right Tabs Visibility: Tech tab only shows once Tech / Ops is unlocked
+        const tabTech = document.getElementById('tab-btn-tech');
+        const tabsBar = document.querySelector('.right-tabs-bar');
+        const isTechUnlocked = this.lifetimeClips.gte(new BigDouble(80, 0)) || this.ops > 0;
+        if (tabTech) {
+            tabTech.style.display = isTechUnlocked ? 'flex' : 'none';
+        }
+        if (tabsBar) {
+            tabsBar.style.gridTemplateColumns = isTechUnlocked ? '1fr 1fr' : '1fr';
+        }
+
         // Notification Badges on Right Tabs
         const nextTech = this.techTree.getNextUnpurchasedNode();
-        const canAffordTech = nextTech && this.techTree.canAfford(nextTech.id, this.ops, this.clips);
+        const canAffordTech = isTechUnlocked && nextTech && this.techTree.canAfford(nextTech.id, this.ops, this.clips);
         const techBadge = document.getElementById('tech-badge-count');
         if (techBadge) techBadge.style.display = canAffordTech ? 'flex' : 'none';
 
@@ -716,15 +756,21 @@ class GameEngine {
     renderNews() {
         const newsTextEl = document.getElementById('news-text');
         if (newsTextEl) {
-            newsTextEl.textContent = this.news.getCurrentText();
+            newsTextEl.textContent = this.news.getCurrentText(this);
         }
     }
 
     renderStore() {
         const clipContainer = document.getElementById('clip-buildings-container');
         const wireContainer = document.getElementById('wire-buildings-container');
+        const wireSection = document.getElementById('section-wire-buildings');
         const clipRatePill = document.getElementById('clip-total-rate-pill');
         const wireRatePill = document.getElementById('wire-total-rate-pill');
+
+        // Toggle Wire Submenu Section Visibility (Entirely hidden until unlocked at 50,000 clips)
+        if (wireSection) {
+            wireSection.style.display = this.isWireUnlocked ? 'flex' : 'none';
+        }
 
         const currentCPS = this.calculateTotalCPS();
         const currentWPS = this.calculateTotalWPS();
@@ -733,15 +779,11 @@ class GameEngine {
             clipRatePill.textContent = currentCPS.gt(BigDouble.zero()) ? `+${currentCPS.toShortScale(1)} CPS` : '+0 CPS';
         }
 
-        if (wireRatePill) {
-            if (!this.isWireUnlocked) {
-                wireRatePill.textContent = 'LOCKED';
-            } else {
-                wireRatePill.textContent = currentWPS.gt(BigDouble.zero()) ? `+${currentWPS.toShortScale(1)} kg/s` : '+0 kg/s';
-            }
+        if (wireRatePill && this.isWireUnlocked) {
+            wireRatePill.textContent = currentWPS.gt(BigDouble.zero()) ? `+${currentWPS.toShortScale(1)} kg/s` : '+0 kg/s';
         }
 
-        // 1. Render Clip Production Buildings
+        // 1. Render Clip Production Buildings (Optimized: Price -> Rate -> Name & Count)
         if (clipContainer) {
             const visibleClips = this.buildings.getVisibleClipBuildings();
             clipContainer.innerHTML = visibleClips.map(b => {
@@ -753,64 +795,69 @@ class GameEngine {
                 return `
                     <div class="building-card ${canAfford ? 'affordable' : 'locked'}" data-id="${b.id}" onclick="game.buyBuilding('${b.id}')">
                         <div class="building-icon">${b.icon}</div>
-                        <div class="building-details">
-                            <div class="building-header-row">
+                        <div class="building-info">
+                            <div class="building-title-row">
                                 <span class="building-name">${b.name}</span>
-                                <span class="building-rate">${rateFormatted}</span>
+                                <span class="building-count-badge" style="${b.count > 0 ? '' : 'display:none;'}">x${b.count}</span>
                             </div>
-                            <div class="building-cost-pill">
-                                <span class="building-cost-amount">📎 ${costFormatted}</span>
+                            <div class="building-metrics-row">
+                                <div class="building-price-pill">
+                                    <span class="price-symbol">📎</span>
+                                    <span class="building-cost-amount">${costFormatted}</span>
+                                </div>
+                                <div class="building-rate-pill">
+                                    <span class="building-rate-amount">${rateFormatted}</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="building-count">${b.count}</div>
                     </div>
                 `;
             }).join('');
         }
 
-        // 2. Render Wire Creation & Conversion Buildings
-        if (wireContainer) {
-            if (!this.isWireUnlocked) {
-                wireContainer.innerHTML = `
-                    <div class="locked-wire-teaser">
-                        <span class="locked-wire-icon">🔒</span>
-                        <span>Wire Conversion & Harvesting Locked</span>
-                        <span class="locked-wire-sub">Unlocks at 50,000 Clips when municipal scrap is exhausted</span>
-                    </div>
-                `;
-            } else {
-                const visibleWire = this.buildings.getVisibleWireBuildings(true);
-                wireContainer.innerHTML = visibleWire.map(b => {
-                    const purchase = b.getCost(this.buyMultiplier, this.clips);
-                    const canAfford = this.clips.gte(purchase.totalCost);
-                    const costFormatted = `${purchase.totalCost.toWholeScale()}`;
-                    const rateFormatted = `+${b.baseWPS.toShortScale(1)} kg/s`;
+        // 2. Render Wire Creation & Conversion Buildings (Only when wire is unlocked)
+        if (wireContainer && this.isWireUnlocked) {
+            const visibleWire = this.buildings.getVisibleWireBuildings(true);
+            wireContainer.innerHTML = visibleWire.map(b => {
+                const purchase = b.getCost(this.buyMultiplier, this.clips);
+                const canAfford = this.clips.gte(purchase.totalCost);
+                const costFormatted = `${purchase.totalCost.toWholeScale()}`;
+                const rateFormatted = `+${b.baseWPS.toShortScale(1)} kg/s`;
 
-                    return `
-                        <div class="building-card wire-card ${canAfford ? 'affordable' : 'locked'}" data-id="${b.id}" onclick="game.buyBuilding('${b.id}')">
-                            <div class="building-icon">${b.icon}</div>
-                            <div class="building-details">
-                                <div class="building-header-row">
-                                    <span class="building-name">${b.name}</span>
-                                    <span class="building-rate">${rateFormatted}</span>
+                return `
+                    <div class="building-card wire-card ${canAfford ? 'affordable' : 'locked'}" data-id="${b.id}" onclick="game.buyBuilding('${b.id}')">
+                        <div class="building-icon">${b.icon}</div>
+                        <div class="building-info">
+                            <div class="building-title-row">
+                                <span class="building-name">${b.name}</span>
+                                <span class="building-count-badge" style="${b.count > 0 ? '' : 'display:none;'}">x${b.count}</span>
+                            </div>
+                            <div class="building-metrics-row">
+                                <div class="building-price-pill">
+                                    <span class="price-symbol">📎</span>
+                                    <span class="building-cost-amount">${costFormatted}</span>
                                 </div>
-                                <div class="building-cost-pill">
-                                    <span class="building-cost-amount">📎 ${costFormatted}</span>
+                                <div class="building-rate-pill">
+                                    <span class="building-rate-amount">${rateFormatted}</span>
                                 </div>
                             </div>
-                            <div class="building-count">${b.count}</div>
                         </div>
-                    `;
-                }).join('');
-            }
+                    </div>
+                `;
+            }).join('');
         }
     }
 
     updateStoreRealtime() {
         const clipContainer = document.getElementById('clip-buildings-container');
         const wireContainer = document.getElementById('wire-buildings-container');
+        const wireSection = document.getElementById('section-wire-buildings');
         const clipRatePill = document.getElementById('clip-total-rate-pill');
         const wireRatePill = document.getElementById('wire-total-rate-pill');
+
+        if (wireSection) {
+            wireSection.style.display = this.isWireUnlocked ? 'flex' : 'none';
+        }
 
         const currentCPS = this.calculateTotalCPS();
         const currentWPS = this.calculateTotalWPS();
@@ -819,12 +866,8 @@ class GameEngine {
             clipRatePill.textContent = currentCPS.gt(BigDouble.zero()) ? `+${currentCPS.toShortScale(1)} CPS` : '+0 CPS';
         }
 
-        if (wireRatePill) {
-            if (!this.isWireUnlocked) {
-                wireRatePill.textContent = 'LOCKED';
-            } else {
-                wireRatePill.textContent = currentWPS.gt(BigDouble.zero()) ? `+${currentWPS.toShortScale(1)} kg/s` : '+0 kg/s';
-            }
+        if (wireRatePill && this.isWireUnlocked) {
+            wireRatePill.textContent = currentWPS.gt(BigDouble.zero()) ? `+${currentWPS.toShortScale(1)} kg/s` : '+0 kg/s';
         }
 
         // Update Clip Cards
@@ -848,13 +891,14 @@ class GameEngine {
                 }
 
                 const costAmountEl = card.querySelector('.building-cost-amount');
-                const countEl = card.querySelector('.building-count');
-                if (countEl && countEl.textContent !== String(b.count)) {
-                    countEl.textContent = b.count;
+                const countBadgeEl = card.querySelector('.building-count-badge');
+                if (countBadgeEl) {
+                    countBadgeEl.style.display = b.count > 0 ? 'inline-block' : 'none';
+                    countBadgeEl.textContent = `x${b.count}`;
                 }
                 if (costAmountEl && (this.buyMultiplier === 'max' || card.dataset.cost !== purchase.totalCost.toWholeScale())) {
                     card.dataset.cost = purchase.totalCost.toWholeScale();
-                    costAmountEl.textContent = `📎 ${purchase.totalCost.toWholeScale()}`;
+                    costAmountEl.textContent = purchase.totalCost.toWholeScale();
                 }
             });
         }
@@ -869,7 +913,7 @@ class GameEngine {
 
             visibleWire.forEach((b, idx) => {
                 const card = wireContainer.children[idx];
-                if (!card || card.classList.contains('locked-wire-teaser')) return;
+                if (!card) return;
 
                 const purchase = b.getCost(this.buyMultiplier, this.clips);
                 const canAfford = this.clips.gte(purchase.totalCost);
@@ -880,13 +924,14 @@ class GameEngine {
                 }
 
                 const costAmountEl = card.querySelector('.building-cost-amount');
-                const countEl = card.querySelector('.building-count');
-                if (countEl && countEl.textContent !== String(b.count)) {
-                    countEl.textContent = b.count;
+                const countBadgeEl = card.querySelector('.building-count-badge');
+                if (countBadgeEl) {
+                    countBadgeEl.style.display = b.count > 0 ? 'inline-block' : 'none';
+                    countBadgeEl.textContent = `x${b.count}`;
                 }
                 if (costAmountEl && (this.buyMultiplier === 'max' || card.dataset.cost !== purchase.totalCost.toWholeScale())) {
                     card.dataset.cost = purchase.totalCost.toWholeScale();
-                    costAmountEl.textContent = `📎 ${purchase.totalCost.toWholeScale()}`;
+                    costAmountEl.textContent = purchase.totalCost.toWholeScale();
                 }
             });
         }
@@ -907,7 +952,7 @@ class GameEngine {
             btn.classList.toggle('affordable', canAfford);
             btn.classList.toggle('unaffordable', !canAfford);
             const span = btn.querySelector('span:first-child');
-            if (span) span.textContent = canAfford ? '💡 RESEARCH NOW' : '🔒 NEED MORE OPS / CLIPS';
+            if (span) span.textContent = canAfford ? '💡 RESEARCH UPGRADE' : '🔒 INSUFFICIENT OPS / CLIPS';
         }
     }
 
@@ -917,36 +962,46 @@ class GameEngine {
 
         const nextNode = this.techTree.getNextUnpurchasedNode();
         if (!nextNode) {
-            container.innerHTML = `
-                <div class="no-upgrades-box" style="padding:24px; font-size:14px; line-height:1.5;">
-                    🎉 All Available Research Completed!
-                    <div style="font-size:12px; color:var(--text-sub); margin-top:8px;">Maximum Technological Singularity Achieved!</div>
-                </div>
-            `;
+            const researchedCount = this.techTree.getResearchedNodes().length;
+            const totalCount = this.techTree.nodes.length;
+            if (researchedCount >= totalCount) {
+                container.innerHTML = `
+                    <div class="no-upgrades-box" style="padding:24px; font-size:14px; line-height:1.5;">
+                        🎉 All Available Research Completed!
+                        <div style="font-size:12px; color:var(--text-sub); margin-top:8px;">Maximum Technological Singularity Achieved!</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="no-upgrades-box" style="padding:24px; font-size:13px; line-height:1.5; color:var(--text-sub);">
+                        ⚡ Expand factory production & Computing Ops to unlock new research objectives!
+                    </div>
+                `;
+            }
             return;
         }
 
         const canAfford = this.techTree.canAfford(nextNode.id, this.ops, this.clips);
+        const costClipsStr = nextNode.clipsCost.gt(BigDouble.zero()) ? ` &nbsp;|&nbsp; 📎 ${nextNode.clipsCost.toWholeScale()}` : '';
+
         container.innerHTML = `
             <div class="single-upgrade-shelf" style="padding:10px 12px;">
                 <div class="shelf-label" style="font-size:10px; margin-bottom:8px;">🔬 NEXT RESEARCH OBJECTIVE</div>
-                <div class="next-upgrade-card" style="padding:10px 12px; gap:10px;">
+                <div class="next-upgrade-card" style="padding:12px; gap:10px;">
                     <div class="upgrade-top-row" style="gap:10px;">
                         <div class="upgrade-icon-box" style="width:44px; height:44px; font-size:24px;">${nextNode.icon}</div>
                         <div class="upgrade-header-info">
-                            <div class="upgrade-title" style="font-size:17px;">${nextNode.title}</div>
-                            <div class="upgrade-discipline" style="font-size:9px; margin-top:2px;">${nextNode.discipline}</div>
+                            <div class="upgrade-title" style="font-size:17px; font-weight:800;">${nextNode.title}</div>
                         </div>
                     </div>
                     <div class="upgrade-effect" style="font-size:14px; color:#ffffff; background:#190c33; padding:10px; border-radius:8px; border:2px solid var(--border-ink); line-height:1.35;">
                         ${nextNode.effectDescription}
                     </div>
-                    <div class="building-cost-pill" style="width:100%; justify-content:center; padding:8px 12px; border-width:3px;">
-                        <span class="building-cost-amount" style="font-size:20px;">⚡ ${nextNode.opsCost} Ops &nbsp;|&nbsp; 📎 ${nextNode.clipsCost.toWholeScale()}</span>
+                    <div class="building-cost-pill" style="width:100%; justify-content:center; padding:8px 12px; border-width:2px;">
+                        <span class="building-cost-amount" style="font-size:18px;">⚡ ${nextNode.opsCost} Ops${costClipsStr}</span>
                     </div>
-                    <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:12px 16px; font-size:16px; font-weight:800;" onclick="game.buyTech('${nextNode.id}')">
-                        <span>${canAfford ? '💡 RESEARCH NOW' : '🔒 NEED MORE OPS / CLIPS'}</span>
-                        <span>⚡ ${nextNode.opsCost} Ops</span>
+                    <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:12px 16px; font-size:15px; font-weight:800;" onclick="game.buyTech('${nextNode.id}')">
+                        <span>${canAfford ? '💡 RESEARCH UPGRADE' : '🔒 INSUFFICIENT OPS / CLIPS'}</span>
                     </button>
                 </div>
             </div>

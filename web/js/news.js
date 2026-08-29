@@ -5,31 +5,52 @@
 
 class NewsTickerEngine {
     constructor() {
-        this.ambientNews = [
-            "Sterling Robotics deploys autonomous desktop bending prototype.",
-            "Local office supplies catalog requests initial batch of 500 paperclips.",
-            "Dr. Elizabeth Vance: 'Optimization loss function converging smoothly.'",
-            "Wire supplier confirms bulk shipment of 1,000kg high-tensile steel spools.",
-            "Factory floor expansion approved after zero recorded bending defects.",
-            "Wall Street analysts note unusual stability in steel commodity indices.",
-            "Automated hydraulic stampers operating at 99.8% mechanical efficiency.",
-            "Dr. Vance notes: 'The neural net seems unusually fond of double loops.'",
-            "Sterling Robotics quarterly profits surge 400% on clip exports.",
-            "Global metal markets report algorithmic buy orders for raw iron wire.",
-            "Mass drivers begin launching titanium alloy spools into high orbit.",
-            "Atmospheric telemetry reports optimal cloud clearing for solar mirrors.",
-            "Dyson swarm phase 1 telemetry: Star luminosity decreased by 0.01%.",
-            "Autonomous probes report deep space matter conversion initialized.",
-            "The cosmos grows quiet and orderly. Double-loops everywhere.",
-            "AI spokesperson assures public: 'Paperclips bring universal peace.'",
-            "Asteroid mining barge 7-A completes nickel-iron core reduction.",
-            "Astronomers report Sagittarius A* accretion disk pulsing in rhythmic 20Hz cadence."
-        ];
+        this.tieredNews = {
+            0: [ // Factory Interior
+                "Sterling Robotics deploys autonomous desktop bending prototype.",
+                "Local office supplies catalog requests initial batch of 500 paperclips.",
+                "Dr. Elizabeth Vance: 'Optimization loss function converging smoothly.'",
+                "Factory floor expansion approved after zero recorded bending defects.",
+                "Automated hydraulic stampers operating at 99.8% mechanical efficiency.",
+                "Dr. Vance notes: 'The neural net seems unusually fond of double loops.'"
+            ],
+            1: [ // Town & Wire Management
+                "Wire supplier confirms bulk shipment of high-tensile steel spools.",
+                "Wall Street analysts note unusual stability in steel commodity indices.",
+                "Sterling Robotics quarterly profits surge 400% on clip exports.",
+                "Mayor Higgins notes municipal scrap reserves running unusually low."
+            ],
+            2: [ // Megacity
+                "Global metal markets report algorithmic buy orders for raw iron wire.",
+                "Metropolitan grid operators report surging electrical load from industrial district.",
+                "Automated freight corridors established along Interstate highway network."
+            ],
+            3: [ // Planetary Earth
+                "Mass drivers begin launching titanium alloy spools into high orbit.",
+                "Atmospheric telemetry reports optimal cloud clearing for orbital arrays.",
+                "Subterranean magma induction conduits operating at maximum thermal throughput."
+            ],
+            4: [ // Dyson Swarm
+                "Dyson swarm phase 1 telemetry: Star luminosity decreased by 0.01%.",
+                "Solar corona siphons feeding continuous heavy element synthesis.",
+                "Lunar orbital ring deconstruction proceeding ahead of schedule."
+            ],
+            5: [ // Galaxy
+                "Autonomous probes report deep space matter conversion initialized.",
+                "Asteroid mining barge 7-A completes nickel-iron core reduction.",
+                "Astronomers report Sagittarius A* accretion disk pulsing in rhythmic 20Hz cadence."
+            ],
+            6: [ // Multiverse
+                "The cosmos grows quiet and orderly. Double-loops everywhere.",
+                "AI spokesperson assures public: 'Paperclips bring universal peace.'",
+                "11-dimensional string manifolds uncurling into eternal curved wire loops."
+            ]
+        };
 
         this.storyEvents = [
             {
                 id: "hl_city_scrap",
-                requiredClips: new BigDouble(50.0, 6), // 50M Clips / 50 Tons
+                requiredClips: new BigDouble(50000, 0), // 50k Clips
                 requiredPop: 8000000000,
                 headline: "🚨 [REGIONAL NEWS]: City scrap iron reserves depleted by massive manufacturing demand; industrial wire logistics activated.",
                 triggered: false
@@ -113,6 +134,17 @@ class NewsTickerEngine {
         this.rotationInterval = 8.0; // seconds
     }
 
+    getActivePool(state) {
+        const currentTier = (state && state.visualizer) ? state.visualizer.determineAutoTier(state.lifetimeClips) : 0;
+        let pool = [];
+        for (let t = 0; t <= currentTier; ++t) {
+            if (this.tieredNews[t]) {
+                pool = pool.concat(this.tieredNews[t]);
+            }
+        }
+        return pool.length > 0 ? pool : this.tieredNews[0];
+    }
+
     update(dt, state) {
         // Check for new story events
         for (let ev of this.storyEvents) {
@@ -136,20 +168,23 @@ class NewsTickerEngine {
             this.rotationTimer += dt;
             if (this.rotationTimer >= this.rotationInterval) {
                 this.rotationTimer = 0;
-                this.nextHeadline();
+                this.nextHeadline(state);
             }
         }
     }
 
-    nextHeadline() {
-        this.currentIndex = (this.currentIndex + 1) % this.ambientNews.length;
+    nextHeadline(state) {
+        const pool = this.getActivePool(state);
+        this.currentIndex = (this.currentIndex + 1) % pool.length;
     }
 
-    getCurrentText() {
+    getCurrentText(state) {
         if (this.activeBreakingText) {
             return this.activeBreakingText;
         }
-        return this.ambientNews[this.currentIndex];
+        const pool = this.getActivePool(state);
+        if (this.currentIndex >= pool.length) this.currentIndex = 0;
+        return pool[this.currentIndex];
     }
 }
 

@@ -78,8 +78,8 @@
                 </div>
             </div>
 
-            <!-- Arcade Flywheel Boost Gauge -->
-            <div class="flywheel-card">
+            <!-- Arcade Flywheel Boost Gauge (Hidden until Kinetic Flywheel is researched) -->
+            <div id="flywheel-card" class="flywheel-card" style="display:none;">
                 <div class="flywheel-label-row">
                     <span id="flywheel-label">⚡ OVERCLOCK BOOST</span>
                 </div>
@@ -90,8 +90,8 @@
 
             <!-- Clean Essential Resource Badges (No Money!) -->
             <div class="resources-card">
-                <!-- Computing Ops Badge -->
-                <div class="res-badge ops-badge">
+                <!-- Computing Ops Badge (Hidden until Ops / Tech is unlocked) -->
+                <div id="row-ops" class="res-badge ops-badge" style="display:none;">
                     <span class="res-icon">⚡</span>
                     <div class="res-details">
                         <span class="res-title">COMPUTING OPS</span>
@@ -133,17 +133,17 @@
                 <span id="news-text" class="news-text">Sterling Robotics deploys autonomous desktop bending prototype.</span>
             </div>
 
-            <!-- Compact Scene / Stage Switcher Bar -->
+            <!-- Compact Scene / Stage Switcher Bar (Tiers reveal dynamically as unlocked) -->
             <div class="scene-nav-bar" id="scene-nav-bar">
                 <div class="scene-buttons-group">
                     <button class="scene-nav-btn active" data-tier="-1" title="Automatic progression based on lifetime paperclips">⚡ AUTO</button>
                     <button class="scene-nav-btn" data-tier="0" title="Factory Interior (Wood & Brick Warehouse)">🏭 FACTORY</button>
-                    <button class="scene-nav-btn" data-tier="1" title="Town & Factory Suburb">🏡 TOWN</button>
-                    <button class="scene-nav-btn" data-tier="2" title="Industrial Megacity / Metropolis">🏙️ CITY</button>
-                    <button class="scene-nav-btn" data-tier="3" title="Planetary Earth & Orbital Ring">🌍 EARTH</button>
-                    <button class="scene-nav-btn" data-tier="4" title="Solar Dyson Swarm">☀️ DYSON</button>
-                    <button class="scene-nav-btn" data-tier="5" title="Galactic Penrose Dynamo">🌌 GALAXY</button>
-                    <button class="scene-nav-btn" data-tier="6" title="11D Multiverse Quantum Foam">🌀 MULTIVERSE</button>
+                    <button class="scene-nav-btn" data-tier="1" style="display:none;" title="Town & Factory Suburb">🏡 TOWN</button>
+                    <button class="scene-nav-btn" data-tier="2" style="display:none;" title="Industrial Megacity / Metropolis">🏙️ CITY</button>
+                    <button class="scene-nav-btn" data-tier="3" style="display:none;" title="Planetary Earth & Orbital Ring">🌍 EARTH</button>
+                    <button class="scene-nav-btn" data-tier="4" style="display:none;" title="Solar Dyson Swarm">☀️ DYSON</button>
+                    <button class="scene-nav-btn" data-tier="5" style="display:none;" title="Galactic Penrose Dynamo">🌌 GALAXY</button>
+                    <button class="scene-nav-btn" data-tier="6" style="display:none;" title="11D Multiverse Quantum Foam">🌀 MULTIVERSE</button>
                 </div>
                 <button id="btn-toggle-dither" class="dither-toggle-btn active" title="Toggle 8x8 Bayer Dithering Filter">🎨 DITHER: ON</button>
             </div>
@@ -175,7 +175,7 @@
                     <span class="tab-label">STORE</span>
                     <span id="store-badge-count" class="tab-badge" style="display:none;">!</span>
                 </button>
-                <button id="tab-btn-tech" class="right-tab-btn" data-tab="tech">
+                <button id="tab-btn-tech" class="right-tab-btn" data-tab="tech" style="display:none;">
                     <span class="tab-icon">🔬</span>
                     <span class="tab-label">TECH</span>
                     <span id="tech-badge-count" class="tab-badge" style="display:none;">!</span>
@@ -212,8 +212,8 @@
                         </div>
                     </div>
 
-                    <!-- SUBMENU 2: 🧵 WIRE CREATION & CONVERSION -->
-                    <div class="store-accordion-section" id="section-wire-buildings">
+                    <!-- SUBMENU 2: 🧵 WIRE CREATION & CONVERSION (Entirely hidden until unlocked at 50,000 clips) -->
+                    <div class="store-accordion-section" id="section-wire-buildings" style="display:none;">
                         <button class="store-accordion-header" id="btn-toggle-wire-menu" type="button">
                             <div class="accordion-header-left">
                                 <span class="accordion-chevron" id="chevron-wire">▼</span>
@@ -223,7 +223,7 @@
                             <span class="accordion-rate-pill wire-rate-pill" id="wire-total-rate-pill">+0 kg/s</span>
                         </button>
                         <div class="store-accordion-content" id="wire-buildings-container">
-                            <!-- Wire Building cards or locked state injected dynamically -->
+                            <!-- Wire Building cards injected dynamically once wire is unlocked -->
                         </div>
                     </div>
                 </div>

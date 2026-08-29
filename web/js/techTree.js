@@ -504,8 +504,7 @@ class TechTreeEngine {
         const available = this.getAvailableNodes();
         if (available.length > 0) return available[0];
 
-        const unresearched = this.nodes.filter(n => !n.isResearched);
-        return unresearched.length > 0 ? unresearched[0] : null;
+        return null;
     }
 
     getAvailableNodes() {

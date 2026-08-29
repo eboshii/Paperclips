@@ -202,8 +202,8 @@ class DialogueDirector {
                 ]
             },
             {
-                id: "wire_unlocked_50m",
-                condition: (s) => s.isWireUnlocked || s.lifetimeClips.gte(new BigDouble(50.0, 6)), // 50 Million Clips = 50 Tons
+                id: "wire_unlocked_50k",
+                condition: (s) => s.isWireUnlocked || s.lifetimeClips.gte(new BigDouble(50000, 0)), // 50k Clips
                 sequence: [
                     {
                         sender: "NEWS ANCHOR (CHUCK VANCE)",
