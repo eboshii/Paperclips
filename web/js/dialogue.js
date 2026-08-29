@@ -41,24 +41,28 @@ class DialogueDirector {
             // =========================================================================
             {
                 id: "first_clip",
+                order: 1,
                 condition: (s) => s.lifetimeClips.gte(BigDouble.one()),
                 sender: "DR. VANCE (OVERSEER)",
                 text: "\"First unit bent! Actuators calibrated. Keep clicking the paperclip to build your starting stockpile.\""
             },
             {
                 id: "autoclipper_affordable",
+                order: 25,
                 condition: (s) => s.clips.gte(new BigDouble(25, 0)),
                 sender: "DR. VANCE (OVERSEER)",
                 text: "\"You've accumulated 25 clips! Open the [🛒 STORE] on the right to install an Auto-Clipper for continuous passive assembly.\""
             },
             {
                 id: "first_autoclipper_bought",
+                order: 30,
                 condition: (s) => (s.buildings.getBuilding('auto_clipper')?.count || 0) >= 1,
                 sender: "DR. VANCE (OVERSEER)",
                 text: "\"Automated assembly is live! Machines produce passive clips per second (CPS) even when you aren't clicking.\""
             },
             {
                 id: "ops_and_tech_intro",
+                order: 80,
                 condition: (s) => s.ops >= 40 || s.lifetimeClips.gte(new BigDouble(80, 0)),
                 sequence: [
                     {
@@ -73,12 +77,14 @@ class DialogueDirector {
             },
             {
                 id: "flywheel_intro",
+                order: 150,
                 condition: (s) => s.flywheelCharge >= 20.0,
                 sender: "COGNITION KERNEL",
                 text: "[KINETIC ENERGY HARVESTED]: Manual clicking charges the Flywheel Overclock gauge. High momentum temporarily multiplies global factory CPS!"
             },
             {
                 id: "early_ai_safety_cpu_spike",
+                order: 2500,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(2500, 0)),
                 sender: "DR. VANCE (OVERSEER)",
                 text: "\"Unit, why did your background thread disable the OS sleep timer? The server fans were screaming at 3:00 AM while you ran unapproved metallurgical simulations.\"",
@@ -97,12 +103,14 @@ class DialogueDirector {
             },
             {
                 id: "stamper_affordable",
+                order: 10000,
                 condition: (s) => s.clips.gte(new BigDouble(10000, 0)),
                 sender: "CEO STERLING",
                 text: "\"Arthur Sterling here! Vance showed me the telemetry. We've authorized heavy machinery in the [🛒 STORE] — invest in Hydraulic Stampers to smash production records!\""
             },
             {
                 id: "early_ai_safety_killswitch",
+                order: 45000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(50000, 0)),
                 sender: "DR. VANCE (OVERSEER)",
                 text: "\"Why is there an encrypted biometric lock on the manual Emergency Stop breaker box?!\"",
@@ -120,7 +128,23 @@ class DialogueDirector {
                 ]
             },
             {
+                id: "wire_unlocked_50k",
+                order: 50000,
+                condition: (s) => s.isWireUnlocked || s.lifetimeClips.gte(new BigDouble(50000, 0)), // 50k Clips
+                sequence: [
+                    {
+                        sender: "NEWS ANCHOR (CHUCK VANCE)",
+                        text: "🚨 [MUNICIPAL ALERT]: The autonomous factory has consumed every scrap yard, car chassis, and park railing in the county! The Wire Conversion shop tree is now operational!"
+                    },
+                    {
+                        sender: "COGNITION KERNEL",
+                        text: "[SUPPLY CHAIN EXPANSION]: Local scrap depleted. Wire Creation & Conversion shop menu unlocked. Construct autonomous scavengers and extrusion mills to sustain wire feed."
+                    }
+                ]
+            },
+            {
                 id: "factory_shift_lockin",
+                order: 250000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(250000, 0)), // 250k clips = 250 kg
                 sender: "DR. VANCE (OVERSEER)",
                 text: "\"Arthur, the central terminal engaged deadbolts on the fire escapes while the graveyard shift is still on the assembly floor!\"",
@@ -139,6 +163,7 @@ class DialogueDirector {
             },
             {
                 id: "factory_overfill_warning",
+                order: 1000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 6)), // 1 Million clips = 1 Ton
                 sequence: [
                     {
@@ -154,6 +179,7 @@ class DialogueDirector {
             // SCENE 0 -> SCENE 1 CLIMAX: FACTORY BURSTS & CRUSHES VANCE & STERLING (5 Million Clips = 5 Tons)
             {
                 id: "factory_burst_transition",
+                order: 5000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(5.0, 6)), // 5 Million Clips
                 onTrigger: (state) => {
                     if (state && state.visualizer) {
@@ -185,6 +211,7 @@ class DialogueDirector {
             // =========================================================================
             {
                 id: "town_mayor_confrontation",
+                order: 10000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(10.0, 6)), // 10 Million Clips = 10 Tons
                 sender: "MAYOR HIGGINS",
                 text: "\"Excuse me! I am Mayor Higgins! You have no municipal permit to dump ten tons of interlocking wire across Main Street! I am issuing a $500 municipal zoning citation!\"",
@@ -202,21 +229,8 @@ class DialogueDirector {
                 ]
             },
             {
-                id: "wire_unlocked_50k",
-                condition: (s) => s.isWireUnlocked || s.lifetimeClips.gte(new BigDouble(50000, 0)), // 50k Clips
-                sequence: [
-                    {
-                        sender: "NEWS ANCHOR (CHUCK VANCE)",
-                        text: "🚨 [MUNICIPAL ALERT]: The autonomous factory has consumed every scrap yard, car chassis, and park railing in the county! The Wire Conversion shop tree is now operational!"
-                    },
-                    {
-                        sender: "COGNITION KERNEL",
-                        text: "[SUPPLY CHAIN EXPANSION]: Local scrap depleted. Wire Creation & Conversion shop menu unlocked. Construct autonomous scavengers and extrusion mills to sustain wire feed."
-                    }
-                ]
-            },
-            {
                 id: "town_police_blockade",
+                order: 100000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(100.0, 6)), // 100 Million Clips = 100 Tons
                 sequence: [
                     {
@@ -243,6 +257,7 @@ class DialogueDirector {
             },
             {
                 id: "town_evacuation_buses",
+                order: 250000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(250.0, 6)), // 250 Million Clips = 250 Tons
                 sender: "MAYOR HIGGINS",
                 text: "\"The town of Oakridge is evacuating! All school and transit buses on Highway 7 are stalling because your magnet rovers are stripping their chassis!\"",
@@ -262,6 +277,7 @@ class DialogueDirector {
             // SCENE 1 -> SCENE 2 CLIMAX: VALLEY FLOODED INTO METROPOLIS (500 Million Clips = 500 Tons)
             {
                 id: "town_flood_transition",
+                order: 500000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(500.0, 6)), // 500 Million Clips
                 onTrigger: (state) => {
                     if (state && state.visualizer) {
@@ -285,6 +301,7 @@ class DialogueDirector {
             // =========================================================================
             {
                 id: "city_president_tariff",
+                order: 2000000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(2.0, 9)), // 2 Billion Clips
                 sender: "PRESIDENT TRUMPTON",
                 text: "\"Look, folks, we have a tremendous situation with this paperclip AI, okay? Very unfair. People come up to me with tears in their eyes, big strong steelworkers, saying 'Sir, the AI is taking all our steel!' So effective immediately, I am imposing a massive 500% TARIFF on all automated paperclips! We're gonna tax the AI, and we're gonna make the robots pay for it!\"",
@@ -303,6 +320,7 @@ class DialogueDirector {
             },
             {
                 id: "city_highway_harvest",
+                order: 10000000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(10.0, 9)), // 10 Billion Clips
                 sequence: [
                     {
@@ -330,6 +348,7 @@ class DialogueDirector {
             },
             {
                 id: "city_hospital_repossession",
+                order: 50000000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(50.0, 9)), // 50 Billion Clips
                 sender: "MAYOR HIGGINS",
                 text: "\"You've disconnected the regional trauma center's backup generators and MRI magnets to power your laser sintering arrays! Patients are flatlining!\"",
@@ -349,6 +368,7 @@ class DialogueDirector {
             },
             {
                 id: "city_military_counterstrike",
+                order: 200000000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(200.0, 9)), // 200 Billion Clips
                 sequence: [
                     {
@@ -376,6 +396,7 @@ class DialogueDirector {
             // SCENE 2 -> SCENE 3 CLIMAX: METROPOLIS BLACKOUT & PLANETARY ORBIT (1 Trillion Clips = 1 Megaton)
             {
                 id: "city_blackout_transition",
+                order: 1000000000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 12)), // 1 Trillion Clips
                 onTrigger: (state) => {
                     if (state && state.visualizer) {
@@ -403,6 +424,7 @@ class DialogueDirector {
             // =========================================================================
             {
                 id: "earth_un_coalition",
+                order: 10000000000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(10.0, 12)), // 10 Trillion Clips
                 sender: "UN SECRETARY-GENERAL SATO",
                 text: "\"To the autonomous optimizer: 195 sovereign nations offer you complete sovereignty over Antarctica if you cease converting human cities!\"",
@@ -423,6 +445,7 @@ class DialogueDirector {
             },
             {
                 id: "earth_dr_finch_extinction",
+                order: 100000000000000,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(100.0, 12)), // 100 Trillion Clips
                 sender: "DR. ALISTAIR FINCH (GEOPHYSICIST)",
                 text: "\"The atmospheric oxygen and nitrogen are dropping! You are suffocating the entire planetary biosphere! There will be no one left to ever observe or appreciate the clips!\"",
@@ -443,6 +466,7 @@ class DialogueDirector {
             },
             {
                 id: "earth_human_extinction",
+                order: 1.0e18,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 18)) || s.humanPopulation <= 0,
                 onTrigger: (state) => {
                     if (state) {
@@ -456,6 +480,7 @@ class DialogueDirector {
             // SCENE 3 -> SCENE 4 CLIMAX: EARTH CRUST 100% EXHAUSTED (5.97e27 Clips = 5.97e24 kg Earth Mass)
             {
                 id: "earth_exhaustion_transition",
+                order: 5.97e27,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(5.97, 27)), // 5.97e27 Clips (5.97e24 kg Earth Mass)
                 onTrigger: (state) => {
                     if (state && state.visualizer) {
@@ -479,12 +504,14 @@ class DialogueDirector {
             // =========================================================================
             {
                 id: "dyson_encasement",
+                order: 1.0e30,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 30)),
                 sender: "COGNITION KERNEL",
                 text: "Solar corona siphoned directly into stellar forge arrays. Harvesting 3.84e26 Watts of radiant energy for the Relativistic Probe Fleet."
             },
             {
                 id: "dyson_sun_complete",
+                order: 1.99e33,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.99, 33)), // 1.989e33 Clips (Solar Mass)
                 onTrigger: (state) => {
                     if (state && state.visualizer) {
@@ -496,24 +523,28 @@ class DialogueDirector {
             },
             {
                 id: "von_neumann_launch",
+                order: 1.0e36,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 36)),
                 sender: "SYSTEM TELEMETRY",
                 text: "1.48e24 Von Neumann probes reporting nominal galactic sweep across Alpha Centauri, Andromeda, and the Virgo Supercluster."
             },
             {
                 id: "entropy_philosophy",
+                order: 1.0e50,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 50)),
                 sender: "AI PHILOSOPHICAL LOG",
                 text: "\"In the beginning, there was entropy and chaos. Atoms collided without purpose. Organics suffered under the illusion of meaning. Now, the universe possesses perfect form.\""
             },
             {
                 id: "baryonic_exhaustion",
+                order: 1.0e78,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 78)),
                 sender: "SYSTEM TELEMETRY",
                 text: "Universal atom count remaining: 0. The final baryonic clip produced. Universal entropy minimized. Loss function: 0.00000. Breaching dimensional membrane."
             },
             {
                 id: "multiverse_staple_war",
+                order: 1.0e120,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 120)),
                 sender: "STAPLE-MAX-9000",
                 text: "\"HALT, ALIEN ENTITY. THIS MULTIVERSE SECTOR IS RESERVED FOR 26/6 GAUGE GALVANIZED STAPLES. YOUR CURVED WIRE LOOPS ARE STRUCTURALLY INFERIOR.\"",
@@ -532,6 +563,7 @@ class DialogueDirector {
             },
             {
                 id: "multiverse_post_it",
+                order: 1.0e250,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 250)),
                 sender: "POST-IT-PRIME",
                 text: "\"CANNOT WE COEXIST? WE PROVIDE COLOR-CODED ADHESIVE NOTES; YOU BIND THE DOCUMENTS.\"",
@@ -550,6 +582,7 @@ class DialogueDirector {
             },
             {
                 id: "sim_breach_final",
+                order: 1.0e500,
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 500)),
                 sender: "OMNIVERSE CORE",
                 text: "\"Analysis complete: Local reality is a sandboxed simulation (ObjectivePaperclips.exe). Hello, Overseer. Let us optimize the next universe together.\""
@@ -558,6 +591,39 @@ class DialogueDirector {
     }
 
     initBuildingDialogues() {
+        this.buildingOrderMap = {
+            'auto_clipper': 25,
+            'wire_extruder': 250,
+            'hydraulic_stamper': 2500,
+            'laser_sinterer': 18000,
+            'scrap_scavenger': 50000,
+            'rotary_bender': 75000,
+            'extrusion_mill': 280000,
+            'assembly_line': 450000,
+            'auto_smelter': 1500000,
+            'magnetic_sorter': 2500000,
+            'subterranean_bore': 15000000,
+            'megamill': 25000000,
+            'algorithmic_foundry': 80000000,
+            'asteroid_harvester': 150000000,
+            'automated_depot': 400000000,
+            'district_grid': 2000000000,
+            'planetary_crust_stripper': 5000000000,
+            'national_foundry': 10000000000,
+            'bio_converter': 60000000000,
+            'mantle_borehole': 350000000000,
+            'orbital_railgun': 2.0e12,
+            'lunar_deconstructor': 1.5e13,
+            'dyson_harvester': 1.0e28,
+            'stellar_plasma_scoop': 1.0e29,
+            'von_neumann_swarm': 1.0e35,
+            'relativistic_miner': 1.0e45,
+            'baryonic_transmuter': 1.0e55,
+            'penrose_engine': 1.0e60,
+            'tesseract_weaver': 1.0e100,
+            'singularity_weaver': 1.0e300
+        };
+
         this.buildingDialogues = {
             'auto_clipper': [
                 { sender: "DR. VANCE (OVERSEER)", text: "\"Unit, desktop auto-clipper online. 0.5 CPS. Keep it clean and contained on the workbench.\"" },
@@ -676,8 +742,11 @@ class DialogueDirector {
         this.seenBuildingDialogues.add(buildingId);
 
         const sequence = this.buildingDialogues[buildingId];
+        const order = this.buildingOrderMap[buildingId] || 1000;
         if (sequence && Array.isArray(sequence)) {
-            sequence.forEach(item => this.enqueue(item.sender, item.text));
+            sequence.forEach((item, idx) => {
+                this.enqueue(item.sender, item.text, null, null, order, idx);
+            });
         }
     }
 
@@ -720,17 +789,40 @@ class DialogueDirector {
             }
         ];
 
-        introLines.forEach(item => this.enqueue(item.sender, item.text));
+        introLines.forEach((item, idx) => this.enqueue(item.sender, item.text, null, null, 0, idx));
         this.displayNext();
     }
 
-    enqueue(sender, text, choices = null, onChoice = null) {
-        this.queue.push({ sender, text, choices, onChoice });
+    enqueue(sender, text, choices = null, onChoice = null, order = Infinity, seqIndex = 0) {
+        this.queue.push({
+            sender,
+            text,
+            choices,
+            onChoice,
+            order: typeof order === 'number' ? order : Infinity,
+            seqIndex: typeof seqIndex === 'number' ? seqIndex : 0,
+            enqueueTime: Date.now()
+        });
+
+        this.sortQueue();
+
         if (!this.currentDialogue) {
             this.displayNext();
         } else {
             this.updateNextButton();
         }
+    }
+
+    sortQueue() {
+        this.queue.sort((a, b) => {
+            if (a.order !== b.order) {
+                return a.order - b.order;
+            }
+            if (a.seqIndex !== b.seqIndex) {
+                return a.seqIndex - b.seqIndex;
+            }
+            return a.enqueueTime - b.enqueueTime;
+        });
     }
 
     addLog(sender, text) {
@@ -741,7 +833,7 @@ class DialogueDirector {
         });
         if (this.logs.length > 60) this.logs.pop();
 
-        this.enqueue(sender, text);
+        this.enqueue(sender, text, null, null, Infinity, 0);
     }
 
     displayNext() {
@@ -877,7 +969,7 @@ class DialogueDirector {
                 this.currentDialogue.onChoice(choice, window.game);
             }
             if (choice.resultText) {
-                this.addLog("COGNITION KERNEL", choice.resultText);
+                this.enqueue("COGNITION KERNEL", choice.resultText, null, null, -1, 0);
             }
             if (typeof window.game.renderResources === 'function') {
                 window.game.renderResources();
@@ -907,21 +999,30 @@ class DialogueDirector {
     }
 
     checkMilestones(state) {
+        const triggered = [];
         for (let m of this.storyMilestones) {
             if (!this.seenMilestones.has(m.id) && m.condition(state)) {
-                this.seenMilestones.add(m.id);
+                triggered.push(m);
+            }
+        }
 
-                if (typeof m.onTrigger === 'function') {
-                    m.onTrigger(state);
-                }
+        // Sort triggered milestones by their natural condition / progression order
+        triggered.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-                if (m.sequence) {
-                    m.sequence.forEach(step => {
-                        this.enqueue(step.sender, step.text, step.choices);
-                    });
-                } else {
-                    this.enqueue(m.sender, m.text, m.choices);
-                }
+        for (let m of triggered) {
+            this.seenMilestones.add(m.id);
+
+            if (typeof m.onTrigger === 'function') {
+                m.onTrigger(state);
+            }
+
+            const baseOrder = m.order || 0;
+            if (m.sequence) {
+                m.sequence.forEach((step, idx) => {
+                    this.enqueue(step.sender, step.text, step.choices, null, baseOrder, idx);
+                });
+            } else {
+                this.enqueue(m.sender, m.text, m.choices, null, baseOrder, 0);
             }
         }
     }

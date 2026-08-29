@@ -1835,19 +1835,6 @@ class CosmicVisualizer {
             ctx.closePath();
             ctx.fill();
 
-            // Cyan Wave Surface Glow
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            for (let i = 0; i < this.numColumns; ++i) {
-                const moundH = Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
-                const x = i * colWidth;
-                const y = floorY - moundH;
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.stroke();
-
             // Overlapping Vibrant Paperclip Textures scaled by stage zoom
             const palette = ['#00f0ff', '#ffe600', '#ffffff', '#ff2a85', '#00ff88', '#ff7700', '#a855f7', '#38bdf8'];
             const getHash = (col, row, salt = 0) => {

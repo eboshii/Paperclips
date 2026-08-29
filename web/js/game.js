@@ -163,6 +163,38 @@ class GameEngine {
             });
         }
 
+        // Settings Modal Open/Close Controls
+        const openSettingsBtn = document.getElementById('btn-open-settings');
+        const closeSettingsBtn = document.getElementById('btn-close-settings');
+        const settingsModal = document.getElementById('settings-modal');
+
+        if (openSettingsBtn && settingsModal) {
+            openSettingsBtn.addEventListener('click', () => {
+                settingsModal.style.display = 'flex';
+                this.updateSettingsUI();
+            });
+        }
+
+        if (closeSettingsBtn && settingsModal) {
+            closeSettingsBtn.addEventListener('click', () => {
+                settingsModal.style.display = 'none';
+            });
+        }
+
+        if (settingsModal) {
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) {
+                    settingsModal.style.display = 'none';
+                }
+            });
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && settingsModal && settingsModal.style.display === 'flex') {
+                settingsModal.style.display = 'none';
+            }
+        });
+
         // Audio Controls
         const muteBtn = document.getElementById('btn-mute');
         if (muteBtn) {
@@ -174,9 +206,14 @@ class GameEngine {
         }
 
         const volSlider = document.getElementById('volume-slider');
+        const volReadout = document.getElementById('volume-readout');
         if (volSlider) {
             volSlider.addEventListener('input', (e) => {
-                this.audio.setVolume(parseFloat(e.target.value));
+                const val = parseFloat(e.target.value);
+                this.audio.setVolume(val);
+                if (volReadout) {
+                    volReadout.textContent = `${Math.round(val * 100)}%`;
+                }
             });
         }
 
@@ -193,18 +230,35 @@ class GameEngine {
             });
         });
 
-        // Dither Filter Toggle Button
+        // Dither Filter Toggle Handlers (Center Nav & Settings Modal)
+        const updateDitherButtons = (isEnabled) => {
+            const ditherBtn = document.getElementById('btn-toggle-dither');
+            const modalDitherBtn = document.getElementById('btn-modal-dither');
+            const text = isEnabled ? '🎨 DITHER: ON' : '🎨 DITHER: OFF';
+            if (ditherBtn) {
+                ditherBtn.textContent = text;
+                ditherBtn.classList.toggle('active', isEnabled);
+                ditherBtn.classList.toggle('off', !isEnabled);
+            }
+            if (modalDitherBtn) {
+                modalDitherBtn.textContent = text;
+                modalDitherBtn.classList.toggle('active', isEnabled);
+                modalDitherBtn.classList.toggle('off', !isEnabled);
+            }
+        };
+
+        const toggleDitherAction = () => {
+            if (this.visualizer) {
+                const isEnabled = this.visualizer.toggleDither();
+                updateDitherButtons(isEnabled);
+            }
+        };
+
         const ditherBtn = document.getElementById('btn-toggle-dither');
-        if (ditherBtn) {
-            ditherBtn.addEventListener('click', () => {
-                if (this.visualizer) {
-                    const isEnabled = this.visualizer.toggleDither();
-                    ditherBtn.textContent = isEnabled ? '🎨 DITHER: ON' : '🎨 DITHER: OFF';
-                    ditherBtn.classList.toggle('active', isEnabled);
-                    ditherBtn.classList.toggle('off', !isEnabled);
-                }
-            });
-        }
+        if (ditherBtn) ditherBtn.addEventListener('click', toggleDitherAction);
+
+        const modalDitherBtn = document.getElementById('btn-modal-dither');
+        if (modalDitherBtn) modalDitherBtn.addEventListener('click', toggleDitherAction);
 
         // Save & Reset Controls
         const saveBtn = document.getElementById('btn-save');
@@ -218,6 +272,29 @@ class GameEngine {
 
         const wipeBtn = document.getElementById('btn-wipe');
         if (wipeBtn) wipeBtn.addEventListener('click', () => this.wipeSave());
+    }
+
+    updateSettingsUI() {
+        const volSlider = document.getElementById('volume-slider');
+        const volReadout = document.getElementById('volume-readout');
+        const muteBtn = document.getElementById('btn-mute');
+        if (volSlider && this.audio) {
+            volSlider.value = this.audio.volume !== undefined ? this.audio.volume : 0.6;
+            if (volReadout) volReadout.textContent = `${Math.round((this.audio.volume !== undefined ? this.audio.volume : 0.6) * 100)}%`;
+        }
+        if (muteBtn && this.audio) {
+            muteBtn.textContent = this.audio.isMuted ? '🔇' : '🔊';
+            muteBtn.classList.toggle('muted', this.audio.isMuted);
+        }
+        if (this.visualizer) {
+            const isEnabled = this.visualizer.enableDither;
+            const modalDitherBtn = document.getElementById('btn-modal-dither');
+            if (modalDitherBtn) {
+                modalDitherBtn.textContent = isEnabled ? '🎨 DITHER: ON' : '🎨 DITHER: OFF';
+                modalDitherBtn.classList.toggle('active', isEnabled);
+                modalDitherBtn.classList.toggle('off', !isEnabled);
+            }
+        }
     }
 
     switchTab(tab) {

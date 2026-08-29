@@ -17,17 +17,10 @@
             <span class="app-logo">📎 OBJECTIVE: PAPERCLIPS</span>
         </div>
         <div class="header-controls">
-            <button id="btn-dev-clips" class="hdr-btn btn-dev" title="Dev Tool: Add 1 Million Paperclips" onclick="game.addDevClips()">🛠️ +1M</button>
-            <button id="btn-dev-billion" class="hdr-btn btn-dev btn-dev-b" title="Dev Tool: Add 1 Billion Paperclips" onclick="game.addDevClipsBillion()">🪐 +1B</button>
-            <button id="btn-dev-trillion" class="hdr-btn btn-dev btn-dev-t" title="Dev Tool: Add 1 Trillion Paperclips" onclick="game.addDevClipsTrillion()">🌌 +1T</button>
-            <div class="volume-control">
-                <button id="btn-mute" class="hdr-btn" title="Toggle Sound">🔊</button>
-                <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.6">
-            </div>
-            <button id="btn-save" class="hdr-btn" title="Save Game">💾 Save</button>
-            <button id="btn-export" class="hdr-btn" title="Export Save">📤</button>
-            <button id="btn-import" class="hdr-btn" title="Import Save">📥</button>
-            <button id="btn-wipe" class="hdr-btn btn-danger" title="Wipe Save">⚠️ Reset</button>
+            <button id="btn-open-settings" class="hdr-btn settings-cog-btn" title="Open Settings &amp; Preferences">
+                <span class="settings-cog-icon">⚙️</span>
+                <span class="settings-cog-label">SETTINGS</span>
+            </button>
         </div>
     </header>
 
@@ -127,8 +120,8 @@
 
         <!-- COLUMN 2: CENTER ARENA (Vibrant Pixel Art Canvas & Spilling Fluid Paperclips) -->
         <section class="center-arena">
-            <!-- Cute Floating News Pill -->
-            <div id="news-ticker" class="news-ticker-pill" title="Click to cycle headline">
+            <!-- Floating News Pill (Hidden for now) -->
+            <div id="news-ticker" class="news-ticker-pill" style="display:none;" title="Click to cycle headline">
                 <span class="news-icon">📢</span>
                 <span id="news-text" class="news-text">Sterling Robotics deploys autonomous desktop bending prototype.</span>
             </div>
@@ -241,6 +234,63 @@
     <!-- Floating Popups & Toast Notifications -->
     <div id="floating-popups"></div>
     <div id="toast-container"></div>
+
+    <!-- Settings & Preferences Modal Overlay -->
+    <div id="settings-modal" class="settings-modal-backdrop" style="display:none;">
+        <div class="settings-modal-card">
+            <div class="settings-modal-header">
+                <div class="settings-modal-title">
+                    <span class="settings-modal-icon">⚙️</span>
+                    <span>SETTINGS &amp; PREFERENCES</span>
+                </div>
+                <button id="btn-close-settings" class="settings-close-btn" title="Close Settings">✖</button>
+            </div>
+            <div class="settings-modal-body">
+                <!-- Section 1: Audio Preferences -->
+                <div class="settings-section">
+                    <div class="settings-section-title">🔊 AUDIO &amp; SOUND</div>
+                    <div class="settings-row">
+                        <span class="settings-label">Master Volume</span>
+                        <div class="settings-control-group">
+                            <button id="btn-mute" class="hdr-btn settings-mute-btn" title="Toggle Sound">🔊</button>
+                            <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.6">
+                            <span id="volume-readout" class="settings-value-readout">60%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Save Data & Backup -->
+                <div class="settings-section">
+                    <div class="settings-section-title">💾 SAVE &amp; BACKUP</div>
+                    <div class="settings-grid-buttons">
+                        <button id="btn-save" class="hdr-btn settings-action-btn" title="Save Game">💾 Save Game</button>
+                        <button id="btn-export" class="hdr-btn settings-action-btn" title="Export Save String">📤 Export Save</button>
+                        <button id="btn-import" class="hdr-btn settings-action-btn" title="Import Save String">📥 Import Save</button>
+                        <button id="btn-wipe" class="hdr-btn btn-danger settings-action-btn" title="Wipe Simulation Save">⚠️ Wipe / Reset</button>
+                    </div>
+                </div>
+
+                <!-- Section 3: Visual & Filter Settings -->
+                <div class="settings-section">
+                    <div class="settings-section-title">🎨 GRAPHICS &amp; VISUALS</div>
+                    <div class="settings-row">
+                        <span class="settings-label">8x8 Retro Dither Filter</span>
+                        <button id="btn-modal-dither" class="hdr-btn settings-action-btn" title="Toggle Retro Bayer Dither Filter">🎨 DITHER: ON</button>
+                    </div>
+                </div>
+
+                <!-- Section 4: Developer Sandbox -->
+                <div class="settings-section settings-section-dev">
+                    <div class="settings-section-title">🛠️ DEVELOPER TOOLS</div>
+                    <div class="settings-grid-buttons">
+                        <button id="btn-dev-clips" class="hdr-btn btn-dev settings-action-btn" title="Dev Tool: Add 1 Million Paperclips" onclick="game.addDevClips()">🛠️ +1M Clips</button>
+                        <button id="btn-dev-billion" class="hdr-btn btn-dev btn-dev-b settings-action-btn" title="Dev Tool: Add 1 Billion Paperclips" onclick="game.addDevClipsBillion()">🪐 +1B Clips</button>
+                        <button id="btn-dev-trillion" class="hdr-btn btn-dev btn-dev-t settings-action-btn" title="Dev Tool: Add 1 Trillion Paperclips" onclick="game.addDevClipsTrillion()">🌌 +1T Clips</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Core Scripts -->
     <script src="js/bigDouble.js"></script>
