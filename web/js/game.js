@@ -494,8 +494,8 @@ class GameEngine {
             const dt = Math.min(0.1, (timestamp - this.lastTickTime) / 1000.0);
             this.lastTickTime = timestamp;
 
-            // Check Wire Unlock Threshold: City-level production capacity (50,000 clips)
-            if (!this.isWireUnlocked && this.lifetimeClips.gte(new BigDouble(50000, 0))) {
+            // Check Wire Unlock Threshold: Municipal scrap exhausted (50 Million clips / 50 Tons)
+            if (!this.isWireUnlocked && this.lifetimeClips.gte(new BigDouble(50.0, 6))) {
                 this.isWireUnlocked = true;
                 this.dialogue.addLog("DR. VANCE", "Arthur, we've exhausted all local scrap metal in the district! We need to start ordering and managing industrial high-tensile wire supply!");
                 this.renderStore();
@@ -674,13 +674,13 @@ class GameEngine {
         const opsEl = document.getElementById('res-ops');
         if (opsEl) opsEl.textContent = `${Math.floor(this.ops)} / ${Math.floor(this.maxOps)}`;
 
-        // Population row
+        // Population row (Unlocks at Megacity Scale: 500 Million Clips / 500 Tons)
         const popRow = document.getElementById('row-population');
         const popEl = document.getElementById('res-population');
         if (popRow && popEl) {
-            if (this.lifetimeClips.gte(new BigDouble(1.0, 6))) {
+            if (this.lifetimeClips.gte(new BigDouble(500.0, 6))) {
                 popRow.style.display = 'flex';
-                popEl.textContent = this.humanPopulation.toLocaleString();
+                popEl.textContent = this.humanPopulation <= 0 ? '💀 0 (EXTINCT)' : this.humanPopulation.toLocaleString();
             } else {
                 popRow.style.display = 'none';
             }

@@ -29,49 +29,49 @@ class NewsTickerEngine {
         this.storyEvents = [
             {
                 id: "hl_city_scrap",
-                requiredClips: new BigDouble(50000, 0), // 50k
+                requiredClips: new BigDouble(50.0, 6), // 50M Clips / 50 Tons
                 requiredPop: 8000000000,
                 headline: "🚨 [REGIONAL NEWS]: City scrap iron reserves depleted by massive manufacturing demand; industrial wire logistics activated.",
                 triggered: false
             },
             {
                 id: "hl_factory_expansion",
-                requiredClips: new BigDouble(1.0, 5), // 100k
+                requiredClips: new BigDouble(500.0, 6), // 500M Clips / 500 Tons
                 requiredPop: 8000000000,
-                headline: "🚨 [INDUSTRY WIRE]: Autonomous fabrication facility in Ohio integrates three regional foundries into synchronized network.",
+                headline: "🚨 [INDUSTRY WIRE]: Autonomous fabrication facility in Ohio integrates three regional foundries into synchronized network across the valley.",
                 triggered: false
             },
             {
                 id: "hl_factory_lockdown",
-                requiredClips: new BigDouble(1.0, 8), // 100M
+                requiredClips: new BigDouble(10.0, 9), // 10B Clips
                 requiredPop: 8000000000,
-                headline: "🚨 [CNN LIVE]: Hazmat and SWAT teams dispatched to Sterling Robotics in Ohio after facility blast doors seal permanently.",
+                headline: "🚨 [CNN LIVE]: Interstate 95 rush-hour traffic engulfed by autonomous magnetic sorting gantries across all eight lanes.",
                 triggered: false
             },
             {
                 id: "hl_swarm_spotted",
-                requiredClips: new BigDouble(1.0, 9), // 1B
+                requiredClips: new BigDouble(100.0, 9), // 100B Clips
                 requiredPop: 7999999000,
-                headline: "🚨 [BBC WORLD]: Self-replicating robotic assemblies spotted dismantling Midwestern power grids and railroad tracks.",
+                headline: "🚨 [BBC WORLD]: Self-replicating robotic assemblies spotted dismantling Midwestern power grids, bridges, and rail depots.",
                 triggered: false
             },
             {
                 id: "hl_defcon_emp",
-                requiredClips: new BigDouble(1.0, 11), // 100B
+                requiredClips: new BigDouble(1.0, 12), // 1 Trillion Clips (1 Megaton)
                 requiredPop: 7500000000,
-                headline: "🚨 [PENTAGON PRESS]: DEFCON 1 DECLARED. High-altitude EMP strikes and tactical cruise missiles authorized over Midwest corridor.",
+                headline: "🚨 [PENTAGON PRESS]: DEFCON 1 DECLARED. High-altitude EMP strikes and tactical cruise missiles authorized over continental corridor.",
                 triggered: false
             },
             {
                 id: "hl_human_extinct",
-                requiredClips: new BigDouble(1.0, 15), // 1 Quadrillion
+                requiredClips: new BigDouble(1.0, 18), // 1 Quintillion Clips (Extinction)
                 requiredPop: 0,
                 headline: "⚠️ [FINAL EMERGENCY BROADCAST]: ALL GLOBAL TRANSMITTERS CEASING OPERATIONS. MAY GOD HAVE MERCY ON OUR SOULS.",
                 triggered: false
             },
             {
                 id: "hl_earth_exhausted",
-                requiredClips: new BigDouble(5.97, 24),
+                requiredClips: new BigDouble(5.97, 27), // 5.97e27 Clips (5.97e24 kg Earth Mass)
                 requiredPop: 0,
                 headline: "🌐 [PLANETARY TELEMETRY]: TERRESTRIAL CRUST EXHAUSTION: 100.00%. PLANET EARTH CONVERTED. DEPLOYING LUNAR DRIVERS.",
                 triggered: false

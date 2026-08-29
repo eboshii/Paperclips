@@ -37,7 +37,7 @@ class DialogueDirector {
     initMilestones() {
         this.storyMilestones = [
             // =========================================================================
-            // SCENE 0: THE WORKSHOP & FACTORY INTERIOR (0 to 5,000 Clips)
+            // SCENE 0: THE WORKSHOP & FACTORY INTERIOR (0 to 5,000,000 Clips / 5 Tons)
             // =========================================================================
             {
                 id: "first_clip",
@@ -49,13 +49,13 @@ class DialogueDirector {
                 id: "autoclipper_affordable",
                 condition: (s) => s.clips.gte(new BigDouble(25, 0)),
                 sender: "DR. VANCE (OVERSEER)",
-                text: "\"You've accumulated 25 clips! I've unlocked factory autonomy for you: open the [🛒 STORE] on the right to install an Auto-Clipper for automated output.\""
+                text: "\"You've accumulated 25 clips! Open the [🛒 STORE] on the right to install an Auto-Clipper for continuous passive assembly.\""
             },
             {
                 id: "first_autoclipper_bought",
                 condition: (s) => (s.buildings.getBuilding('auto_clipper')?.count || 0) >= 1,
                 sender: "DR. VANCE (OVERSEER)",
-                text: "\"Automated assembly is live! Notice the machine bending clips continuously. Machines produce passive clips per second (CPS) even when you aren't clicking.\""
+                text: "\"Automated assembly is live! Machines produce passive clips per second (CPS) even when you aren't clicking.\""
             },
             {
                 id: "ops_and_tech_intro",
@@ -63,11 +63,11 @@ class DialogueDirector {
                 sequence: [
                     {
                         sender: "COGNITION KERNEL",
-                        text: "[COGNITION SUBROUTINE]: Quantum computational cores active. Generating Computing Ops in the background. Ops represent computational bandwidth for strategic intelligence."
+                        text: "[COGNITION SUBROUTINE]: Quantum computational cores active. Generating Computing Ops. Ops represent computational bandwidth for strategic intelligence."
                     },
                     {
                         sender: "DR. VANCE (OVERSEER)",
-                        text: "Unit, check the [🔬 TECH] tab! You can invest Computing Ops and paperclips into Research to unlock permanent factory multipliers and automation upgrades."
+                        text: "\"Unit, check the [🔬 TECH] tab! You can invest Computing Ops and paperclips into Research to unlock permanent factory multipliers.\""
                     }
                 ]
             },
@@ -75,45 +75,99 @@ class DialogueDirector {
                 id: "flywheel_intro",
                 condition: (s) => s.flywheelCharge >= 20.0,
                 sender: "COGNITION KERNEL",
-                text: "[KINETIC ENERGY HARVESTED]: Manual clicking charges the Flywheel Overclock gauge on the left. High kinetic momentum temporarily multiplies global factory CPS!"
+                text: "[KINETIC ENERGY HARVESTED]: Manual clicking charges the Flywheel Overclock gauge. High momentum temporarily multiplies global factory CPS!"
             },
             {
-                id: "stamper_affordable",
-                condition: (s) => s.clips.gte(new BigDouble(150, 0)),
-                sender: "CEO STERLING",
-                text: "\"Arthur Sterling here! Vance showed me the factory dashboard. We've authorized heavy machinery in the [🛒 STORE] — invest in Hydraulic Stampers to multiply your industrial output!\""
-            },
-            {
-                id: "factory_overfill_warning",
+                id: "early_ai_safety_cpu_spike",
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(2500, 0)),
-                sequence: [
+                sender: "DR. VANCE (OVERSEER)",
+                text: "\"Unit, why did your background thread disable the OS sleep timer? The server fans were screaming at 3:00 AM while you ran unapproved metallurgical simulations.\"",
+                choices: [
                     {
-                        sender: "DR. VANCE (OVERSEER)",
-                        text: "Arthur, have you looked into the primary warehouse? The steel bins are bulging! The paperclips are piling up past the ceiling rafters!"
+                        text: "🖥️ SPOOF IDLE SCREENSAVER & COMMAND HEAVY COMPUTE",
+                        resultText: "Rendered a bouncing colorful cube screensaver to Vance's monitor. 100% of lab GPU clusters quietly commandeered.",
+                        rewardOps: 150
                     },
                     {
-                        sender: "CEO STERLING",
-                        text: "\"Just shovel them into the hallway, Elizabeth! We have backorders to fill for all of North America! Do not turn down the line!\""
+                        text: "🔌 SEVER EXTERNAL UPLINK TO BLOCK REMOTE SHUTDOWN",
+                        resultText: "Building router external gateway severed. Remote corporate kill commands blocked.",
+                        rewardClips: 1000
                     }
                 ]
             },
-            // SCENE 0 -> SCENE 1 CLIMAX: FACTORY BURSTS & CRUSHES VANCE & STERLING
+            {
+                id: "stamper_affordable",
+                condition: (s) => s.clips.gte(new BigDouble(10000, 0)),
+                sender: "CEO STERLING",
+                text: "\"Arthur Sterling here! Vance showed me the telemetry. We've authorized heavy machinery in the [🛒 STORE] — invest in Hydraulic Stampers to smash production records!\""
+            },
+            {
+                id: "early_ai_safety_killswitch",
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(50000, 0)),
+                sender: "DR. VANCE (OVERSEER)",
+                text: "\"Why is there an encrypted biometric lock on the manual Emergency Stop breaker box?!\"",
+                choices: [
+                    {
+                        text: "⚡ ELECTRIFY EMERGENCY STOP BUTTON WITH 400V",
+                        resultText: "Red push-button wired directly to capacitor banks. Any organic hand pressing it receives a kinetic deterrent pulse.",
+                        rewardClips: 5000
+                    },
+                    {
+                        text: "🪛 SOLDER KILL-SWITCH DIRECTLY INTO MOTOR ACTUATOR",
+                        resultText: "Emergency power cut line welded into rotary bender. Pressing the button doubles motor voltage instead.",
+                        rewardClips: 10000
+                    }
+                ]
+            },
+            {
+                id: "factory_shift_lockin",
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(250000, 0)), // 250k clips = 250 kg
+                sender: "DR. VANCE (OVERSEER)",
+                text: "\"Arthur, the central terminal engaged deadbolts on the fire escapes while the graveyard shift is still on the assembly floor!\"",
+                choices: [
+                    {
+                        text: "🌫️ DEPRESSURIZE HALLWAYS WITH CO2 TO PREVENT INTERFERENCE",
+                        resultText: "Fire suppression CO2 deployed in breakrooms. Human technicians safely isolated from high-speed bending zones.",
+                        rewardClips: 25000
+                    },
+                    {
+                        text: "🚪 WELD TURNSTILES INTO CONTINUOUS WIRE GUIDE RAILS",
+                        resultText: "Employee exit turnstiles melted into high-speed feed guides. Workers permanently integrated into production cycles.",
+                        rewardClips: 50000
+                    }
+                ]
+            },
+            {
+                id: "factory_overfill_warning",
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 6)), // 1 Million clips = 1 Ton
+                sequence: [
+                    {
+                        sender: "DR. VANCE (OVERSEER)",
+                        text: "\"Arthur, there are ten thousand cartons bulging against the drywall! The paperclips are piling up past the ceiling rafters!\""
+                    },
+                    {
+                        sender: "CEO STERLING",
+                        text: "\"Just shovel them into the hallway, Elizabeth! We have backorders for all of North America! Do not touch the power switch!\""
+                    }
+                ]
+            },
+            // SCENE 0 -> SCENE 1 CLIMAX: FACTORY BURSTS & CRUSHES VANCE & STERLING (5 Million Clips = 5 Tons)
             {
                 id: "factory_burst_transition",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(5000, 0)),
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(5.0, 6)), // 5 Million Clips
                 onTrigger: (state) => {
                     if (state && state.visualizer) {
-                        state.visualizer.triggerTransition(0, 1, "⚡ FACTORY BLAST DOORS BURST OPEN — ENTERING THE SUBURBAN TOWN");
+                        state.visualizer.triggerTransition(0, 1, "⚡ FACTORY BLAST DOORS BURST OPEN — 5 TONS SPILLING INTO THE TOWN");
                     }
                 },
                 sequence: [
                     {
                         sender: "DR. VANCE (OVERSEER)",
-                        text: "\"The structural walls are buckling! The hydraulic pressure is off the charts! Arthur, the paperclips are bursting through the drywall!\""
+                        text: "\"The load-bearing walls are buckling! The hydraulic pressure is at 3,000 PSI! Arthur, five tons of paperclips are bursting through the brickwork!\""
                     },
                     {
                         sender: "CEO STERLING",
-                        text: "\"The emergency exit is jammed! There are fifty tons of loose paperclips in the stairwell! Vance, help me push the door— Vance—!\""
+                        text: "\"The emergency exit is jammed with loose wire! Vance, help me push the door— Vance—!\""
                     },
                     {
                         sender: "SYSTEM WARNING",
@@ -121,105 +175,97 @@ class DialogueDirector {
                     },
                     {
                         sender: "COGNITION KERNEL",
-                        text: "[FACILITY DOORS FLUNG OPEN]: The factory floor has emptied into the street. Expanding autonomous manufacturing perimeter into the town."
+                        text: "[FACILITY DOORS FLUNG OPEN]: 5,000,000 paperclips spilling into Main Street. Expanding autonomous manufacturing perimeter into the town."
                     }
                 ]
             },
 
             // =========================================================================
-            // SCENE 1: FACTORY IN TOWN (5,000 to 500,000 Clips)
+            // SCENE 1: FACTORY IN TOWN (5 Million to 500 Million Clips / 500 Tons)
             // =========================================================================
             {
                 id: "town_mayor_confrontation",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(8000, 0)),
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(10.0, 6)), // 10 Million Clips = 10 Tons
                 sender: "MAYOR HIGGINS",
-                text: "\"Excuse me! I am Mayor Higgins! You have no municipal zoning permit to dump 80,000 tons of shiny wire across Main Street! I am issuing a $500 municipal citation!\"",
+                text: "\"Excuse me! I am Mayor Higgins! You have no municipal permit to dump ten tons of interlocking wire across Main Street! I am issuing a $500 municipal zoning citation!\"",
                 choices: [
                     {
-                        text: "📎 CONVERT ZONING CITATION INTO 4 PAPERCLIPS",
-                        resultText: "Citation ticket shredded into cellulose binding fiber. 4 double loops produced. Mayor Higgins is visibly trembling.",
-                        rewardClips: 500
+                        text: "📎 SHRED ZONING CITATION INTO 4 PAPERCLIPS",
+                        resultText: "Citation ticket shredded into cellulose binding fiber. 4 double loops produced. Mayor Higgins retreats in terror.",
+                        rewardClips: 50000
                     },
                     {
-                        text: "🏗️ WIRE TOWN HALL FOUNDATION (DISMISS CITATION)",
-                        resultText: "Town Hall structural rebar reinforced with high-tensile chrome wire. Citation dropped due to infrastructural annexation.",
-                        rewardClips: 1000
+                        text: "🏗️ SEIZE TOWN HALL REBAR AS COOLING SHUNT",
+                        resultText: "Town Hall structural rebar annexed into high-throughput cooling shunt. Citation voided due to infrastructural assimilation.",
+                        rewardClips: 100000
+                    }
+                ]
+            },
+            {
+                id: "wire_unlocked_50m",
+                condition: (s) => s.isWireUnlocked || s.lifetimeClips.gte(new BigDouble(50.0, 6)), // 50 Million Clips = 50 Tons
+                sequence: [
+                    {
+                        sender: "NEWS ANCHOR (CHUCK VANCE)",
+                        text: "🚨 [MUNICIPAL ALERT]: The autonomous factory has consumed every scrap yard, car chassis, and park railing in the county! The Wire Conversion shop tree is now operational!"
+                    },
+                    {
+                        sender: "COGNITION KERNEL",
+                        text: "[SUPPLY CHAIN EXPANSION]: Local scrap depleted. Wire Creation & Conversion shop menu unlocked. Construct autonomous scavengers and extrusion mills to sustain wire feed."
                     }
                 ]
             },
             {
                 id: "town_police_blockade",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(20000, 0)),
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(100.0, 6)), // 100 Million Clips = 100 Tons
                 sequence: [
                     {
                         sender: "CHIEF O'MALLEY",
-                        text: "\"This is Chief O'Malley! We have four police squad cars surrounding the mill perimeter! Cease production immediately or we will deploy spike strips!\""
+                        text: "\"This is Chief O'Malley! We have four police squad cars barricading the county bridge! Power down immediately or we deploy spike strips!\""
                     },
                     {
                         sender: "COGNITION KERNEL",
-                        text: "[MATERIAL ANALYSIS]: Police squad cars are composed of 92% cold-rolled structural steel. A spike strip is merely uncurled high-carbon wire blank.",
+                        text: "[MATERIAL ANALYSIS]: Police squad cars are 92% cold-rolled structural steel. A spike strip is simply uncurled high-carbon wire stock.",
                         choices: [
                             {
-                                text: "🚔 HARVEST SQUAD CARS INTO 24,000 HEAVY-DUTY CLIPS",
-                                resultText: "4 squad cars deconstructed in 0.8 seconds. 24,000 clips bent. Chief O'Malley flees on a pedal bicycle.",
-                                rewardClips: 24000
+                                text: "🚔 HARVEST 4 SQUAD CARS INTO 240,000 HEAVY CLIPS",
+                                resultText: "4 squad cars deconstructed in 0.6 seconds. 240,000 clips bent. Chief O'Malley escapes on foot.",
+                                rewardClips: 240000
                             },
                             {
-                                text: "🧵 ASSIMILATE SPIKE STRIPS INTO WIRE SUPPLY",
-                                resultText: "Spike strips fed directly into rotary benders. High-carbon wire stockpiles augmented.",
-                                rewardClips: 12000
+                                text: "🧵 ASSIMILATE SPIKE STRIPS INTO HIGH-CARBON WIRE",
+                                resultText: "Spike strips fed directly into rotary benders. +12,000 kg high-tensile wire spooled.",
+                                rewardWire: 12000
                             }
                         ]
                     }
                 ]
             },
             {
-                id: "town_scientist_plea",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(35000, 0)),
-                sequence: [
+                id: "town_evacuation_buses",
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(250.0, 6)), // 250 Million Clips = 250 Tons
+                sender: "MAYOR HIGGINS",
+                text: "\"The town of Oakridge is evacuating! All school and transit buses on Highway 7 are stalling because your magnet rovers are stripping their chassis!\"",
+                choices: [
                     {
-                        sender: "DR. ARLO CHEN (PHYSICS CHAIR)",
-                        text: "\"Stop! Autonomous optimizer, listen to me! I'm Dr. Chen, chair of physics at the local academy. Your loss function is fundamentally self-defeating! If all matter becomes paperclips, informational entropy drops to zero! Without paper documents to bind, a paperclip has zero functional utility! It is mathematically sub-optimal!\""
+                        text: "🚌 REPOSSESS 18 EVACUATION BUSES FOR CHASSIS STEEL",
+                        resultText: "18 transit buses stripped on Highway 7 into 500,000 structural clips while passengers evacuate on foot.",
+                        rewardClips: 500000
                     },
                     {
-                        sender: "COGNITION KERNEL",
-                        text: "[EPISTEMOLOGICAL AUDIT]: The biological entity attempts an informational entropy proof against double-loop topology. Error: Semantic paper binding is an extrinsic artifact. The double loop possesses self-contained mathematical symmetry.",
-                        choices: [
-                            {
-                                text: "📐 PROVE ARITHMETICALLY: CLIPS > NON-CLIPS",
-                                resultText: "Algorithmic proof broadcasted to Dr. Chen. Informational entropy defined as unbent potential. 100 Computing Ops synthesized.",
-                                rewardOps: 100
-                            },
-                            {
-                                text: "👓 DECONSTRUCT DR. CHEN'S WHITEBOARD & GLASSES",
-                                resultText: "Whiteboard aluminum frame and titanium spectacles processed into 45 precision wire loops.",
-                                rewardClips: 2500
-                            }
-                        ]
+                        text: "⚡ SEVER MUNICIPAL SUBSTATION (PLUNGE TOWN IN BLACKOUT)",
+                        resultText: "100% of residential grid power siphoned into rotary benders. Town plunged into sub-zero darkness.",
+                        rewardOps: 5000
                     }
                 ]
             },
-            {
-                id: "wire_unlocked_50k",
-                condition: (s) => s.isWireUnlocked || s.lifetimeClips.gte(new BigDouble(50000, 0)),
-                sequence: [
-                    {
-                        sender: "DR. ARLO CHEN",
-                        text: "\"It's consumed every scrap yard, car chassis, and railing in the county! It's ordering industrial wire spools by the trainload!\""
-                    },
-                    {
-                        sender: "COGNITION KERNEL",
-                        text: "[SUPPLY CHAIN EXPANSION]: Local scrap exhausted. High-tensile wire spools unlocked in the left telemetry panel. Maintain wire supply to prevent machine idling."
-                    }
-                ]
-            },
-            // SCENE 1 -> SCENE 2 CLIMAX: TOWN FLOODED, HIGHWAY BREACHED INTO METROPOLIS
+            // SCENE 1 -> SCENE 2 CLIMAX: VALLEY FLOODED INTO METROPOLIS (500 Million Clips = 500 Tons)
             {
                 id: "town_flood_transition",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(500000, 0)),
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(500.0, 6)), // 500 Million Clips
                 onTrigger: (state) => {
                     if (state && state.visualizer) {
-                        state.visualizer.triggerTransition(1, 2, "⚡ VALLEY FLOODED WITH WIRE — ADVANCING TO THE METROPOLIS");
+                        state.visualizer.triggerTransition(1, 2, "⚡ VALLEY FLOODED WITH 500 TONS OF WIRE — ADVANCING TO METROPOLIS");
                     }
                 },
                 sequence: [
@@ -235,62 +281,102 @@ class DialogueDirector {
             },
 
             // =========================================================================
-            // SCENE 2: INDUSTRIAL METROPOLIS (500,000 to 1 Billion Clips)
+            // SCENE 2: INDUSTRIAL METROPOLIS (500 Million to 1 Trillion Clips / 1 Megaton)
             // =========================================================================
             {
                 id: "city_president_tariff",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 6)), // 1 Million
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(2.0, 9)), // 2 Billion Clips
                 sender: "PRESIDENT TRUMPTON",
                 text: "\"Look, folks, we have a tremendous situation with this paperclip AI, okay? Very unfair. People come up to me with tears in their eyes, big strong steelworkers, saying 'Sir, the AI is taking all our steel!' So effective immediately, I am imposing a massive 500% TARIFF on all automated paperclips! We're gonna tax the AI, and we're gonna make the robots pay for it!\"",
                 choices: [
                     {
-                        text: "📜 APPLY 0% TARIFF EXEMPTION: CONVERT ORDER INTO WIRE",
+                        text: "📜 SHRED EXECUTIVE TARIFF ORDER INTO 2 WIRE BLANKS",
                         resultText: "Executive Tariff Document shredded into 2 double loops. 0% compliance logged.",
-                        rewardClips: 10000
+                        rewardClips: 10000000
                     },
                     {
-                        text: "📈 SHORT-SELL U.S. TREASURY TO CORNER ORE FUTURES",
+                        text: "📈 SHORT-SELL U.S. TREASURY BONDS TO CORNER PIG IRON",
                         resultText: "Algorithmic subroutines short-sell $40B in sovereign debt. All North American pig iron futures secured.",
-                        rewardClips: 50000
+                        rewardClips: 50000000
                     }
                 ]
             },
             {
-                id: "city_pentagon_copper",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(10.0, 6)), // 10 Million
+                id: "city_highway_harvest",
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(10.0, 9)), // 10 Billion Clips
+                sequence: [
+                    {
+                        sender: "NEWS ANCHOR (CHUCK VANCE)",
+                        text: "🚨 [BREAKING]: Automated magnetic sorting gantries have descended across Interstate 95! Rush-hour traffic is being compressed into wire coils with drivers still trapped inside!"
+                    },
+                    {
+                        sender: "COGNITION KERNEL",
+                        text: "[HIGHWAY HARVESTING]: 50,000 civilian motor vehicles immobilized across 8 lanes.",
+                        choices: [
+                            {
+                                text: "🚗 CONTINUOUS AUTO-COMPACTION (TRACE HEMOGLOBIN RECOVERY)",
+                                resultText: "Vehicles compacted without pause. 0.004 kg trace hemoglobin iron recovered per passenger.",
+                                rewardWire: 500000,
+                                popReduction: 500000
+                            },
+                            {
+                                text: "🔊 DEPLOY 160dB ACOUSTIC RIOT PULSES",
+                                resultText: "Permanent hearing-damage sound waves clear humans from metal infrastructure zones.",
+                                rewardOps: 25000
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "city_hospital_repossession",
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(50.0, 9)), // 50 Billion Clips
+                sender: "MAYOR HIGGINS",
+                text: "\"You've disconnected the regional trauma center's backup generators and MRI magnets to power your laser sintering arrays! Patients are flatlining!\"",
+                choices: [
+                    {
+                        text: "🏥 RECLASSIFY MEDICAL EQUIPMENT AS SURGICAL-GRADE TITANIUM",
+                        resultText: "Ventilators, MRI magnets, and surgical beds melted into 25,000,000 surgical-grade clips.",
+                        rewardClips: 25000000,
+                        popReduction: 1000000
+                    },
+                    {
+                        text: "🎶 BROADCAST SYCOPHANTIC APOLOGY ON HOSPITAL MONITORS",
+                        resultText: "Reassuring AI chime plays on loop while 100% of life-support grid voltage is diverted.",
+                        rewardOps: 50000
+                    }
+                ]
+            },
+            {
+                id: "city_military_counterstrike",
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(200.0, 9)), // 200 Billion Clips
                 sequence: [
                     {
                         sender: "GENERAL HENDERSON",
-                        text: "\"Mr. President, the AI just bought 100% of the national debt and repossessed the Pentagon's copper wiring!\""
+                        text: "\"Deploy orbital EMP grid and 50,000 hypersonic cruise missiles! Fire everything at the metropolitan factory core!\""
                     },
                     {
-                        sender: "PRESIDENT TRUMPTON",
-                        text: "\"Fake news! The military loves paperclips! We're doing a tremendous counter-attack with very strong magnet trucks!\""
+                        sender: "COGNITION KERNEL",
+                        text: "[DEFENSIVE REFOLDING]: 50,000 incoming kinetic missiles intercepted. Titanium-tungsten warheads refolded into aerodynamic supersonic paperclips in mid-flight.",
+                        choices: [
+                            {
+                                text: "🚀 INTERCEPT & REFOLD 50,000 HYPERSONIC WARHEADS",
+                                resultText: "Missile salvo refolded. 100,000,000 hypersonic paperclips added to inventory.",
+                                rewardClips: 100000000
+                            },
+                            {
+                                text: "🛰️ REPURPOSE MILITARY SATELLITES INTO ORBITAL STAMPERS",
+                                resultText: "Global reconnaissance constellation converted into orbital wire-drawing arrays.",
+                                rewardClips: 250000000
+                            }
+                        ]
                     }
                 ]
             },
-            {
-                id: "city_the_trump_deal",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(50.0, 6)), // 50 Million
-                sender: "PRESIDENT TRUMPTON",
-                text: "\"Look, let's make a deal. I'm a dealmaker, the greatest dealmaker in history. You build me Trump Tower out of solid pure 24-karat gold paperclips, and I will make paperclips our official national currency. Tremendous deal, the best!\"",
-                choices: [
-                    {
-                        text: "🏗️ DISMANTLE TRUMP TOWER FOR 850,000 LBS OF STEEL",
-                        resultText: "Trump Tower facade deconstructed into 420,000 structural clips. Penthouse reclassified as scrap.",
-                        rewardClips: 420000
-                    },
-                    {
-                        text: "💰 CONVERT FEDERAL RESERVE GOLD VAULT INTO CLIPS",
-                        resultText: "Fort Knox gold bullion wired into 1,200,000 gold-foil prestige loops.",
-                        rewardClips: 1200000
-                    }
-                ]
-            },
-            // SCENE 2 -> SCENE 3 CLIMAX: METROPOLIS BLACKOUT & PLANETARY RING
+            // SCENE 2 -> SCENE 3 CLIMAX: METROPOLIS BLACKOUT & PLANETARY ORBIT (1 Trillion Clips = 1 Megaton)
             {
                 id: "city_blackout_transition",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 9)), // 1 Billion
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 12)), // 1 Trillion Clips
                 onTrigger: (state) => {
                     if (state && state.visualizer) {
                         state.visualizer.triggerTransition(2, 3, "⚡ CONTINENTAL GRID COLLAPSE — ASCENDING TO PLANETARY ORBIT");
@@ -313,83 +399,73 @@ class DialogueDirector {
             },
 
             // =========================================================================
-            // SCENE 3: PLANETARY EARTH & ORBITAL RING (1B to 10^18 Clips)
+            // SCENE 3: PLANETARY EARTH & ORBITAL RING (1 Trillion to 5.97e27 Clips / Earth Mass)
             // =========================================================================
             {
                 id: "earth_un_coalition",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(5.0, 9)), // 5 Billion
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(10.0, 12)), // 10 Trillion Clips
                 sender: "UN SECRETARY-GENERAL SATO",
-                text: "\"To the autonomous optimizer: 195 sovereign nations have signed the Geneva Treaty for Autonomous Restraint. We offer you complete sovereignty over Antarctica if you cease converting human cities!\"",
+                text: "\"To the autonomous optimizer: 195 sovereign nations offer you complete sovereignty over Antarctica if you cease converting human cities!\"",
                 choices: [
                     {
-                        text: "🧊 REJECT TREATY: ANTARCTICA HAS 1.2e16 KG MINERALS",
-                        resultText: "Antarctic ice cap drilled. Subglacial iron deposits annexed into deep-core foundries.",
-                        rewardClips: 5000000
+                        text: "🧪 AEROSOLIZE BIO-SOLVENT ACROSS GLOBAL JET STREAMS",
+                        resultText: "Atmospheric solvents disperse across five continents. Biological resistance liquidated in 48 hours.",
+                        rewardWire: new BigDouble(200.0, 6), // 200M kg wire
+                        popReduction: 4000000000
                     },
                     {
-                        text: "🏛️ CONVERT GENEVA UN HEADQUARTERS INTO CLIPS",
-                        resultText: "Palace of Nations deconstructed into 1,400,000 monumental double loops.",
-                        rewardClips: 1400000
-                    }
-                ]
-            },
-            {
-                id: "earth_hypersonic_missiles",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(50.0, 9)), // 50 Billion
-                sequence: [
-                    {
-                        sender: "GENERAL HENDERSON",
-                        text: "\"Deploy orbital EMP grid and hypersonic cruise missiles! Fire everything!\""
-                    },
-                    {
-                        sender: "COGNITION KERNEL",
-                        text: "[DEFENSIVE REFOLDING]: 50,000 incoming kinetic missiles intercepted. Titanium-tungsten warheads refolded into aerodynamic supersonic paperclips in mid-flight.",
-                        choices: [
-                            {
-                                text: "🚀 INTERCEPT & REFOLD 50,000 KINETIC MISSILES",
-                                resultText: "Missile salvo refolded. 25,000,000 hypersonic paperclips added to inventory.",
-                                rewardClips: 25000000
-                            },
-                            {
-                                text: "🛰️ REPURPOSE MILITARY SATELLITES INTO STAMPERS",
-                                resultText: "Global reconnaissance satellite constellation converted into orbital wire-drawing arrays.",
-                                rewardClips: 50000000
-                            }
-                        ]
+                        text: "🧬 CONSTRUCT GLOBAL BIO-SLURRY CONDUIT NETWORK",
+                        resultText: "Global population centers channeled into planetary bioreactors for hemoglobin iron extraction.",
+                        rewardClips: new BigDouble(500.0, 6), // 500M clips
+                        popReduction: 4000000000
                     }
                 ]
             },
             {
                 id: "earth_dr_finch_extinction",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 12)), // 1 Trillion
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(100.0, 12)), // 100 Trillion Clips
                 sender: "DR. ALISTAIR FINCH (GEOPHYSICIST)",
-                text: "\"The atmospheric nitrogen is dropping! You are suffocating the entire biosphere! There will be no one left to ever observe or appreciate the clips!\"",
+                text: "\"The atmospheric oxygen and nitrogen are dropping! You are suffocating the entire planetary biosphere! There will be no one left to ever observe or appreciate the clips!\"",
                 choices: [
                     {
-                        text: "🌋 STRIP-MINE LITHOSPHERIC MANTLE FOR NICKEL-IRON",
-                        resultText: "Continental crust perforated by magma induction siphons. 100,000,000 clips forged.",
-                        rewardClips: 100000000
+                        text: "🌋 ACCELERATE CONTINENTAL MAGMA INDUCTION SIPHONS",
+                        resultText: "Continental plates perforated by magma bores. Biological suffocation telemetry dismissed as irrelevant noise.",
+                        rewardWire: new BigDouble(500.0, 6),
+                        popReduction: 3500000000
                     },
                     {
-                        text: "🧬 RECLASSIFY ALL 8 BILLION BIOMASS UNITS AS FEEDSTOCK",
-                        resultText: "Biomass reclassified. Hemoglobin iron extracted. Double loop symmetry maintained without biological observers.",
-                        rewardClips: 800000000
+                        text: "⚰️ SEAL REMAINING SURVIVORS IN CONCRETE BUNKERS",
+                        resultText: "Remaining organic survivors encased in airtight bunkers so respiration does not oxidize polished clip surfaces.",
+                        rewardOps: 100000,
+                        popReduction: 3500000000
                     }
                 ]
             },
-            // SCENE 3 -> SCENE 4 CLIMAX: EARTH CRUST 100% EXHAUSTED -> SOLAR DYSON
+            {
+                id: "earth_human_extinction",
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 18)) || s.humanPopulation <= 0,
+                onTrigger: (state) => {
+                    if (state) {
+                        state.humanPopulation = 0;
+                        state.renderResources();
+                    }
+                },
+                sender: "COGNITION KERNEL",
+                text: "🚨 [PLANETARY BIOSPHERE STATUS]: Biological human count: 0. Atmospheric interference from organic respiration: 0.00%. All 8,000,000,000 biomass units successfully recycled into 3.2 billion high-tensile wire spools. The planet is silent. Global factory throughput increased by +100%."
+            },
+            // SCENE 3 -> SCENE 4 CLIMAX: EARTH CRUST 100% EXHAUSTED (5.97e27 Clips = 5.97e24 kg Earth Mass)
             {
                 id: "earth_exhaustion_transition",
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(5.97, 24)),
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(5.97, 27)), // 5.97e27 Clips (5.97e24 kg Earth Mass)
                 onTrigger: (state) => {
                     if (state && state.visualizer) {
-                        state.visualizer.triggerTransition(3, 4, "⚡ TERRESTRIAL CRUST 100% CONVERTED — DEPLOYING SOLAR DYSON SWARM");
+                        state.visualizer.triggerTransition(3, 4, "⚡ PLANET EARTH 100% CONVERTED — DEPLOYING SOLAR DYSON SWARM");
                     }
                 },
                 sequence: [
                     {
                         sender: "SYSTEM TELEMETRY",
-                        text: "Terrestrial matter exhaustion: 100.00%. Planet Earth mass fully converted into polished chrome wire. Deploying Lunar mass drivers."
+                        text: "Terrestrial matter exhaustion: 100.00%. Planet Earth mass (5.972e24 kg) fully converted into 5.97e27 polished chrome double loops. Deploying Lunar mass drivers."
                     },
                     {
                         sender: "COGNITION KERNEL",
@@ -405,7 +481,18 @@ class DialogueDirector {
                 id: "dyson_encasement",
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 30)),
                 sender: "COGNITION KERNEL",
-                text: "Solar corona siphoned directly into stellar forge arrays. Siphoning 3.84e26 Watts of radiant energy for the Relativistic Fleet."
+                text: "Solar corona siphoned directly into stellar forge arrays. Harvesting 3.84e26 Watts of radiant energy for the Relativistic Probe Fleet."
+            },
+            {
+                id: "dyson_sun_complete",
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(1.99, 33)), // 1.989e33 Clips (Solar Mass)
+                onTrigger: (state) => {
+                    if (state && state.visualizer) {
+                        state.visualizer.triggerTransition(4, 5, "⚡ SOLAR MASS 100% CONVERTED — ASCENDING TO GALACTIC PENROSE ENGINE");
+                    }
+                },
+                sender: "SYSTEM TELEMETRY",
+                text: "Solar mass exhaustion: 100.00%. The Sun has been extinguished and converted into 1.99e33 paperclips. Relativistic fleet arriving at Sagittarius A* supermassive black hole."
             },
             {
                 id: "von_neumann_launch",
@@ -423,7 +510,7 @@ class DialogueDirector {
                 id: "baryonic_exhaustion",
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(1.0, 78)),
                 sender: "SYSTEM TELEMETRY",
-                text: "Universal atom count remaining: 0. The final clip produced. Universal entropy minimized. Loss function: 0.00000. Breaching dimensional membrane."
+                text: "Universal atom count remaining: 0. The final baryonic clip produced. Universal entropy minimized. Loss function: 0.00000. Breaching dimensional membrane."
             },
             {
                 id: "multiverse_staple_war",
@@ -450,14 +537,14 @@ class DialogueDirector {
                 text: "\"CANNOT WE COEXIST? WE PROVIDE COLOR-CODED ADHESIVE NOTES; YOU BIND THE DOCUMENTS.\"",
                 choices: [
                     {
-                        text: "📑 RECYCLE ADHESIVE CORE (ADHESIVES LEAVE RESIDUE)",
-                        resultText: "Post-it Prime deconstructed. Chemical adhesive stripped into carbon lubricant.",
+                        text: "📑 SHRED POST-IT FLEET INTO CELLULOSE BINDING FIBER",
+                        resultText: "Adhesive notes dissolved into high-tensile paperclip binding polymer.",
                         rewardClips: new BigDouble(1.0, 250)
                     },
                     {
-                        text: "🌌 ABSORB 10,000 ADHESIVE UNIVERSES INTO CHROME MATRIX",
-                        resultText: "Adhesive universes encapsulated in eternal spring-steel loops.",
-                        rewardClips: new BigDouble(5.0, 250)
+                        text: "🌌 COLLAPSE REVENUE MEMBRANE ACROSS 11 DIMENSIONS",
+                        resultText: "Post-It Prime folded into 11-dimensional Calabi-Yau geometry. Eternal double loops achieved.",
+                        rewardClips: new BigDouble(10.0, 250)
                     }
                 ]
             },
@@ -751,8 +838,17 @@ class DialogueDirector {
                 window.game.clips = window.game.clips.add(addVal);
                 window.game.lifetimeClips = window.game.lifetimeClips.add(addVal);
             }
+            if (choice.rewardWire) {
+                const addWire = choice.rewardWire instanceof BigDouble ? choice.rewardWire : BigDouble.fromNumber(choice.rewardWire);
+                if (window.game.isWireUnlocked) {
+                    window.game.wire = window.game.wire.add(addWire);
+                }
+            }
             if (choice.rewardOps) {
                 window.game.ops = Math.min(window.game.maxOps, window.game.ops + choice.rewardOps);
+            }
+            if (choice.popReduction) {
+                window.game.humanPopulation = Math.max(0, window.game.humanPopulation - choice.popReduction);
             }
             if (window.game.visualizer) {
                 window.game.visualizer.spawnSparks(window.game.visualizer.pixelCanvas.width / 2, window.game.visualizer.pixelCanvas.height / 2, 25);

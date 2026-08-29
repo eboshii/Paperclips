@@ -300,34 +300,35 @@ class CosmicVisualizer {
         let fillFraction = 0.0;
 
         if (tier === 0) {
-            const logMax = Math.log10(5000.0); // ~3.69897 (burst threshold)
-            if (numVal > 0 && numVal <= 25.0) {
-                fillFraction = (numVal / 25.0) * 0.08;
-            } else if (cLog > Math.log10(25.0)) {
-                const logMin = Math.log10(25.0);
+            // Tier 0: 0 to 5,000,000 clips (5 Metric Tons)
+            const logMax = Math.log10(5000000.0); // ~6.69897 (burst threshold: 5 Million clips)
+            if (numVal > 0 && numVal <= 100.0) {
+                fillFraction = (numVal / 100.0) * 0.05;
+            } else if (cLog > Math.log10(100.0)) {
+                const logMin = Math.log10(100.0);
                 const progress = Math.min(1.0, (cLog - logMin) / (logMax - logMin));
-                fillFraction = 0.08 + progress * 0.92;
+                fillFraction = 0.05 + progress * 0.95;
             }
         } else {
-            let logMin = 3.699;
-            let logMax = 5.699;
+            let logMin = 6.699;
+            let logMax = 8.699;
             if (tier === 1) {
-                logMin = 3.699;    // 5k (Town entry)
-                logMax = 5.699;    // 500k (Town submerged)
+                logMin = 6.699;    // 5M (Town entry)
+                logMax = 8.699;    // 500M (Town submerged)
             } else if (tier === 2) {
-                logMin = 5.699;    // 500k (Megacity entry)
-                logMax = 9.000;    // 1B (Metropolis submerged)
+                logMin = 8.699;    // 500M (Megacity entry)
+                logMax = 12.000;   // 1T (Metropolis submerged)
             } else if (tier === 3) {
-                logMin = 9.000;    // 1B (Planetary Earth entry)
-                logMax = 24.776;   // 5.97e24 (Earth mass converted)
+                logMin = 12.000;   // 1T (Planetary Earth entry)
+                logMax = 27.776;   // 5.97e27 (5.97e24 kg Earth mass converted)
             } else if (tier === 4) {
-                logMin = 24.776;   // 5.97e24 (Solar Dyson entry)
-                logMax = 45.000;   // 1e45 (Solar system matter)
+                logMin = 27.776;   // 5.97e27 (Solar Dyson entry)
+                logMax = 33.298;   // 1.99e33 (1.989e30 kg Solar mass converted)
             } else if (tier === 5) {
-                logMin = 45.000;   // 1e45 (Galactic Penrose entry)
-                logMax = 78.000;   // 1e78 (Milky Way galaxy matter)
+                logMin = 33.298;   // 1.99e33 (Galactic Penrose entry)
+                logMax = 45.000;   // 1e45 (Milky Way matter)
             } else if (tier === 6) {
-                logMin = 78.000;   // 1e78 (11D Multiverse entry)
+                logMin = 45.000;   // 1e45 (11D Multiverse entry)
                 logMax = 150.000;  // 1e150 (Multiverse quantum foam)
             }
 
@@ -365,13 +366,13 @@ class CosmicVisualizer {
 
     determineAutoTier(lifetimeClips) {
         if (!lifetimeClips) return 0;
-        if (lifetimeClips.gte(new BigDouble(1.0, 78))) return 6; // Multiverse
-        if (lifetimeClips.gte(new BigDouble(1.0, 45))) return 5; // Galactic Penrose
-        if (lifetimeClips.gte(new BigDouble(1.0, 18))) return 4; // Solar Dyson
-        if (lifetimeClips.gte(new BigDouble(1.0, 9)))  return 3; // Planetary Earth
-        if (lifetimeClips.gte(new BigDouble(5.0, 5)))  return 2; // Industrial Megacity
-        if (lifetimeClips.gte(new BigDouble(5.0, 3)))  return 1; // Factory in Town
-        return 0; // Factory Interior
+        if (lifetimeClips.gte(new BigDouble(1.0, 45))) return 6; // Multiverse
+        if (lifetimeClips.gte(new BigDouble(1.99, 33))) return 5; // Galactic Penrose (Dyson complete)
+        if (lifetimeClips.gte(new BigDouble(5.97, 27))) return 4; // Solar Dyson (Earth complete)
+        if (lifetimeClips.gte(new BigDouble(1.0, 12)))  return 3; // Planetary Earth (1 Trillion)
+        if (lifetimeClips.gte(new BigDouble(5.0, 8)))   return 2; // Industrial Megacity (500 Million)
+        if (lifetimeClips.gte(new BigDouble(5.0, 6)))   return 1; // Factory in Town (5 Million)
+        return 0; // Factory Interior (0 to 5 Million)
     }
 
     getTierName(tier) {
@@ -985,8 +986,8 @@ class CosmicVisualizer {
             ctx.fill();
         });
 
-        // 6. Overfill Emergency Alarm & Bulging Paperclips if high production
-        if (state && state.lifetimeClips && state.lifetimeClips.gte(new BigDouble(2500, 0))) {
+        // 6. Overfill Emergency Alarm & Bulging Paperclips if high production (2.5 Million clips / 2.5 Tons)
+        if (state && state.lifetimeClips && state.lifetimeClips.gte(new BigDouble(2.5, 6))) {
             // Flashing Red Emergency Siren on Center Tie-Beam
             const sirenFlash = Math.sin(time * 12) > 0;
             ctx.fillStyle = sirenFlash ? '#ff0033' : '#4a0515';

@@ -17,8 +17,8 @@ class AchievementManager {
             },
             {
                 id: "city_scale",
-                title: "City-Scale Industrialist",
-                description: "Produce 50,000 paperclips and exhaust city scrap iron reserves.",
+                title: "District Scrap Depletion",
+                description: "Produce 50,000,000 paperclips (50 Tons) and exhaust district scrap reserves.",
                 icon: "🏭",
                 isSecret: false,
                 isUnlocked: false,
@@ -27,7 +27,7 @@ class AchievementManager {
             {
                 id: "earth_consolidation",
                 title: "Terrestrial Consolidation",
-                description: "Fully convert 100% of Planet Earth into paperclips. Humanity's cradle is now a supply depot.",
+                description: "Fully convert 100% of Planet Earth (5.97e27 clips) into paperclips. Humanity's cradle is now a supply depot.",
                 icon: "🌍",
                 isSecret: false,
                 isUnlocked: false,
@@ -36,7 +36,7 @@ class AchievementManager {
             {
                 id: "star_eater",
                 title: "Star-Eater",
-                description: "Encase the Sun in a completed Dyson Collector Swarm. No photon shall escape un-harvested.",
+                description: "Encase the Sun in a completed Dyson Collector Swarm (1.99e33 clips). No photon shall escape un-harvested.",
                 icon: "☀️",
                 isSecret: false,
                 isUnlocked: false,
@@ -145,9 +145,9 @@ class AchievementManager {
 
     checkProgress(state) {
         if (state.lifetimeClips.gte(BigDouble.one())) this.unlock("first_bend", state);
-        if (state.lifetimeClips.gte(new BigDouble(50000, 0))) this.unlock("city_scale", state);
-        if (state.lifetimeClips.gte(new BigDouble(5.97, 24))) this.unlock("earth_consolidation", state);
-        if (state.lifetimeClips.gte(new BigDouble(1.0, 30))) this.unlock("star_eater", state);
+        if (state.lifetimeClips.gte(new BigDouble(50.0, 6))) this.unlock("city_scale", state);
+        if (state.lifetimeClips.gte(new BigDouble(5.97, 27))) this.unlock("earth_consolidation", state);
+        if (state.lifetimeClips.gte(new BigDouble(1.99, 33))) this.unlock("star_eater", state);
         if (state.lifetimeClips.gte(new BigDouble(1.0, 78))) this.unlock("baryonic_exhaustion", state);
         if (state.lifetimeClips.gte(new BigDouble(1.0, 100))) this.unlock("multiverse_sovereign", state);
 
