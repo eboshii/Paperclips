@@ -384,7 +384,7 @@ class GameEngine {
             this.wire = this.wire.add(wireGain);
 
             if (this.visualizer) {
-                const ratio = prevClips.gt(BigDouble.zero()) ? Math.min(1.0, cost.toDouble() / (prevClips.toDouble() + 1)) : 0.5;
+                const ratio = prevClips.gt(BigDouble.zero()) ? Math.min(1.0, Math.max(0.0, cost.div(prevClips).toDouble())) : 0.5;
                 this.visualizer.drainPaperclips(ratio);
             }
 
@@ -406,7 +406,7 @@ class GameEngine {
             b.count += purchase.amount;
 
             if (this.visualizer) {
-                const ratio = prevClips.gt(BigDouble.zero()) ? Math.min(1.0, purchase.totalCost.toDouble() / (prevClips.toDouble() + 1)) : 0.5;
+                const ratio = prevClips.gt(BigDouble.zero()) ? Math.min(1.0, Math.max(0.0, purchase.totalCost.div(prevClips).toDouble())) : 0.5;
                 this.visualizer.drainPaperclips(ratio);
             }
 
@@ -438,7 +438,7 @@ class GameEngine {
 
         if (this.techTree.purchaseResearch(techId, this)) {
             if (this.visualizer) {
-                const ratio = (prevClips.gt(BigDouble.zero()) && costClips.gt(BigDouble.zero())) ? Math.min(1.0, costClips.toDouble() / (prevClips.toDouble() + 1)) : 0.5;
+                const ratio = (prevClips.gt(BigDouble.zero()) && costClips.gt(BigDouble.zero())) ? Math.min(1.0, Math.max(0.0, costClips.div(prevClips).toDouble())) : 0.5;
                 this.visualizer.drainPaperclips(ratio);
             }
             this.audio.playTechUnlockSound();
@@ -927,6 +927,9 @@ class GameEngine {
         if (this.visualizer) {
             this.visualizer.fallingClips = [];
             this.visualizer.settledClips = [];
+            this.visualizer.drainingClips = [];
+            this.visualizer.fluidSplashDroplets = [];
+            this.visualizer.fluidStreamIntensity = 0.0;
             this.visualizer.initFluidColumns();
             this.visualizer.tier = 0;
             this.visualizer.autoTier = true;

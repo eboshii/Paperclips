@@ -64,6 +64,19 @@ class CosmicVisualizer {
         this.drainFlowIntensity = 0.0;
         this.initFluidColumns();
 
+        // Falling Fluid Cascade Streams Simulation (Drifts in at high CPS scales)
+        this.fluidStreamIntensity = 0.0;
+        this.fluidStreamPhase = 0.0;
+        this.fluidStreamChannels = [
+            { relX: 0.18, width: 14, speed: 1.15, phaseOffset: 0.0, waveAmp: 3.2, waveFreq: 0.045, colorScheme: 0 },
+            { relX: 0.32, width: 18, speed: 1.35, phaseOffset: 1.4, waveAmp: 4.0, waveFreq: 0.040, colorScheme: 1 },
+            { relX: 0.50, width: 24, speed: 1.55, phaseOffset: 2.8, waveAmp: 4.8, waveFreq: 0.035, colorScheme: 2 },
+            { relX: 0.68, width: 18, speed: 1.30, phaseOffset: 4.2, waveAmp: 4.0, waveFreq: 0.040, colorScheme: 1 },
+            { relX: 0.82, width: 14, speed: 1.20, phaseOffset: 5.6, waveAmp: 3.2, waveFreq: 0.045, colorScheme: 0 }
+        ];
+        this.fluidSplashDroplets = [];
+        this.maxSplashDroplets = 50;
+
         // Background Stars for space scenes
         this.stars = [];
         this.initStars(60);
@@ -145,7 +158,11 @@ class CosmicVisualizer {
         const pw = this.pixelCanvas.width || 240;
         const centerX = pw / 2;
         const colors = ['#ffffff', '#00f0ff', '#d0e8ff', '#ffe600', '#7fe0ff', '#ff66aa'];
-        const spawnCount = Math.min(count, 16);
+
+        // When fluid stream intensity is high, throttle discrete falling clips so they act as sparkling accents
+        // while the bulk mass of falling paperclips is smoothly rendered by the fluid cascade simulation.
+        const maxSpawn = Math.max(1, Math.round(16 * (1.0 - this.fluidStreamIntensity * 0.85)));
+        const spawnCount = Math.min(count, maxSpawn);
 
         const cpsNum = (typeof cps === 'object' && cps !== null) ? cps.toDouble() : (Number(cps) || 0);
         const spreadFactor = Math.min(1.0, cpsNum / 35.0);
@@ -153,8 +170,10 @@ class CosmicVisualizer {
         const maxSpread = (pw - 24) / 2;
         const currentSpread = minSpread + spreadFactor * (maxSpread - minSpread);
 
+        const currentMaxFalling = Math.round(this.maxFallingClips * (1.0 - this.fluidStreamIntensity * 0.75));
+
         for (let i = 0; i < spawnCount; ++i) {
-            if (this.fallingClips.length >= this.maxFallingClips) break;
+            if (this.fallingClips.length >= currentMaxFalling) break;
 
             let x;
             if (preferredX !== null && count <= 3) {
@@ -189,18 +208,47 @@ class CosmicVisualizer {
     }
 
     drainPaperclips(ratio = 0.5) {
-        const clampedRatio = Math.max(0.2, Math.min(1.0, ratio));
-        this.drainFlowIntensity = Math.min(3.0, this.drainFlowIntensity + clampedRatio * 2.5);
+        const clampedRatio = Math.max(0.1, Math.min(1.0, ratio));
+        // Boost drain flow vortex intensity for visual swirl / whirlpool effect
+        this.drainFlowIntensity = Math.min(3.0, this.drainFlowIntensity + clampedRatio * 2.2);
 
-        for (let i = 0; i < this.numColumns; ++i) {
-            const centerFactor = 1.0 - Math.abs((i / (this.numColumns - 1)) - 0.5) * 1.5;
-            const suctionStrength = Math.max(0.2, centerFactor) * clampedRatio * 2.2;
-            this.waveVelocities[i] -= (0.8 + suctionStrength + Math.random() * 0.8);
-        }
+        const pw = this.pixelCanvas.width || 240;
+        const ph = this.pixelCanvas.height || 150;
+        const floorY = ph - 2;
 
-        const removeCount = Math.floor(this.settledClips.length * clampedRatio * 0.4);
-        if (removeCount > 0) {
-            this.settledClips.splice(0, removeCount);
+        // Spawn draining paperclips that get sucked into the central sink
+        const spawnDrainCount = Math.min(24, Math.floor(6 + clampedRatio * 18));
+        const colors = ['#00f0ff', '#ffe600', '#ffffff', '#ff2a85', '#00ff88', '#ff7700', '#a855f7', '#38bdf8'];
+        const colWidth = pw / (this.numColumns - 1);
+
+        for (let k = 0; k < spawnDrainCount; ++k) {
+            if (this.drainingClips.length >= this.maxDrainingClips) break;
+
+            const colIdx = Math.floor(Math.random() * this.numColumns);
+            const moundH = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
+            if (moundH < 0.8) continue;
+
+            const x = colIdx * colWidth + (Math.random() - 0.5) * 6;
+            const y = floorY - moundH + Math.random() * moundH * 0.4;
+
+            const dx = (pw / 2) - x;
+            const dy = floorY - y;
+            const dist = Math.sqrt(dx * dx + dy * dy) + 1.0;
+            const speed = 1.2 + Math.random() * 2.0;
+
+            this.drainingClips.push({
+                x: x,
+                y: y,
+                vx: (dx / dist) * speed,
+                vy: Math.max(0.4, (dy / dist) * speed * 0.8),
+                rot: Math.random() * Math.PI * 2,
+                vRot: (Math.random() - 0.5) * 0.4 + (dx > 0 ? 0.15 : -0.15),
+                size: 3.5 + Math.random() * 2.0,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                life: 1.8 + Math.random() * 1.2,
+                maxLife: 2.5,
+                alpha: 0.9
+            });
         }
     }
 
@@ -221,32 +269,44 @@ class CosmicVisualizer {
         }
     }
 
+    computeTargetCapacity(state, ph) {
+        if (!state || !state.clips) return 0.0;
+        let cLog = 0;
+        if (state.clips instanceof BigDouble) {
+            if (state.clips.mantissa <= 0) return 0.0;
+            cLog = state.clips.exponent + Math.log10(Math.max(1e-9, state.clips.mantissa));
+        } else {
+            const num = Number(state.clips) || 0;
+            if (num <= 0) return 0.0;
+            cLog = Math.log10(num);
+        }
+
+        const log25 = Math.log10(25.0); // ~1.39794
+        if (cLog <= log25) {
+            const linearClips = Math.pow(10, cLog);
+            return Math.max(0, linearClips * 0.08);
+        } else {
+            const logVal = cLog - log25;
+            return Math.min(ph * 0.55, 2.0 + logVal * 8.5);
+        }
+    }
+
     syncFluidToInventory(state, instant = false) {
         if (!state || !state.clips) return;
         const ph = this.pixelCanvas.height || 150;
-        const c = state.clips.toDouble();
-        let capacity = 0.0;
-        if (c > 0) {
-            if (c <= 25) {
-                capacity = c * 0.08;
-            } else {
-                const logVal = Math.log10(c / 25.0);
-                capacity = Math.min(ph * 0.55, 2.0 + logVal * 8.5);
-            }
-        }
+        const targetCapacity = this.computeTargetCapacity(state, ph);
 
         for (let i = 0; i < this.numColumns; ++i) {
             const centerFactor = 0.65 + 0.35 * Math.sin(Math.PI * (i / (this.numColumns - 1)));
-            const targetH = capacity * centerFactor;
+            const targetH = targetCapacity * centerFactor;
             if (instant) {
                 this.pileHeights[i] = targetH;
                 this.waveOffsets[i] = 0.0;
                 this.waveVelocities[i] = 0.0;
-            } else {
-                this.pileHeights[i] = targetH;
-                this.waveVelocities[i] += 1.2;
-                this.internalFlowVelocity = Math.min(2.5, this.internalFlowVelocity + 0.4);
             }
+        }
+        if (!instant) {
+            this.internalFlowVelocity = Math.min(2.5, this.internalFlowVelocity + 0.4);
         }
     }
 
@@ -289,97 +349,210 @@ class CosmicVisualizer {
     }
 
     update(dt, state) {
+        const safeDt = Math.min(0.1, Math.max(0.001, dt));
+
         if (this.autoTier && state) {
             this.tier = this.determineAutoTier(state.lifetimeClips);
         }
 
-        this.cosmicRotation += dt * 0.8;
-        this.heroRecoil += (1.0 - this.heroRecoil) * (dt * 10.0);
+        this.cosmicRotation += safeDt * 0.8;
+        this.heroRecoil += (1.0 - this.heroRecoil) * (safeDt * 10.0);
 
-        this.internalFlowPhase += this.internalFlowVelocity * dt * 0.6;
-        this.internalFlowVelocity = Math.max(0, this.internalFlowVelocity - dt * 0.85);
+        this.internalFlowPhase += this.internalFlowVelocity * safeDt * 0.6;
+        this.internalFlowVelocity = Math.max(0, this.internalFlowVelocity - safeDt * 0.85);
 
-        this.drainFlowPhase += this.drainFlowIntensity * dt * 2.2;
-        this.drainFlowIntensity = Math.max(0, this.drainFlowIntensity - dt * 1.25);
+        this.drainFlowPhase += this.drainFlowIntensity * safeDt * 2.2;
+        this.drainFlowIntensity = Math.max(0, this.drainFlowIntensity - safeDt * 0.85);
+
+        // 1. Calculate fluid cascade intensity: Drifts towards fluid waterfall at high production scales
+        let targetStreamIntensity = 0.0;
+        if (state && typeof state.calculateTotalCPS === 'function') {
+            const cps = state.calculateTotalCPS();
+            if (cps && cps.gt(BigDouble.zero())) {
+                let logCPS = 0;
+                if (cps.exponent >= 1) {
+                    logCPS = cps.exponent + Math.log10(Math.max(1e-9, cps.mantissa));
+                } else {
+                    const num = cps.toDouble();
+                    if (num > 0) logCPS = Math.log10(num);
+                }
+                if (logCPS > 0.7) {
+                    targetStreamIntensity = Math.min(1.0, (logCPS - 0.7) / 2.3);
+                }
+            }
+        }
+        // Smoothly drift towards the target fluid stream intensity
+        this.fluidStreamIntensity += (targetStreamIntensity - this.fluidStreamIntensity) * (1.0 - Math.exp(-safeDt * 2.2));
+
+        // Advance fluid waterfall flow phase
+        this.fluidStreamPhase += (2.6 + this.fluidStreamIntensity * 3.8) * safeDt;
 
         const pw = this.pixelCanvas.width || 240;
         const ph = this.pixelCanvas.height || 150;
         const floorY = ph - 2;
 
-        // 1. Update Falling Paperclips
-        const colWidth = pw / (this.numColumns - 1);
+        // 2. Fluid Waterfall Impact Physics on the surface of the bottom fluid sea
+        if (this.fluidStreamIntensity > 0.02) {
+            for (let c = 0; c < this.fluidStreamChannels.length; ++c) {
+                const ch = this.fluidStreamChannels[c];
+                const streamCenterX = ch.relX * pw;
+                const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((streamCenterX / pw) * this.numColumns)));
+                const moundH = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
+                const impactY = floorY - moundH;
+
+                // Gentle surface agitation from the pouring fluid torrent
+                const agitation = 0.06 * this.fluidStreamIntensity * Math.sin(this.fluidStreamPhase * 2.0 + ch.phaseOffset);
+                this.waveOffsets[colIdx] += agitation;
+
+                // Spawn splash droplets at impact zone
+                if (Math.random() < this.fluidStreamIntensity * 0.45 && this.fluidSplashDroplets.length < this.maxSplashDroplets) {
+                    const splashAngle = -Math.PI / 2 + (Math.random() - 0.5) * 1.4;
+                    const splashSpeed = 1.2 + Math.random() * 2.2 * this.fluidStreamIntensity;
+                    const splashColors = ['#ffffff', '#00f0ff', '#70e2ff', '#ffe600'];
+                    this.fluidSplashDroplets.push({
+                        x: streamCenterX + (Math.random() - 0.5) * (ch.width * 0.7),
+                        y: impactY,
+                        vx: Math.cos(splashAngle) * splashSpeed,
+                        vy: Math.sin(splashAngle) * splashSpeed,
+                        life: 0.4 + Math.random() * 0.35,
+                        maxLife: 0.75,
+                        size: Math.random() > 0.6 ? 2 : 1,
+                        color: splashColors[Math.floor(Math.random() * splashColors.length)]
+                    });
+                }
+            }
+        }
+
+        // Update Splash Droplets
+        for (let i = this.fluidSplashDroplets.length - 1; i >= 0; --i) {
+            const d = this.fluidSplashDroplets[i];
+            d.x += d.vx;
+            d.y += d.vy;
+            d.vy += 0.16; // gravity
+            d.life -= safeDt;
+            if (d.life <= 0 || d.y > ph + 5) {
+                this.fluidSplashDroplets.splice(i, 1);
+            }
+        }
+
+        // 3. Update Falling Paperclips (Discrete accent clips)
         for (let i = this.fallingClips.length - 1; i >= 0; --i) {
             const p = this.fallingClips[i];
             p.x += p.vx;
             p.y += p.vy;
             p.rot += p.vRot;
             p.vy += 0.22;
-            p.life -= dt;
+            p.life -= safeDt;
 
             const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((p.x / pw) * this.numColumns)));
-            const currentMound = this.pileHeights[colIdx] + this.waveOffsets[colIdx];
+            const currentMound = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
             const surfaceY = floorY - currentMound;
 
             if (p.y >= surfaceY) {
                 p.y = surfaceY;
-                this.waveVelocities[colIdx] += 0.45;
-                if (colIdx > 0) this.waveVelocities[colIdx - 1] += 0.22;
-                if (colIdx < this.numColumns - 1) this.waveVelocities[colIdx + 1] += 0.22;
+                // Subtle fluid surface ripple (viscous dissipation, no rubber bounce)
+                this.waveOffsets[colIdx] += 0.12;
+                this.waveVelocities[colIdx] += 0.18;
+                if (colIdx > 0) this.waveVelocities[colIdx - 1] += 0.09;
+                if (colIdx < this.numColumns - 1) this.waveVelocities[colIdx + 1] += 0.09;
 
-                p.bounces++;
-                if (p.bounces < 2 && Math.abs(p.vy) > 1.2) {
-                    p.vy = -p.vy * 0.35;
-                    p.vx += (Math.random() - 0.5) * 1.0;
-                } else {
-                    p.settled = true;
-                    if (this.settledClips.length < this.maxSettledClips) {
-                        this.settledClips.push(p);
-                    }
-                    this.fallingClips.splice(i, 1);
-                }
+                p.settled = true;
+                this.fallingClips.splice(i, 1);
             } else if (p.life <= 0 || p.y > ph + 20) {
                 this.fallingClips.splice(i, 1);
             }
         }
 
-        // 2. Dynamic Fluid Mound Simulation
-        const tension = 0.035;
-        const dampening = 0.045;
-        const spread = 0.25;
+        // 4. Update Draining Paperclips (Vortex Suction towards Center Floor Drain)
+        const drainTargetX = pw / 2;
+        const drainTargetY = floorY + 4;
+        for (let i = this.drainingClips.length - 1; i >= 0; --i) {
+            const p = this.drainingClips[i];
+            const dx = drainTargetX - p.x;
+            const dy = drainTargetY - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) + 0.1;
 
-        for (let i = 0; i < this.numColumns; ++i) {
-            const targetH = this.pileHeights[i];
-            const currentH = this.pileHeights[i] + this.waveOffsets[i];
-            const diff = targetH - currentH;
-            this.waveVelocities[i] += diff * tension - this.waveVelocities[i] * dampening;
-            this.waveOffsets[i] += this.waveVelocities[i];
+            const suctionAcc = 3.5 + this.drainFlowIntensity * 2.5;
+            p.vx += (dx / dist) * suctionAcc * safeDt;
+            p.vy += Math.max(0.6, (dy / dist) * suctionAcc * safeDt);
+
+            // Tangential swirl (vortex whirlpool effect)
+            const tanX = -dy / dist;
+            const tanY = dx / dist;
+            p.vx += tanX * 1.8 * safeDt;
+            p.vy += tanY * 0.6 * safeDt;
+
+            // Fluid drag
+            p.vx *= 0.95;
+            p.vy *= 0.95;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.rot += p.vRot;
+
+            p.life -= safeDt;
+            p.alpha = Math.max(0, p.life / p.maxLife);
+
+            if (p.life <= 0 || p.y > ph + 10 || dist < 3.0) {
+                this.drainingClips.splice(i, 1);
+            }
         }
 
-        const leftDeltas = new Float32Array(this.numColumns);
-        const rightDeltas = new Float32Array(this.numColumns);
-        for (let pass = 0; pass < 3; ++pass) {
+        // 5. Dynamic Fluid Simulation - Smooth slow drain over a few seconds, zero spring bounce
+        const targetCapacity = this.computeTargetCapacity(state, ph);
+
+        for (let i = 0; i < this.numColumns; ++i) {
+            const centerFactor = 0.65 + 0.35 * Math.sin(Math.PI * (i / (this.numColumns - 1)));
+            const targetH = targetCapacity * centerFactor;
+            const diff = targetH - this.pileHeights[i];
+
+            if (diff < 0) {
+                // Spending / Draining: Slow, smooth viscous drain over 2.5 - 3.5 seconds
+                const baseDrainRate = 1.2;
+                const drainSpeed = baseDrainRate * (1.0 + this.drainFlowIntensity * 0.35);
+                const drainFactor = 1.0 - Math.exp(-safeDt * drainSpeed);
+                this.pileHeights[i] += diff * drainFactor;
+            } else if (diff > 0) {
+                // Producing / Filling: Smooth fill
+                const fillRate = 3.5;
+                const fillFactor = 1.0 - Math.exp(-safeDt * fillRate);
+                this.pileHeights[i] += diff * fillFactor;
+            }
+
+            // Surface ripples: Overdamped / critically damped viscous relaxation (Zero bounce)
+            const rippleDamping = 10.0;
+            const rippleRestoring = 16.0;
+            const accel = -rippleRestoring * this.waveOffsets[i] - rippleDamping * this.waveVelocities[i];
+            this.waveVelocities[i] += accel * safeDt;
+            this.waveOffsets[i] += this.waveVelocities[i] * safeDt;
+
+            this.waveOffsets[i] *= Math.exp(-safeDt * 4.0);
+            this.waveVelocities[i] *= Math.exp(-safeDt * 6.0);
+        }
+
+        // Viscous lateral diffusion smoothing pass
+        const waveSpread = 0.15;
+        for (let pass = 0; pass < 2; ++pass) {
             for (let i = 0; i < this.numColumns; ++i) {
                 if (i > 0) {
-                    leftDeltas[i] = spread * (this.waveOffsets[i] - this.waveOffsets[i - 1]);
-                    this.waveOffsets[i - 1] += leftDeltas[i];
+                    const d = waveSpread * (this.waveOffsets[i] - this.waveOffsets[i - 1]);
+                    this.waveOffsets[i - 1] += d;
+                    this.waveOffsets[i] -= d;
                 }
                 if (i < this.numColumns - 1) {
-                    rightDeltas[i] = spread * (this.waveOffsets[i] - this.waveOffsets[i + 1]);
-                    this.waveOffsets[i + 1] += rightDeltas[i];
+                    const d = waveSpread * (this.waveOffsets[i] - this.waveOffsets[i + 1]);
+                    this.waveOffsets[i + 1] += d;
+                    this.waveOffsets[i] -= d;
                 }
             }
         }
 
-        // 3. Update Sparks
+        // 6. Update Sparks
         for (let i = this.sparks.length - 1; i >= 0; --i) {
             const p = this.sparks[i];
             p.x += p.vx;
             p.y += p.vy;
             p.vy += 0.12;
             p.life -= p.decay;
-            if (p.life <= 0) {
-                this.sparks.splice(i, 1);
-            }
         }
     }
 
@@ -405,24 +578,30 @@ class CosmicVisualizer {
         // 1. Render Progressive Neutral/Monochrome Vector Background Scene
         this.renderSceneVector(pctx, pw, ph, state);
 
-        // 2. Render Spilling Fluid Paperclip Mountains & Flowing Terrain
+        // 2. Render Falling Fluid Streams & Cascade Torrent (when CPS is high)
+        this.renderFallingFluidStreams(pctx, pw, ph);
+
+        // 3. Render Spilling Fluid Paperclip Mountains & Flowing Terrain
         this.renderFlowingPaperclipSea(pctx, pw, ph);
 
-        // 3. Render Draining / Sinking Paperclips
+        // 4. Render Fluid Waterfall Impact Splashes
+        this.renderFluidImpactSplashes(pctx);
+
+        // 5. Render Draining / Sinking Paperclips
         this.renderDrainingPaperclips(pctx);
 
-        // 4. Render Falling Tumbling Clips
+        // 6. Render Falling Tumbling Clips (Discrete foreground accents)
         this.renderFallingPaperclips(pctx);
 
-        // 5. Render Pixel Sparks
+        // 7. Render Pixel Sparks
         this.renderSparks(pctx);
 
-        // 6. Apply Bayer Ordered Dithering & Color Filter Pass
+        // 8. Apply Bayer Ordered Dithering & Color Filter Pass
         if (this.enableDither) {
             this.applyDitherFilter(pctx, pw, ph);
         }
 
-        // 7. Crisp Nearest-Neighbor Upscale Blit to Main Display Canvas
+        // 9. Crisp Nearest-Neighbor Upscale Blit to Main Display Canvas
         this.ctx.imageSmoothingEnabled = false;
         this.ctx.clearRect(0, 0, displayW, displayH);
         this.ctx.drawImage(this.pixelCanvas, 0, 0, pw, ph, 0, 0, displayW, displayH);
@@ -1487,16 +1666,19 @@ class CosmicVisualizer {
 
     renderDrainingPaperclips(ctx) {
         this.drainingClips.forEach(p => {
+            const alpha = p.alpha !== undefined ? p.alpha : 0.6;
+            if (alpha <= 0.01) return;
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
             ctx.strokeStyle = p.color;
-            ctx.globalAlpha = 0.55;
             ctx.lineWidth = 1.2;
             ctx.beginPath();
             ctx.moveTo(p.x - p.vx * 2.2, p.y - p.vy * 2.0);
             ctx.quadraticCurveTo(p.x - p.vx, p.y - p.vy * 0.5, p.x, p.y);
             ctx.stroke();
-            ctx.globalAlpha = 1.0;
 
             this.drawTinyPaperclip(ctx, p.x, p.y, p.size, p.rot, p.color);
+            ctx.restore();
         });
     }
 
@@ -1579,6 +1761,152 @@ class CosmicVisualizer {
         ctx.stroke();
 
         ctx.restore();
+    }
+
+    // =========================================================================
+    // FALLING FLUID CASCADE STREAMS & WATERFALL SIMULATION
+    // Drifts in as paperclip volume scales up into millions/billions/cosmic rates
+    // =========================================================================
+    renderFallingFluidStreams(ctx, w, h) {
+        if (this.fluidStreamIntensity <= 0.01) return;
+
+        const floorY = h - 2;
+        const intensity = this.fluidStreamIntensity;
+
+        ctx.save();
+
+        this.fluidStreamChannels.forEach((ch, idx) => {
+            const streamCenterX = ch.relX * w;
+            const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((streamCenterX / w) * this.numColumns)));
+            const moundH = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
+            const impactY = Math.min(h, Math.max(10, floorY - moundH));
+            const streamWidth = ch.width * (0.65 + 0.45 * intensity);
+
+            // 1. Build curved fluid ribbon envelope
+            const numSegments = 16;
+            const segHeight = impactY / numSegments;
+            const leftPoints = [];
+            const rightPoints = [];
+
+            for (let s = 0; s <= numSegments; ++s) {
+                const y = s * segHeight;
+                // Fluid acceleration narrowing in mid-air, flaring at impact
+                const t = y / impactY;
+                const widthMod = streamWidth * (1.0 - 0.28 * Math.sin(Math.PI * t) + 0.15 * t);
+                const sway = ch.waveAmp * intensity * Math.sin(y * ch.waveFreq - this.fluidStreamPhase * ch.speed + ch.phaseOffset);
+                const cx = streamCenterX + sway;
+
+                leftPoints.push({ x: cx - widthMod / 2, y: y });
+                rightPoints.push({ x: cx + widthMod / 2, y: y });
+            }
+
+            // Draw translucent fluid body
+            ctx.beginPath();
+            ctx.moveTo(leftPoints[0].x, leftPoints[0].y);
+            for (let i = 1; i <= numSegments; ++i) {
+                ctx.lineTo(leftPoints[i].x, leftPoints[i].y);
+            }
+            ctx.lineTo(rightPoints[numSegments].x, rightPoints[numSegments].y);
+            for (let i = numSegments - 1; i >= 0; --i) {
+                ctx.lineTo(rightPoints[i].x, rightPoints[i].y);
+            }
+            ctx.closePath();
+
+            // Liquid metal stream gradient
+            const streamGrad = ctx.createLinearGradient(streamCenterX - streamWidth / 2, 0, streamCenterX + streamWidth / 2, 0);
+            const baseAlpha = 0.65 * intensity;
+            if (ch.colorScheme === 2) {
+                // Golden central torrent (Hero core)
+                streamGrad.addColorStop(0, `rgba(18, 30, 48, ${baseAlpha * 0.4})`);
+                streamGrad.addColorStop(0.25, `rgba(0, 240, 255, ${baseAlpha * 0.7})`);
+                streamGrad.addColorStop(0.5, `rgba(255, 255, 255, ${baseAlpha * 0.95})`);
+                streamGrad.addColorStop(0.75, `rgba(255, 230, 0, ${baseAlpha * 0.8})`);
+                streamGrad.addColorStop(1, `rgba(18, 30, 48, ${baseAlpha * 0.4})`);
+            } else {
+                // Neon Cyan / Electric Blue metallic rivers
+                streamGrad.addColorStop(0, `rgba(14, 22, 36, ${baseAlpha * 0.3})`);
+                streamGrad.addColorStop(0.25, `rgba(0, 240, 255, ${baseAlpha * 0.75})`);
+                streamGrad.addColorStop(0.5, `rgba(255, 255, 255, ${baseAlpha * 0.95})`);
+                streamGrad.addColorStop(0.75, `rgba(56, 189, 248, ${baseAlpha * 0.75})`);
+                streamGrad.addColorStop(1, `rgba(14, 22, 36, ${baseAlpha * 0.3})`);
+            }
+
+            ctx.fillStyle = streamGrad;
+            ctx.fill();
+
+            // 2. High-speed fluid streamlines & laminar filaments
+            const filamentCount = Math.floor(3 + intensity * 2);
+            for (let f = 0; f < filamentCount; ++f) {
+                const fOffset = ((f + 0.5) / filamentCount - 0.5) * (streamWidth * 0.65);
+                ctx.strokeStyle = (f % 2 === 0) ? `rgba(255, 255, 255, ${0.5 * intensity})` : `rgba(0, 240, 255, ${0.45 * intensity})`;
+                ctx.lineWidth = 1.0;
+                ctx.setLineDash([4 + (f % 3) * 2, 6 + (f % 2) * 3]);
+                ctx.lineDashOffset = -(this.fluidStreamPhase * ch.speed * 24.0 + f * 12.0);
+
+                ctx.beginPath();
+                for (let s = 0; s <= numSegments; ++s) {
+                    const y = s * segHeight;
+                    const t = y / impactY;
+                    const widthMod = streamWidth * (1.0 - 0.28 * Math.sin(Math.PI * t) + 0.15 * t);
+                    const sway = ch.waveAmp * intensity * Math.sin(y * ch.waveFreq - this.fluidStreamPhase * ch.speed + ch.phaseOffset);
+                    const fx = streamCenterX + sway + (fOffset * (widthMod / streamWidth));
+                    if (s === 0) ctx.moveTo(fx, y);
+                    else ctx.lineTo(fx, y);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // 3. Shimmering tiny paperclip glyphs carried in the fluid flow
+            const numClipsInStream = Math.floor(6 + intensity * 10);
+            for (let k = 0; k < numClipsInStream; ++k) {
+                const clipY = ((k * (impactY / numClipsInStream) + this.fluidStreamPhase * ch.speed * 32.0 + k * 17.0) % impactY);
+                if (clipY < 4 || clipY > impactY - 4) continue;
+
+                const t = clipY / impactY;
+                const widthMod = streamWidth * (1.0 - 0.28 * Math.sin(Math.PI * t) + 0.15 * t);
+                const sway = ch.waveAmp * intensity * Math.sin(clipY * ch.waveFreq - this.fluidStreamPhase * ch.speed + ch.phaseOffset);
+                const lateralJitter = (((k * 7919 + idx * 1013) % 1000) / 1000.0 - 0.5) * (widthMod * 0.6);
+                const clipX = streamCenterX + sway + lateralJitter;
+
+                const clipRot = Math.PI / 2 + Math.sin(this.fluidStreamPhase + k) * 0.25;
+                const clipColor = (k % 3 === 0) ? '#ffffff' : ((k % 3 === 1) ? '#00f0ff' : '#ffe600');
+                const clipAlpha = Math.min(1.0, Math.sin(Math.PI * (clipY / impactY))) * intensity;
+
+                ctx.save();
+                ctx.globalAlpha = clipAlpha;
+                this.drawTinyPaperclip(ctx, clipX, clipY, 3.8, clipRot, clipColor);
+                ctx.restore();
+            }
+
+            // 4. Energetic glowing impact flare where the waterfall plunges into the bottom fluid sea
+            const flareW = streamWidth * 1.4;
+            const flareH = 4.0;
+            const impactSway = ch.waveAmp * intensity * Math.sin(impactY * ch.waveFreq - this.fluidStreamPhase * ch.speed + ch.phaseOffset);
+            const flareX = streamCenterX + impactSway;
+
+            ctx.fillStyle = `rgba(0, 240, 255, ${0.7 * intensity})`;
+            ctx.beginPath();
+            ctx.ellipse(flareX, impactY, flareW / 2, flareH, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.9 * intensity})`;
+            ctx.beginPath();
+            ctx.ellipse(flareX, impactY, flareW / 4, flareH / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        ctx.restore();
+    }
+
+    renderFluidImpactSplashes(ctx) {
+        this.fluidSplashDroplets.forEach(d => {
+            const alpha = Math.max(0, Math.min(1, d.life / d.maxLife));
+            ctx.fillStyle = d.color;
+            ctx.globalAlpha = alpha;
+            ctx.fillRect(Math.floor(d.x), Math.floor(d.y), d.size, d.size);
+        });
+        ctx.globalAlpha = 1.0;
     }
 
     renderSparks(ctx) {
