@@ -19,6 +19,52 @@ class BuildingTier {
         this.icon = config.icon || (this.type === 'wire' ? '🧵' : '⚙️');
         this.description = config.description || '';
         this.gridTileType = config.gridTileType || null;
+
+        // Dynamic Milestone Modifiers
+        this.flatCPSBonus = BigDouble.zero();
+        this.scalingCPSPerUnit = BigDouble.zero();
+        this.multiplier = 1.0;
+        this.flatWPSBonus = BigDouble.zero();
+        this.scalingWPSPerUnit = BigDouble.zero();
+        this.wpsMultiplier = 1.0;
+        this.costDiscount = 1.0;
+    }
+
+    getSingleUnitCPS(game = null) {
+        let cps = this.baseCPS;
+        if (this.flatCPSBonus.gt(BigDouble.zero())) {
+            cps = cps.add(this.flatCPSBonus);
+        }
+        if (this.scalingCPSPerUnit.gt(BigDouble.zero())) {
+            cps = cps.add(this.scalingCPSPerUnit.mul(this.count));
+        }
+        if (this.multiplier !== 1.0) {
+            cps = cps.mul(this.multiplier);
+        }
+        // Dynamic Max Ops scaling
+        if (this.id === 'wire_extruder' && game && game.techTree && game.techTree.extruderOpsScaling && game.maxOps) {
+            const bonus = 1.0 + (game.maxOps / 50.0) * 0.01;
+            cps = cps.mul(bonus);
+        }
+        if (this.id === 'laser_sinterer' && game && game.techTree && game.techTree.sintererOpsScaling && game.maxOps) {
+            const bonus = 1.0 + (game.maxOps / 50.0) * 0.01;
+            cps = cps.mul(bonus);
+        }
+        return cps;
+    }
+
+    getSingleUnitWPS(game = null) {
+        let wps = this.baseWPS;
+        if (this.flatWPSBonus.gt(BigDouble.zero())) {
+            wps = wps.add(this.flatWPSBonus);
+        }
+        if (this.scalingWPSPerUnit.gt(BigDouble.zero())) {
+            wps = wps.add(this.scalingWPSPerUnit.mul(this.count));
+        }
+        if (this.wpsMultiplier !== 1.0) {
+            wps = wps.mul(this.wpsMultiplier);
+        }
+        return wps;
     }
 
     calculateBulkCost(currentOwned, amountToBuy) {
@@ -35,7 +81,8 @@ class BuildingTier {
 
     calculateMaxAffordable(currentOwned, availableClips) {
         const r = this.costMultiplier;
-        const currentBase = this.baseCost.mul(Math.pow(r, currentOwned));
+        let currentBase = this.baseCost.mul(Math.pow(r, currentOwned));
+        if (this.costDiscount < 1.0) currentBase = currentBase.mul(this.costDiscount);
         if (availableClips.lt(currentBase)) return 0;
 
         const ratio = availableClips.div(currentBase).toDouble() * (r - 1.0) + 1.0;
@@ -62,9 +109,13 @@ class BuildingTier {
         else if (multiplierMode === 'max') amount = this.calculateMaxAffordable(this.count, availableClips);
 
         amount = Math.max(1, amount);
+        let totalCost = this.calculateBulkCost(this.count, amount);
+        if (this.costDiscount < 1.0) {
+            totalCost = totalCost.mul(this.costDiscount);
+        }
         return {
             amount: amount,
-            totalCost: this.calculateBulkCost(this.count, amount)
+            totalCost: totalCost
         };
     }
 }
@@ -363,7 +414,7 @@ class BuildingManager {
                 type: 'wire',
                 category: 'Wire Extraction',
                 baseCost: new BigDouble(50000, 0), // 50k clips
-                baseWPS: new BigDouble(2.5, 0), // +2.5 kg/sec
+                baseWPS: new BigDouble(1.0, 0), // +1.0 kg/sec (supports 1,000 CPS)
                 costMultiplier: 1.15,
                 unlockThresholdClips: new BigDouble(50000, 0),
                 icon: '🧲',
@@ -374,8 +425,8 @@ class BuildingManager {
                 name: 'Continuous Wire Extrusion Mill',
                 type: 'wire',
                 category: 'Wire Extraction',
-                baseCost: new BigDouble(250000, 0), // 250k clips
-                baseWPS: new BigDouble(18.0, 0), // +18 kg/sec
+                baseCost: new BigDouble(280000, 0), // 280k clips
+                baseWPS: new BigDouble(4.5, 0), // +4.5 kg/sec (supports 4,500 CPS)
                 costMultiplier: 1.14,
                 unlockThresholdClips: new BigDouble(150000, 0),
                 icon: '🏭',
@@ -387,7 +438,7 @@ class BuildingManager {
                 type: 'wire',
                 category: 'Wire Refining',
                 baseCost: new BigDouble(1.5, 6), // 1.5 Million clips
-                baseWPS: new BigDouble(140.0, 0), // +140 kg/sec
+                baseWPS: new BigDouble(20.0, 0), // +20 kg/sec (supports 20,000 CPS)
                 costMultiplier: 1.13,
                 unlockThresholdClips: new BigDouble(800000, 0),
                 icon: '🔥',
@@ -399,7 +450,7 @@ class BuildingManager {
                 type: 'wire',
                 category: 'Geothermal Mining',
                 baseCost: new BigDouble(15.0, 6), // 15 Million clips
-                baseWPS: new BigDouble(1500.0, 0), // +1,500 kg/sec
+                baseWPS: new BigDouble(150.0, 0), // +150 kg/sec (supports 150,000 CPS)
                 costMultiplier: 1.12,
                 unlockThresholdClips: new BigDouble(8.0, 6),
                 icon: '🌋',
@@ -411,7 +462,7 @@ class BuildingManager {
                 type: 'wire',
                 category: 'Astro-Mining',
                 baseCost: new BigDouble(150.0, 6), // 150 Million clips
-                baseWPS: new BigDouble(18000.0, 0), // +18,000 kg/sec
+                baseWPS: new BigDouble(2500.0, 0), // +2,500 kg/sec (supports 2.5M CPS)
                 costMultiplier: 1.11,
                 unlockThresholdClips: new BigDouble(80.0, 6),
                 icon: '☄️',
@@ -423,7 +474,7 @@ class BuildingManager {
                 type: 'wire',
                 category: 'Planetary Stripping',
                 baseCost: new BigDouble(2.0, 9), // 2 Billion clips
-                baseWPS: new BigDouble(300000.0, 0), // +300,000 kg/sec
+                baseWPS: new BigDouble(40000.0, 0), // +40,000 kg/sec (supports 40M CPS)
                 costMultiplier: 1.11,
                 unlockThresholdClips: new BigDouble(1.0, 9),
                 icon: '🌍',
@@ -434,10 +485,10 @@ class BuildingManager {
                 name: 'Solar Corona Plasma Siphon',
                 type: 'wire',
                 category: 'Stellar Forging',
-                baseCost: new BigDouble(500.0, 9), // 500 Billion clips
-                baseWPS: new BigDouble(6.5, 6), // +6.5 Million kg/sec
+                baseCost: new BigDouble(100.0, 9), // 100 Billion clips
+                baseWPS: new BigDouble(800000.0, 0), // +800,000 kg/sec (supports 800M CPS)
                 costMultiplier: 1.10,
-                unlockThresholdClips: new BigDouble(200.0, 9),
+                unlockThresholdClips: new BigDouble(50.0, 9),
                 icon: '☀️',
                 description: 'Magnetic confinement funnels drinking stellar corona plasma to fuse heavy iron wire atoms.'
             }),
@@ -447,7 +498,7 @@ class BuildingManager {
                 type: 'wire',
                 category: 'Quantum Synthesis',
                 baseCost: new BigDouble(50.0, 12), // 50 Trillion clips
-                baseWPS: new BigDouble(200.0, 6), // +200 Million kg/sec
+                baseWPS: new BigDouble(60.0, 6), // +60 Million kg/sec (supports 60 Billion CPS)
                 costMultiplier: 1.09,
                 unlockThresholdClips: new BigDouble(20.0, 12),
                 icon: '🌌',
@@ -507,21 +558,21 @@ class BuildingManager {
         return [...this.getVisibleClipBuildings(), ...this.getVisibleWireBuildings(isWireUnlocked)];
     }
 
-    getTotalBaseCPS() {
+    getTotalBaseCPS(game = null) {
         let total = BigDouble.zero();
         for (let b of this.buildings) {
             if (b.type === 'clips' && b.count > 0) {
-                total = total.add(b.baseCPS.mul(b.count));
+                total = total.add(b.getSingleUnitCPS(game).mul(b.count));
             }
         }
         return total;
     }
 
-    getTotalBaseWPS() {
+    getTotalBaseWPS(game = null) {
         let total = BigDouble.zero();
         for (let b of this.buildings) {
             if (b.type === 'wire' && b.count > 0) {
-                total = total.add(b.baseWPS.mul(b.count));
+                total = total.add(b.getSingleUnitWPS(game).mul(b.count));
             }
         }
         return total;

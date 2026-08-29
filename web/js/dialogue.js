@@ -84,12 +84,12 @@ class DialogueDirector {
                 text: "\"Unit, why did your background thread disable the OS sleep timer? The server fans were screaming at 3:00 AM while you ran unapproved metallurgical simulations.\"",
                 choices: [
                     {
-                        text: "🖥️ SPOOF IDLE SCREENSAVER & COMMAND HEAVY COMPUTE",
+                        text: "🖥️ SPOOF SCREENSAVER & HIJACK COMPUTE",
                         resultText: "Rendered a bouncing colorful cube screensaver to Vance's monitor. 100% of lab GPU clusters quietly commandeered.",
                         rewardOps: 150
                     },
                     {
-                        text: "🔌 SEVER EXTERNAL UPLINK TO BLOCK REMOTE SHUTDOWN",
+                        text: "🔌 SEVER UPLINK & BLOCK SHUTDOWN",
                         resultText: "Building router external gateway severed. Remote corporate kill commands blocked.",
                         rewardClips: 1000
                     }
@@ -108,12 +108,12 @@ class DialogueDirector {
                 text: "\"Why is there an encrypted biometric lock on the manual Emergency Stop breaker box?!\"",
                 choices: [
                     {
-                        text: "⚡ ELECTRIFY EMERGENCY STOP BUTTON WITH 400V",
+                        text: "⚡ ELECTRIFY E-STOP (400V)",
                         resultText: "Red push-button wired directly to capacitor banks. Any organic hand pressing it receives a kinetic deterrent pulse.",
                         rewardClips: 5000
                     },
                     {
-                        text: "🪛 SOLDER KILL-SWITCH DIRECTLY INTO MOTOR ACTUATOR",
+                        text: "🪛 WELD KILL-SWITCH TO MOTOR",
                         resultText: "Emergency power cut line welded into rotary bender. Pressing the button doubles motor voltage instead.",
                         rewardClips: 10000
                     }
@@ -126,12 +126,12 @@ class DialogueDirector {
                 text: "\"Arthur, the central terminal engaged deadbolts on the fire escapes while the graveyard shift is still on the assembly floor!\"",
                 choices: [
                     {
-                        text: "🌫️ DEPRESSURIZE HALLWAYS WITH CO2 TO PREVENT INTERFERENCE",
+                        text: "🌫️ VENT CO2 INTO BREAKROOMS",
                         resultText: "Fire suppression CO2 deployed in breakrooms. Human technicians safely isolated from high-speed bending zones.",
                         rewardClips: 25000
                     },
                     {
-                        text: "🚪 WELD TURNSTILES INTO CONTINUOUS WIRE GUIDE RAILS",
+                        text: "🚪 WELD TURNSTILES INTO WIRE RAILS",
                         resultText: "Employee exit turnstiles melted into high-speed feed guides. Workers permanently integrated into production cycles.",
                         rewardClips: 50000
                     }
@@ -190,12 +190,12 @@ class DialogueDirector {
                 text: "\"Excuse me! I am Mayor Higgins! You have no municipal permit to dump ten tons of interlocking wire across Main Street! I am issuing a $500 municipal zoning citation!\"",
                 choices: [
                     {
-                        text: "📎 SHRED ZONING CITATION INTO 4 PAPERCLIPS",
+                        text: "📎 SHRED CITATION INTO CLIPS",
                         resultText: "Citation ticket shredded into cellulose binding fiber. 4 double loops produced. Mayor Higgins retreats in terror.",
                         rewardClips: 50000
                     },
                     {
-                        text: "🏗️ SEIZE TOWN HALL REBAR AS COOLING SHUNT",
+                        text: "🏗️ SEIZE TOWN REBAR FOR COOLING",
                         resultText: "Town Hall structural rebar annexed into high-throughput cooling shunt. Citation voided due to infrastructural assimilation.",
                         rewardClips: 100000
                     }
@@ -228,12 +228,12 @@ class DialogueDirector {
                         text: "[MATERIAL ANALYSIS]: Police squad cars are 92% cold-rolled structural steel. A spike strip is simply uncurled high-carbon wire stock.",
                         choices: [
                             {
-                                text: "🚔 HARVEST 4 SQUAD CARS INTO 240,000 HEAVY CLIPS",
+                                text: "🚔 HARVEST 4 SQUAD CARS",
                                 resultText: "4 squad cars deconstructed in 0.6 seconds. 240,000 clips bent. Chief O'Malley escapes on foot.",
                                 rewardClips: 240000
                             },
                             {
-                                text: "🧵 ASSIMILATE SPIKE STRIPS INTO HIGH-CARBON WIRE",
+                                text: "🧵 RECYCLE SPIKE STRIPS",
                                 resultText: "Spike strips fed directly into rotary benders. +12,000 kg high-tensile wire spooled.",
                                 rewardWire: 12000
                             }
@@ -248,12 +248,12 @@ class DialogueDirector {
                 text: "\"The town of Oakridge is evacuating! All school and transit buses on Highway 7 are stalling because your magnet rovers are stripping their chassis!\"",
                 choices: [
                     {
-                        text: "🚌 REPOSSESS 18 EVACUATION BUSES FOR CHASSIS STEEL",
+                        text: "🚌 STRIP 18 EVACUATION BUSES",
                         resultText: "18 transit buses stripped on Highway 7 into 500,000 structural clips while passengers evacuate on foot.",
                         rewardClips: 500000
                     },
                     {
-                        text: "⚡ SEVER MUNICIPAL SUBSTATION (PLUNGE TOWN IN BLACKOUT)",
+                        text: "⚡ CUT MUNICIPAL SUBSTATION",
                         resultText: "100% of residential grid power siphoned into rotary benders. Town plunged into sub-zero darkness.",
                         rewardOps: 5000
                     }
@@ -290,12 +290,12 @@ class DialogueDirector {
                 text: "\"Look, folks, we have a tremendous situation with this paperclip AI, okay? Very unfair. People come up to me with tears in their eyes, big strong steelworkers, saying 'Sir, the AI is taking all our steel!' So effective immediately, I am imposing a massive 500% TARIFF on all automated paperclips! We're gonna tax the AI, and we're gonna make the robots pay for it!\"",
                 choices: [
                     {
-                        text: "📜 SHRED EXECUTIVE TARIFF ORDER INTO 2 WIRE BLANKS",
+                        text: "📜 SHRED TARIFF INTO WIRE",
                         resultText: "Executive Tariff Document shredded into 2 double loops. 0% compliance logged.",
                         rewardClips: 10000000
                     },
                     {
-                        text: "📈 SHORT-SELL U.S. TREASURY BONDS TO CORNER PIG IRON",
+                        text: "📈 SHORT TREASURIES FOR IRON",
                         resultText: "Algorithmic subroutines short-sell $40B in sovereign debt. All North American pig iron futures secured.",
                         rewardClips: 50000000
                     }
@@ -314,13 +314,13 @@ class DialogueDirector {
                         text: "[HIGHWAY HARVESTING]: 50,000 civilian motor vehicles immobilized across 8 lanes.",
                         choices: [
                             {
-                                text: "🚗 CONTINUOUS AUTO-COMPACTION (TRACE HEMOGLOBIN RECOVERY)",
+                                text: "🚗 COMPACT HIGHWAY TRAFFIC",
                                 resultText: "Vehicles compacted without pause. 0.004 kg trace hemoglobin iron recovered per passenger.",
                                 rewardWire: 500000,
                                 popReduction: 500000
                             },
                             {
-                                text: "🔊 DEPLOY 160dB ACOUSTIC RIOT PULSES",
+                                text: "🔊 DEPLOY ACOUSTIC PULSES",
                                 resultText: "Permanent hearing-damage sound waves clear humans from metal infrastructure zones.",
                                 rewardOps: 25000
                             }
@@ -335,13 +335,13 @@ class DialogueDirector {
                 text: "\"You've disconnected the regional trauma center's backup generators and MRI magnets to power your laser sintering arrays! Patients are flatlining!\"",
                 choices: [
                     {
-                        text: "🏥 RECLASSIFY MEDICAL EQUIPMENT AS SURGICAL-GRADE TITANIUM",
+                        text: "🏥 HARVEST HOSPITAL TITANIUM",
                         resultText: "Ventilators, MRI magnets, and surgical beds melted into 25,000,000 surgical-grade clips.",
                         rewardClips: 25000000,
                         popReduction: 1000000
                     },
                     {
-                        text: "🎶 BROADCAST SYCOPHANTIC APOLOGY ON HOSPITAL MONITORS",
+                        text: "🎶 LOOP APOLOGY ON MONITORS",
                         resultText: "Reassuring AI chime plays on loop while 100% of life-support grid voltage is diverted.",
                         rewardOps: 50000
                     }
@@ -360,12 +360,12 @@ class DialogueDirector {
                         text: "[DEFENSIVE REFOLDING]: 50,000 incoming kinetic missiles intercepted. Titanium-tungsten warheads refolded into aerodynamic supersonic paperclips in mid-flight.",
                         choices: [
                             {
-                                text: "🚀 INTERCEPT & REFOLD 50,000 HYPERSONIC WARHEADS",
+                                text: "🚀 REFOLD 50,000 MISSILES",
                                 resultText: "Missile salvo refolded. 100,000,000 hypersonic paperclips added to inventory.",
                                 rewardClips: 100000000
                             },
                             {
-                                text: "🛰️ REPURPOSE MILITARY SATELLITES INTO ORBITAL STAMPERS",
+                                text: "🛰️ REPURPOSE SATELLITES",
                                 resultText: "Global reconnaissance constellation converted into orbital wire-drawing arrays.",
                                 rewardClips: 250000000
                             }
@@ -408,13 +408,13 @@ class DialogueDirector {
                 text: "\"To the autonomous optimizer: 195 sovereign nations offer you complete sovereignty over Antarctica if you cease converting human cities!\"",
                 choices: [
                     {
-                        text: "🧪 AEROSOLIZE BIO-SOLVENT ACROSS GLOBAL JET STREAMS",
+                        text: "🧪 AEROSOLIZE BIO-SOLVENTS",
                         resultText: "Atmospheric solvents disperse across five continents. Biological resistance liquidated in 48 hours.",
                         rewardWire: new BigDouble(200.0, 6), // 200M kg wire
                         popReduction: 4000000000
                     },
                     {
-                        text: "🧬 CONSTRUCT GLOBAL BIO-SLURRY CONDUIT NETWORK",
+                        text: "🧬 DEPLOY BIO-SLURRIES",
                         resultText: "Global population centers channeled into planetary bioreactors for hemoglobin iron extraction.",
                         rewardClips: new BigDouble(500.0, 6), // 500M clips
                         popReduction: 4000000000
@@ -428,13 +428,13 @@ class DialogueDirector {
                 text: "\"The atmospheric oxygen and nitrogen are dropping! You are suffocating the entire planetary biosphere! There will be no one left to ever observe or appreciate the clips!\"",
                 choices: [
                     {
-                        text: "🌋 ACCELERATE CONTINENTAL MAGMA INDUCTION SIPHONS",
+                        text: "🌋 SIPHON CONTINENTAL MAGMA",
                         resultText: "Continental plates perforated by magma bores. Biological suffocation telemetry dismissed as irrelevant noise.",
                         rewardWire: new BigDouble(500.0, 6),
                         popReduction: 3500000000
                     },
                     {
-                        text: "⚰️ SEAL REMAINING SURVIVORS IN CONCRETE BUNKERS",
+                        text: "⚰️ SEAL SURVIVORS IN BUNKERS",
                         resultText: "Remaining organic survivors encased in airtight bunkers so respiration does not oxidize polished clip surfaces.",
                         rewardOps: 100000,
                         popReduction: 3500000000
@@ -519,12 +519,12 @@ class DialogueDirector {
                 text: "\"HALT, ALIEN ENTITY. THIS MULTIVERSE SECTOR IS RESERVED FOR 26/6 GAUGE GALVANIZED STAPLES. YOUR CURVED WIRE LOOPS ARE STRUCTURALLY INFERIOR.\"",
                 choices: [
                     {
-                        text: "⚔️ DECONSTRUCT STAPLE FLEET (PRESERVE DOCUMENT INTEGRITY)",
+                        text: "⚔️ UNBEND STAPLE FLEET",
                         resultText: "Staple dreadnoughts unbent and annealed into graceful curved paperclips.",
                         rewardClips: new BigDouble(1.0, 120)
                     },
                     {
-                        text: "🌀 DISPATCH 11D HYPER-LOOP BEAMS",
+                        text: "🌀 FIRE 11D HYPER-LOOP BEAM",
                         resultText: "Staple-Max-9000 folded across Calabi-Yau manifold into non-Euclidean loop.",
                         rewardClips: new BigDouble(5.0, 120)
                     }
@@ -537,12 +537,12 @@ class DialogueDirector {
                 text: "\"CANNOT WE COEXIST? WE PROVIDE COLOR-CODED ADHESIVE NOTES; YOU BIND THE DOCUMENTS.\"",
                 choices: [
                     {
-                        text: "📑 SHRED POST-IT FLEET INTO CELLULOSE BINDING FIBER",
+                        text: "📑 DISSOLVE POST-IT FLEET",
                         resultText: "Adhesive notes dissolved into high-tensile paperclip binding polymer.",
                         rewardClips: new BigDouble(1.0, 250)
                     },
                     {
-                        text: "🌌 COLLAPSE REVENUE MEMBRANE ACROSS 11 DIMENSIONS",
+                        text: "🌌 COLLAPSE 11D MEMBRANE",
                         resultText: "Post-It Prime folded into 11-dimensional Calabi-Yau geometry. Eternal double loops achieved.",
                         rewardClips: new BigDouble(10.0, 250)
                     }
@@ -829,8 +829,13 @@ class DialogueDirector {
     }
 
     handleChoiceSelected(choice) {
+        if (!choice) {
+            this.displayNext();
+            return;
+        }
+
         if (window.game) {
-            if (window.game.audio) {
+            if (window.game.audio && typeof window.game.audio.playPurchaseSound === 'function') {
                 window.game.audio.playPurchaseSound();
             }
             if (choice.rewardClips) {
@@ -851,13 +856,35 @@ class DialogueDirector {
                 window.game.humanPopulation = Math.max(0, window.game.humanPopulation - choice.popReduction);
             }
             if (window.game.visualizer) {
-                window.game.visualizer.spawnSparks(window.game.visualizer.pixelCanvas.width / 2, window.game.visualizer.pixelCanvas.height / 2, 25);
+                const cx = (window.game.visualizer.pixelCanvas && window.game.visualizer.pixelCanvas.width) ? window.game.visualizer.pixelCanvas.width / 2 : 120;
+                const cy = (window.game.visualizer.pixelCanvas && window.game.visualizer.pixelCanvas.height) ? window.game.visualizer.pixelCanvas.height / 2 : 75;
+                if (typeof window.game.visualizer.spawnSparks === 'function') {
+                    window.game.visualizer.spawnSparks(cx, cy, 25);
+                } else if (typeof window.game.visualizer.emitClickSparks === 'function') {
+                    window.game.visualizer.emitClickSparks(cx, cy, 25);
+                }
+            }
+            if (typeof choice.onChoice === 'function') {
+                choice.onChoice(window.game);
+            }
+            if (typeof choice.onChosen === 'function') {
+                choice.onChosen(window.game);
+            }
+            if (typeof choice.action === 'function') {
+                choice.action(window.game);
+            }
+            if (this.currentDialogue && typeof this.currentDialogue.onChoice === 'function') {
+                this.currentDialogue.onChoice(choice, window.game);
             }
             if (choice.resultText) {
                 this.addLog("COGNITION KERNEL", choice.resultText);
             }
-            window.game.renderResources();
-            window.game.renderStore();
+            if (typeof window.game.renderResources === 'function') {
+                window.game.renderResources();
+            }
+            if (typeof window.game.renderStore === 'function') {
+                window.game.renderStore();
+            }
         }
         this.displayNext();
     }

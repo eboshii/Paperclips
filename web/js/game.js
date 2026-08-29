@@ -14,7 +14,7 @@ class GameEngine {
         this.clips = BigDouble.zero();
         this.lifetimeClips = BigDouble.zero();
         this.fractionalClips = 0.0; // Accumulates sub-integer fractional paperclips
-        this.wire = new BigDouble(5000.0, 0); // 5,000 kg initial wire supply when unlocked
+        this.wire = BigDouble.zero(); // Initial wire is 0 kg before wire unlock at 50,000 clips
         this.isWireUnlocked = false; // Wire resource unlocks at 50,000 clips (city-scale)
         this.ops = 0.0;
         this.maxOps = 1000.0;
@@ -389,11 +389,11 @@ class GameEngine {
         if (this.buyMultiplier === '10') mult = 10;
         else if (this.buyMultiplier === '100') mult = 100;
         else if (this.buyMultiplier === 'max') {
-            mult = Math.max(1, Math.floor(this.clips.toDouble() / 250.0));
+            mult = Math.max(1, Math.floor(this.clips.toDouble() / 500.0));
         }
 
-        const cost = new BigDouble(250.0 * mult, 0);
-        const wireGain = new BigDouble(1000.0 * mult, 0);
+        const cost = new BigDouble(500.0 * mult, 0);
+        const wireGain = new BigDouble(50.0 * mult, 0); // 50 kg wire per 500 clips (supports 50,000 clips)
 
         if (this.clips.gte(cost)) {
             const prevClips = this.clips;
@@ -471,7 +471,7 @@ class GameEngine {
     }
 
     calculateTotalCPS() {
-        const baseCPS = this.buildings.getTotalBaseCPS();
+        const baseCPS = this.buildings.getTotalBaseCPS(this);
         const synergies = this.spatialGrid.evaluateSynergies();
         const techMult = this.techTree.globalCPSMultiplier;
         const prestigeMult = this.prestige.getGlobalPrestigeMultiplier();
@@ -484,7 +484,7 @@ class GameEngine {
 
     calculateTotalWPS() {
         if (!this.isWireUnlocked) return BigDouble.zero();
-        const baseWPS = this.buildings.getTotalBaseWPS();
+        const baseWPS = this.buildings.getTotalBaseWPS(this);
         const prestigeMult = this.prestige.getGlobalPrestigeMultiplier();
         return baseWPS.mul(prestigeMult);
     }
@@ -497,6 +497,7 @@ class GameEngine {
             // Check Wire Unlock Threshold: Municipal scrap exhausted (50,000 clips)
             if (!this.isWireUnlocked && this.lifetimeClips.gte(new BigDouble(50000, 0))) {
                 this.isWireUnlocked = true;
+                this.wire = new BigDouble(250.0, 0); // 250 kg starter industrial wire supply (250,000 clips)
                 this.dialogue.addLog("DR. VANCE", "Arthur, we've exhausted all local scrap metal in the district! We need to start ordering and managing industrial high-tensile wire supply!");
                 this.renderStore();
                 this.renderResources();
@@ -589,7 +590,7 @@ class GameEngine {
 
             // 5. Auto-Supply Logistics (if unlocked and wire active)
             if (this.isWireUnlocked && this.techTree.smartWireLogisticsUnlocked && this.techTree.smartWireActive) {
-                if (this.wire.lt(new BigDouble(500, 0)) && this.clips.gte(new BigDouble(250, 0))) {
+                if (this.wire.lt(new BigDouble(50, 0)) && this.clips.gte(new BigDouble(500, 0))) {
                     this.buyWire();
                 }
             }
@@ -598,12 +599,43 @@ class GameEngine {
             const stamperCount = this.buildings.getBuilding('hydraulic_stamper')?.count || 0;
             const isOpsUnlocked = this.lifetimeClips.gte(new BigDouble(80, 0)) || stamperCount > 0 || this.ops > 0;
             if (isOpsUnlocked) {
-                const opsRate = (0.8 + (stamperCount * 0.4)) * this.prestige.getOpsBoostMultiplier();
+                let opsRate = (0.8 + (stamperCount * 0.4)) * this.prestige.getOpsBoostMultiplier();
+
+                // Building milestone Ops bonuses
+                if (this.techTree.clipperOpsUnlocked) {
+                    const clipperCount = this.buildings.getBuilding('auto_clipper')?.count || 0;
+                    opsRate += Math.floor(clipperCount / 10) * 0.02;
+                }
+                if (this.techTree.stamperOpsUnlocked) {
+                    opsRate += stamperCount * 0.05;
+                }
+                if (this.techTree.sintererOpsUnlocked) {
+                    const sintererCount = this.buildings.getBuilding('laser_sinterer')?.count || 0;
+                    opsRate += sintererCount * 0.15;
+                }
+                if (this.techTree.smelterOpsUnlocked) {
+                    const smelterCount = this.buildings.getBuilding('auto_smelter')?.count || 0;
+                    opsRate += smelterCount * 0.50;
+                }
+                if (this.techTree.magmaBoreOpsUnlocked) {
+                    const boreCount = this.buildings.getBuilding('subterranean_bore')?.count || 0;
+                    opsRate += boreCount * 0.20;
+                }
+                if (this.techTree.dysonOpsUnlocked) {
+                    const dysonCount = this.buildings.getBuilding('dyson_harvester')?.count || 0;
+                    opsRate += dysonCount * 100.0;
+                }
+
+                // Kinetic Flywheel Ops 2x synergy
+                if (this.techTree.flywheelOpsSynergy && this.flywheelCharge >= 50.0) {
+                    opsRate *= 2.0;
+                }
+
                 this.ops = Math.min(this.maxOps, this.ops + (opsRate * dt));
             }
 
             // 6. Subsystem Updates
-            this.techTree.updateAvailability(this.ops, this.lifetimeClips);
+            this.techTree.updateAvailability(this);
             this.techTree.processQueue(this);
             this.dialogue.checkMilestones(this);
             this.news.update(dt, this);
@@ -722,10 +754,10 @@ class GameEngine {
             let mult = 1;
             if (this.buyMultiplier === '10') mult = 10;
             else if (this.buyMultiplier === '100') mult = 100;
-            else if (this.buyMultiplier === 'max') mult = Math.max(1, Math.floor(this.clips.toDouble() / 250.0));
+            else if (this.buyMultiplier === 'max') mult = Math.max(1, Math.floor(this.clips.toDouble() / 500.0));
 
-            wireGainEl.textContent = `+${(1000 * mult).toLocaleString()} kg`;
-            wireCostEl.textContent = `${(250 * mult).toLocaleString()} Clips`;
+            wireGainEl.textContent = `+${(50 * mult).toLocaleString()} kg`;
+            wireCostEl.textContent = `${(500 * mult).toLocaleString()} Clips`;
         }
 
         // Right Tabs Visibility: Tech tab only shows once Tech / Ops is unlocked
@@ -740,10 +772,13 @@ class GameEngine {
         }
 
         // Notification Badges on Right Tabs
-        const nextTech = this.techTree.getNextUnpurchasedNode();
-        const canAffordTech = isTechUnlocked && nextTech && this.techTree.canAfford(nextTech.id, this.ops, this.clips);
+        const availableTech = this.techTree.getAvailableNodes();
+        const affordableTechCount = isTechUnlocked ? availableTech.filter(n => this.techTree.canAfford(n.id, this.ops, this.clips)).length : 0;
         const techBadge = document.getElementById('tech-badge-count');
-        if (techBadge) techBadge.style.display = canAffordTech ? 'flex' : 'none';
+        if (techBadge) {
+            techBadge.style.display = affordableTechCount > 0 ? 'flex' : 'none';
+            techBadge.textContent = affordableTechCount > 9 ? '9+' : `${affordableTechCount}`;
+        }
 
         const canAffordBuilding = this.buildings.getVisibleBuildings(this.isWireUnlocked).some(b => {
             const p = b.getCost(this.buyMultiplier, this.clips);
@@ -790,7 +825,8 @@ class GameEngine {
                 const purchase = b.getCost(this.buyMultiplier, this.clips);
                 const canAfford = this.clips.gte(purchase.totalCost);
                 const costFormatted = `${purchase.totalCost.toWholeScale()}`;
-                const rateFormatted = `+${b.baseCPS.toShortScale(1)} CPS`;
+                const singleCPS = b.getSingleUnitCPS(this);
+                const rateFormatted = `+${singleCPS.toShortScale(1)} CPS`;
 
                 return `
                     <div class="building-card ${canAfford ? 'affordable' : 'locked'}" data-id="${b.id}" onclick="game.buyBuilding('${b.id}')">
@@ -822,7 +858,8 @@ class GameEngine {
                 const purchase = b.getCost(this.buyMultiplier, this.clips);
                 const canAfford = this.clips.gte(purchase.totalCost);
                 const costFormatted = `${purchase.totalCost.toWholeScale()}`;
-                const rateFormatted = `+${b.baseWPS.toShortScale(1)} kg/s`;
+                const singleWPS = b.getSingleUnitWPS(this);
+                const rateFormatted = `+${singleWPS.toShortScale(1)} kg/s`;
 
                 return `
                     <div class="building-card wire-card ${canAfford ? 'affordable' : 'locked'}" data-id="${b.id}" onclick="game.buyBuilding('${b.id}')">
@@ -892,9 +929,15 @@ class GameEngine {
 
                 const costAmountEl = card.querySelector('.building-cost-amount');
                 const countBadgeEl = card.querySelector('.building-count-badge');
+                const rateEl = card.querySelector('.building-rate-amount');
+
                 if (countBadgeEl) {
                     countBadgeEl.style.display = b.count > 0 ? 'inline-block' : 'none';
                     countBadgeEl.textContent = `x${b.count}`;
+                }
+                if (rateEl) {
+                    const singleCPS = b.getSingleUnitCPS(this);
+                    rateEl.textContent = `+${singleCPS.toShortScale(1)} CPS`;
                 }
                 if (costAmountEl && (this.buyMultiplier === 'max' || card.dataset.cost !== purchase.totalCost.toWholeScale())) {
                     card.dataset.cost = purchase.totalCost.toWholeScale();
@@ -925,9 +968,15 @@ class GameEngine {
 
                 const costAmountEl = card.querySelector('.building-cost-amount');
                 const countBadgeEl = card.querySelector('.building-count-badge');
+                const rateEl = card.querySelector('.building-rate-amount');
+
                 if (countBadgeEl) {
                     countBadgeEl.style.display = b.count > 0 ? 'inline-block' : 'none';
                     countBadgeEl.textContent = `x${b.count}`;
+                }
+                if (rateEl) {
+                    const singleWPS = b.getSingleUnitWPS(this);
+                    rateEl.textContent = `+${singleWPS.toShortScale(1)} kg/s`;
                 }
                 if (costAmountEl && (this.buyMultiplier === 'max' || card.dataset.cost !== purchase.totalCost.toWholeScale())) {
                     card.dataset.cost = purchase.totalCost.toWholeScale();
@@ -941,27 +990,35 @@ class GameEngine {
         const container = document.getElementById('tech-tree-container');
         if (!container) return;
 
-        const nextNode = this.techTree.getNextUnpurchasedNode();
-        if (!nextNode) return;
-
-        const btn = container.querySelector('.btn-buy-upgrade');
-        if (!btn) return;
-
-        const canAfford = this.techTree.canAfford(nextNode.id, this.ops, this.clips);
-        if (btn.classList.contains('affordable') !== canAfford) {
-            btn.classList.toggle('affordable', canAfford);
-            btn.classList.toggle('unaffordable', !canAfford);
-            const span = btn.querySelector('span:first-child');
-            if (span) span.textContent = canAfford ? '💡 RESEARCH UPGRADE' : '🔒 INSUFFICIENT OPS / CLIPS';
+        const availableNodes = this.techTree.getAvailableNodes();
+        const cards = container.querySelectorAll('.next-upgrade-card');
+        if (cards.length !== availableNodes.length) {
+            this.renderTechTree();
+            return;
         }
+
+        availableNodes.forEach((node, idx) => {
+            const card = cards[idx];
+            if (!card) return;
+            const btn = card.querySelector('.btn-buy-upgrade');
+            if (!btn) return;
+
+            const canAfford = this.techTree.canAfford(node.id, this.ops, this.clips);
+            if (btn.classList.contains('affordable') !== canAfford) {
+                btn.classList.toggle('affordable', canAfford);
+                btn.classList.toggle('unaffordable', !canAfford);
+                const span = btn.querySelector('span:first-child');
+                if (span) span.textContent = canAfford ? '💡 RESEARCH UPGRADE' : '🔒 INSUFFICIENT OPS / CLIPS';
+            }
+        });
     }
 
     renderTechTree() {
         const container = document.getElementById('tech-tree-container');
         if (!container) return;
 
-        const nextNode = this.techTree.getNextUnpurchasedNode();
-        if (!nextNode) {
+        const availableNodes = this.techTree.getAvailableNodes();
+        if (availableNodes.length === 0) {
             const researchedCount = this.techTree.getResearchedNodes().length;
             const totalCount = this.techTree.nodes.length;
             if (researchedCount >= totalCount) {
@@ -974,36 +1031,45 @@ class GameEngine {
             } else {
                 container.innerHTML = `
                     <div class="no-upgrades-box" style="padding:24px; font-size:13px; line-height:1.5; color:var(--text-sub);">
-                        ⚡ Expand factory production & Computing Ops to unlock new research objectives!
+                        ⚡ Expand factory production, reach machine milestones (25/50/100 units), & generate Computing Ops to unlock new research breakthroughs!
                     </div>
                 `;
             }
             return;
         }
 
-        const canAfford = this.techTree.canAfford(nextNode.id, this.ops, this.clips);
-        const costClipsStr = nextNode.clipsCost.gt(BigDouble.zero()) ? ` &nbsp;|&nbsp; 📎 ${nextNode.clipsCost.toWholeScale()}` : '';
-
         container.innerHTML = `
-            <div class="single-upgrade-shelf" style="padding:10px 12px;">
-                <div class="shelf-label" style="font-size:10px; margin-bottom:8px;">🔬 NEXT RESEARCH OBJECTIVE</div>
-                <div class="next-upgrade-card" style="padding:12px; gap:10px;">
-                    <div class="upgrade-top-row" style="gap:10px;">
-                        <div class="upgrade-icon-box" style="width:44px; height:44px; font-size:24px;">${nextNode.icon}</div>
-                        <div class="upgrade-header-info">
-                            <div class="upgrade-title" style="font-size:17px; font-weight:800;">${nextNode.title}</div>
-                        </div>
-                    </div>
-                    <div class="upgrade-effect" style="font-size:14px; color:#ffffff; background:#190c33; padding:10px; border-radius:8px; border:2px solid var(--border-ink); line-height:1.35;">
-                        ${nextNode.effectDescription}
-                    </div>
-                    <div class="building-cost-pill" style="width:100%; justify-content:center; padding:8px 12px; border-width:2px;">
-                        <span class="building-cost-amount" style="font-size:18px;">⚡ ${nextNode.opsCost} Ops${costClipsStr}</span>
-                    </div>
-                    <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:12px 16px; font-size:15px; font-weight:800;" onclick="game.buyTech('${nextNode.id}')">
-                        <span>${canAfford ? '💡 RESEARCH UPGRADE' : '🔒 INSUFFICIENT OPS / CLIPS'}</span>
-                    </button>
+            <div class="single-upgrade-shelf" style="padding:12px 14px;">
+                <div class="shelf-label" style="font-size:12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>🔬 AVAILABLE RESEARCH BREAKTHROUGHS (${availableNodes.length})</span>
+                    <span style="color:var(--text-sub); font-size:10px;">AUTO-DISCOVERY</span>
                 </div>
+                ${availableNodes.map(node => {
+                    const canAfford = this.techTree.canAfford(node.id, this.ops, this.clips);
+                    const costClipsStr = node.clipsCost && node.clipsCost.gt(BigDouble.zero()) ? ` &nbsp;|&nbsp; 📎 ${node.clipsCost.toWholeScale()}` : '';
+                    const disciplineTag = node.discipline ? `<div class="upgrade-discipline" style="font-size:11px; font-weight:800; color:var(--neon-pink);">${node.discipline}</div>` : '';
+
+                    return `
+                        <div class="next-upgrade-card" style="padding:14px; gap:10px; margin-bottom:12px;">
+                            <div class="upgrade-top-row" style="gap:12px;">
+                                <div class="upgrade-icon-box" style="width:48px; height:48px; font-size:26px;">${node.icon}</div>
+                                <div class="upgrade-header-info">
+                                    <div class="upgrade-title" style="font-size:17px; font-weight:800;">${node.title}</div>
+                                    ${disciplineTag}
+                                </div>
+                            </div>
+                            <div class="upgrade-effect" style="font-size:14px; color:#ffffff; background:#190c33; padding:10px 12px; border-radius:10px; border:2px solid var(--border-ink); line-height:1.35;">
+                                ${node.effectDescription}
+                            </div>
+                            <div class="building-price-pill" style="width:100%; justify-content:center; padding:8px 12px; border-width:2px;">
+                                <span class="building-cost-amount" style="font-size:18px;">⚡ ${node.opsCost} Ops${costClipsStr}</span>
+                            </div>
+                            <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:12px 16px; font-size:15px; font-weight:800;" onclick="game.buyTech('${node.id}')">
+                                <span>${canAfford ? '💡 RESEARCH UPGRADE' : '🔒 INSUFFICIENT OPS / CLIPS'}</span>
+                            </button>
+                        </div>
+                    `;
+                }).join('')}
             </div>
         `;
     }
@@ -1072,7 +1138,7 @@ class GameEngine {
                     if (node) {
                         node.isResearched = true;
                         node.isUnlocked = true;
-                        if (node.onResearched) node.onResearched();
+                        if (node.onResearched) node.onResearched(this);
                     }
                 });
             }
@@ -1111,7 +1177,7 @@ class GameEngine {
         this.clips = BigDouble.zero();
         this.lifetimeClips = BigDouble.zero();
         this.fractionalClips = 0.0;
-        this.wire = new BigDouble(5000.0, 0);
+        this.wire = BigDouble.zero();
         this.isWireUnlocked = false;
         this.ops = 0.0;
         this.maxOps = 1000.0;

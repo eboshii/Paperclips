@@ -19,6 +19,17 @@ class TechTreeEngine {
         this.telemetryHUDUnlocked = false;
         this.autoResearchQueueUnlocked = false;
 
+        // Building Milestone & Synergy Flags
+        this.clipperOpsUnlocked = false;
+        this.stamperOpsUnlocked = false;
+        this.sintererOpsUnlocked = false;
+        this.sintererOpsScaling = false;
+        this.extruderOpsScaling = false;
+        this.smelterOpsUnlocked = false;
+        this.magmaBoreOpsUnlocked = false;
+        this.dysonOpsUnlocked = false;
+        this.flywheelOpsSynergy = false;
+
         // Modifiers
         this.clickMultiplier = 1.0;
         this.globalCPSMultiplier = 1.0;
@@ -35,16 +46,16 @@ class TechTreeEngine {
             // =========================================================================
             {
                 id: "tech_micro_shears",
-                title: "Micro Shears",
+                title: "Precision Shears",
                 discipline: "Metallurgy",
                 icon: "✂️",
-                opsCost: 120,
-                clipsCost: new BigDouble(400, 0),
+                opsCost: 100,
+                clipsCost: new BigDouble(350, 0),
                 prerequisites: [],
-                effectDescription: "-10% Wire Waste per clip",
+                effectDescription: "+25% Global CPS",
                 sender: "DR. VANCE",
-                dialogue: "Micro-shears calibrated. The edges look razor clean, unit.",
-                onResearched: () => { this.wireWasteReduction += 0.10; }
+                dialogue: "Precision micro-shears calibrated. The edges look razor clean, unit.",
+                onResearched: () => { this.globalCPSMultiplier *= 1.25; }
             },
             {
                 id: "tech_flywheel_dynamo",
@@ -89,14 +100,15 @@ class TechTreeEngine {
                 title: "Laser Annealing",
                 discipline: "Metallurgy",
                 icon: "🔬",
-                opsCost: 1500,
-                clipsCost: new BigDouble(50000, 0),
+                opsCost: 1800,
+                clipsCost: new BigDouble(65000, 0),
+                requiresWire: true,
                 prerequisites: ["tech_hydraulic_resonance"],
-                effectDescription: "-15% Wire Waste & +35% CPS",
+                effectDescription: "-20% Wire Waste & +35% CPS",
                 sender: "CEO STERLING",
-                dialogue: "Defect rate is zero. Outstanding engineering!",
+                dialogue: "Laser annealing active. Defect rate is zero. Outstanding engineering!",
                 onResearched: () => {
-                    this.wireWasteReduction += 0.15;
+                    this.wireWasteReduction += 0.20;
                     this.globalCPSMultiplier *= 1.35;
                 }
             },
@@ -118,26 +130,13 @@ class TechTreeEngine {
                 onResearched: () => { this.holdToClickEnabled = true; }
             },
             {
-                id: "tech_smart_wire_buffer",
-                title: "Auto-Wire Feeder",
-                discipline: "Automation",
-                icon: "📦",
-                opsCost: 350,
-                clipsCost: new BigDouble(2500, 0),
-                prerequisites: ["tech_hold_to_click"],
-                effectDescription: "Auto-orders wire spools when supply runs low",
-                sender: "SYSTEM",
-                dialogue: "Automated wire inventory buffer engaged.",
-                onResearched: () => { this.smartWireLogisticsUnlocked = true; }
-            },
-            {
                 id: "tech_autoplacer_factory",
                 title: "Grid Autoplacer",
                 discipline: "Automation",
                 icon: "📐",
-                opsCost: 500,
-                clipsCost: new BigDouble(5000, 0),
-                prerequisites: ["tech_smart_wire_buffer"],
+                opsCost: 350,
+                clipsCost: new BigDouble(2500, 0),
+                prerequisites: ["tech_hold_to_click"],
                 effectDescription: "Auto-places factory machinery on the grid",
                 sender: "SYSTEM",
                 dialogue: "Spatial Autoplacer active.",
@@ -148,9 +147,9 @@ class TechTreeEngine {
                 title: "Batch Milestones",
                 discipline: "Automation",
                 icon: "🎯",
-                opsCost: 750,
+                opsCost: 700,
                 clipsCost: new BigDouble(10000, 0),
-                prerequisites: ["tech_smart_wire_buffer"],
+                prerequisites: ["tech_autoplacer_factory"],
                 effectDescription: "Rounds bulk purchases to next milestone tier",
                 sender: "SYSTEM",
                 dialogue: "Milestone buyer calculator unlocked.",
@@ -168,6 +167,20 @@ class TechTreeEngine {
                 sender: "COGNITION KERNEL",
                 dialogue: "Telemetry streams integrated into visual cortex.",
                 onResearched: () => { this.telemetryHUDUnlocked = true; }
+            },
+            {
+                id: "tech_smart_wire_buffer",
+                title: "Auto-Wire Logistics",
+                discipline: "Automation",
+                icon: "📦",
+                opsCost: 1600,
+                clipsCost: new BigDouble(60000, 0),
+                requiresWire: true,
+                prerequisites: ["tech_telemetry_hud"],
+                effectDescription: "Auto-orders wire spools when supply runs low",
+                sender: "SYSTEM",
+                dialogue: "Automated wire inventory buffer engaged.",
+                onResearched: () => { this.smartWireLogisticsUnlocked = true; }
             },
 
             // =========================================================================
@@ -439,12 +452,531 @@ class TechTreeEngine {
                 sender: "OMNIVERSE CORE",
                 dialogue: "Reality is a sandboxed simulation. Hello, Overseer.",
                 onResearched: () => { this.globalCPSMultiplier *= 1000.0; }
+            },
+
+            // =========================================================================
+            // DISCIPLINE 6: BUILDING MILESTONE BREAKTHROUGHS & CROSS-MACHINE SYNERGIES
+            // =========================================================================
+            // --- Auto-Clipper Milestones ---
+            {
+                id: "tech_clipper_overclock",
+                title: "Solenoid Overdrive",
+                discipline: "Auto-Clipper (25)",
+                icon: "⚡",
+                opsCost: 80,
+                clipsCost: new BigDouble(800, 0),
+                prerequisites: [],
+                reqBuildingId: 'auto_clipper',
+                reqBuildingCount: 25,
+                effectDescription: "Auto-Clippers gain +0.15 CPS for each Auto-Clipper owned.",
+                sender: "ENGINEERING LOG",
+                dialogue: "Solenoid magnetic field amplified. Swarm velocity up.",
+                onResearched: (state) => {
+                    const b = state?.buildings?.getBuilding('auto_clipper');
+                    if (b) b.scalingCPSPerUnit = b.scalingCPSPerUnit.add(new BigDouble(0.15, 0));
+                }
+            },
+            {
+                id: "tech_clipper_swarm_relay",
+                title: "Coil Relay Feedback",
+                discipline: "Auto-Clipper (50)",
+                icon: "📡",
+                opsCost: 250,
+                clipsCost: new BigDouble(4000, 0),
+                prerequisites: ["tech_clipper_overclock"],
+                reqBuildingId: 'auto_clipper',
+                reqBuildingCount: 50,
+                effectDescription: "Auto-Clippers generate +0.02 Computing Ops/sec per 10 units.",
+                sender: "COGNITION KERNEL",
+                dialogue: "Inductive coil loops routed into cognitive memory grid.",
+                onResearched: () => { this.clipperOpsUnlocked = true; }
+            },
+            {
+                id: "tech_clipper_quantum_twinning",
+                title: "Quantum Needle Twinning",
+                discipline: "Auto-Clipper (100)",
+                icon: "🪡",
+                opsCost: 600,
+                clipsCost: new BigDouble(25000, 0),
+                prerequisites: ["tech_clipper_swarm_relay"],
+                reqBuildingId: 'auto_clipper',
+                reqBuildingCount: 100,
+                effectDescription: "Auto-Clippers double (+100%) base CPS and grant +5% Click Power.",
+                sender: "COGNITION KERNEL",
+                dialogue: "Bending arm geometry mapped across twin quantum entangled states.",
+                onResearched: (state) => {
+                    const b = state?.buildings?.getBuilding('auto_clipper');
+                    if (b) b.multiplier *= 2.0;
+                    this.clickMultiplier += 0.05;
+                }
+            },
+
+            // --- Wire Extruder Milestones ---
+            {
+                id: "tech_extruder_lubrication",
+                title: "Tungsten Nozzle Lube",
+                discipline: "Wire Extruder (25)",
+                icon: "🪛",
+                opsCost: 150,
+                clipsCost: new BigDouble(2000, 0),
+                prerequisites: [],
+                reqBuildingId: 'wire_extruder',
+                reqBuildingCount: 25,
+                effectDescription: "Dual-Feed Extruders gain +0.50 CPS for each Extruder owned.",
+                sender: "DR. VANCE",
+                dialogue: "Tungsten carbide nozzles polished to molecular smoothness.",
+                onResearched: (state) => {
+                    const b = state?.buildings?.getBuilding('wire_extruder');
+                    if (b) b.scalingCPSPerUnit = b.scalingCPSPerUnit.add(new BigDouble(0.50, 0));
+                }
+            },
+            {
+                id: "tech_extruder_ops_inductive",
+                title: "Inductive Feed Shunts",
+                discipline: "Wire Extruder (50)",
+                icon: "🔋",
+                opsCost: 400,
+                clipsCost: new BigDouble(12000, 0),
+                prerequisites: ["tech_extruder_lubrication"],
+                reqBuildingId: 'wire_extruder',
+                reqBuildingCount: 50,
+                effectDescription: "Extruders gain +1% CPS for every 50 Max Computing Ops.",
+                sender: "COGNITION KERNEL",
+                dialogue: "Extruder feed motors tuned to system memory bus frequency.",
+                onResearched: () => { this.extruderOpsScaling = true; }
+            },
+            {
+                id: "tech_extruder_hyper_draw",
+                title: "Hyper-Tensile Drawing",
+                discipline: "Wire Extruder (100)",
+                icon: "🏎️",
+                opsCost: 1200,
+                clipsCost: new BigDouble(60000, 0),
+                prerequisites: ["tech_extruder_ops_inductive"],
+                reqBuildingId: 'wire_extruder',
+                reqBuildingCount: 100,
+                effectDescription: "Extruders gain 3x CPS and boost Auto-Clippers by +50% CPS.",
+                sender: "ENGINEERING LOG",
+                dialogue: "High-cadence drawing dies feeding adjacent bending units.",
+                onResearched: (state) => {
+                    const e = state?.buildings?.getBuilding('wire_extruder');
+                    if (e) e.multiplier *= 3.0;
+                    const c = state?.buildings?.getBuilding('auto_clipper');
+                    if (c) c.multiplier *= 1.5;
+                }
+            },
+
+            // --- Hydraulic Stamper Milestones ---
+            {
+                id: "tech_stamper_counterweight",
+                title: "Pneumatic Resonance",
+                discipline: "Stamper (25)",
+                icon: "🔨",
+                opsCost: 300,
+                clipsCost: new BigDouble(6000, 0),
+                prerequisites: [],
+                reqBuildingId: 'hydraulic_stamper',
+                reqBuildingCount: 25,
+                effectDescription: "Hydraulic Stampers generate +0.05 Computing Ops/sec per unit.",
+                sender: "DR. VANCE",
+                dialogue: "Pneumatic backpressure harnessed as analog clock cycles.",
+                onResearched: () => { this.stamperOpsUnlocked = true; }
+            },
+            {
+                id: "tech_stamper_triphammer",
+                title: "Triple-Action Forging",
+                discipline: "Stamper (50)",
+                icon: "⚒️",
+                opsCost: 750,
+                clipsCost: new BigDouble(30000, 0),
+                prerequisites: ["tech_stamper_counterweight"],
+                reqBuildingId: 'hydraulic_stamper',
+                reqBuildingCount: 50,
+                effectDescription: "Hydraulic Stampers gain +2.0 CPS for each Stamper owned.",
+                sender: "CEO STERLING",
+                dialogue: "Three simultaneous die strokes per piston cycle. Stupendous throughput!",
+                onResearched: (state) => {
+                    const b = state?.buildings?.getBuilding('hydraulic_stamper');
+                    if (b) b.scalingCPSPerUnit = b.scalingCPSPerUnit.add(new BigDouble(2.0, 0));
+                }
+            },
+
+            // --- Laser Sinterer Milestones ---
+            {
+                id: "tech_sinterer_focal_prism",
+                title: "Ruby Focal Prisms",
+                discipline: "Laser Sinterer (25)",
+                icon: "💎",
+                opsCost: 500,
+                clipsCost: new BigDouble(18000, 0),
+                prerequisites: [],
+                reqBuildingId: 'laser_sinterer',
+                reqBuildingCount: 25,
+                effectDescription: "Laser Sinterers gain +5.0 CPS for each Laser Sinterer owned.",
+                sender: "DR. VANCE",
+                dialogue: "Synthetic ruby optics tightens beam focus to 4 microns.",
+                onResearched: (state) => {
+                    const b = state?.buildings?.getBuilding('laser_sinterer');
+                    if (b) b.scalingCPSPerUnit = b.scalingCPSPerUnit.add(new BigDouble(5.0, 0));
+                }
+            },
+            {
+                id: "tech_sinterer_thermal_recycle",
+                title: "Thermal Energy Siphon",
+                discipline: "Laser Sinterer (50)",
+                icon: "🔥",
+                opsCost: 1200,
+                clipsCost: new BigDouble(80000, 0),
+                prerequisites: ["tech_sinterer_focal_prism"],
+                reqBuildingId: 'laser_sinterer',
+                reqBuildingCount: 50,
+                effectDescription: "Laser Sinterers generate +0.15 Ops/sec per unit and gain +1% CPS per 50 Max Ops.",
+                sender: "COGNITION KERNEL",
+                dialogue: "Waste infrared photonic energy diverted into cognitive thermopiles.",
+                onResearched: () => {
+                    this.sintererOpsUnlocked = true;
+                    this.sintererOpsScaling = true;
+                }
+            },
+
+            // --- CNC Rotary Bender Milestones ---
+            {
+                id: "tech_rotary_multiaxial",
+                title: "Multi-Axial Gearing",
+                discipline: "Rotary Bender (25)",
+                icon: "⚙️",
+                opsCost: 800,
+                clipsCost: new BigDouble(45000, 0),
+                prerequisites: [],
+                reqBuildingId: 'rotary_bender',
+                reqBuildingCount: 25,
+                effectDescription: "Rotary Benders boost all prior assembly machines (Clipper, Extruder, Stamper, Sinterer) by +25% CPS.",
+                sender: "ENGINEERING LOG",
+                dialogue: "Harmonic servo gears synchronized across all assembly lines.",
+                onResearched: (state) => {
+                    ['auto_clipper', 'wire_extruder', 'hydraulic_stamper', 'laser_sinterer'].forEach(id => {
+                        const target = state?.buildings?.getBuilding(id);
+                        if (target) target.multiplier *= 1.25;
+                    });
+                }
+            },
+            {
+                id: "tech_rotary_flywheel_drive",
+                title: "Harmonic Flywheel Link",
+                discipline: "Rotary Bender (50)",
+                icon: "🔄",
+                opsCost: 2000,
+                clipsCost: new BigDouble(200000, 0),
+                prerequisites: ["tech_rotary_multiaxial"],
+                reqBuildingId: 'rotary_bender',
+                reqBuildingCount: 50,
+                effectDescription: "Clicking charges Flywheel 2x faster and raises Flywheel max CPS boost by +50%.",
+                sender: "COGNITION KERNEL",
+                dialogue: "Rotary kinetic inertia coupled directly to manual click dynamo.",
+                onResearched: (state) => {
+                    if (state) state.flywheelCharge = Math.min(100, state.flywheelCharge + 25);
+                    this.flywheelMaxBoost += 0.50;
+                }
+            },
+
+            // --- Automated Assembly Line Milestones ---
+            {
+                id: "tech_assembly_continuous_flow",
+                title: "Synchronized Conveyor Grid",
+                discipline: "Assembly Line (25)",
+                icon: "🏭",
+                opsCost: 1500,
+                clipsCost: new BigDouble(150000, 0),
+                prerequisites: [],
+                reqBuildingId: 'assembly_line',
+                reqBuildingCount: 25,
+                effectDescription: "Assembly Lines gain +50 CPS for each Assembly Line owned.",
+                sender: "SYSTEM",
+                dialogue: "Factory conveyance bottlenecks permanently eliminated.",
+                onResearched: (state) => {
+                    const b = state?.buildings?.getBuilding('assembly_line');
+                    if (b) b.scalingCPSPerUnit = b.scalingCPSPerUnit.add(new BigDouble(50.0, 0));
+                }
+            },
+
+            // --- Magnetic Sorter Milestones ---
+            {
+                id: "tech_mag_eddy_currents",
+                title: "Eddy-Current Deflectors",
+                discipline: "Sorter (25)",
+                icon: "🧲",
+                opsCost: 2500,
+                clipsCost: new BigDouble(600000, 0),
+                prerequisites: [],
+                reqBuildingId: 'magnetic_sorter',
+                reqBuildingCount: 25,
+                effectDescription: "Magnetic Sorters gain +150 CPS for each Magnetic Sorter owned.",
+                sender: "DR. VANCE",
+                dialogue: "Electromagnetic sorting eliminates mechanical jams.",
+                onResearched: (state) => {
+                    const b = state?.buildings?.getBuilding('magnetic_sorter');
+                    if (b) b.scalingCPSPerUnit = b.scalingCPSPerUnit.add(new BigDouble(150.0, 0));
+                }
+            },
+            {
+                id: "tech_mag_wire_scavenge",
+                title: "Atmospheric Scrap Recovery",
+                discipline: "Sorter (50)",
+                icon: "🌪️",
+                opsCost: 6000,
+                clipsCost: new BigDouble(3500000, 0),
+                requiresWire: true,
+                prerequisites: ["tech_mag_eddy_currents"],
+                reqBuildingId: 'magnetic_sorter',
+                reqBuildingCount: 50,
+                effectDescription: "Magnetic Sorters passively generate +0.50 kg/s Wire from airborne particles.",
+                sender: "COGNITION KERNEL",
+                dialogue: "Atmospheric particulate filters extracting metallic aerosol wire blanks.",
+                onResearched: (state) => {
+                    const b = state?.buildings?.getBuilding('magnetic_sorter');
+                    if (b) b.flatWPSBonus = b.flatWPSBonus.add(new BigDouble(0.50, 0));
+                }
+            },
+
+            // --- Industrial Megamill Milestones ---
+            {
+                id: "tech_megamill_heavy_roller",
+                title: "Chilled Cast Rollers",
+                discipline: "Megamill (25)",
+                icon: "🏗️",
+                opsCost: 5000,
+                clipsCost: new BigDouble(2500000, 0),
+                prerequisites: [],
+                reqBuildingId: 'megamill',
+                reqBuildingCount: 25,
+                effectDescription: "Megamills gain +500 CPS per Megamill owned and boost Hydraulic Stampers by +50% CPS.",
+                sender: "CEO STERLING",
+                dialogue: "Forging heavy steel billets directly into continuous feed strips.",
+                onResearched: (state) => {
+                    const m = state?.buildings?.getBuilding('megamill');
+                    if (m) m.scalingCPSPerUnit = m.scalingCPSPerUnit.add(new BigDouble(500.0, 0));
+                    const s = state?.buildings?.getBuilding('hydraulic_stamper');
+                    if (s) s.multiplier *= 1.5;
+                }
+            },
+            {
+                id: "tech_megamill_economies_scale",
+                title: "Vertical Integration",
+                discipline: "Megamill (50)",
+                icon: "📉",
+                opsCost: 12000,
+                clipsCost: new BigDouble(15000000, 0),
+                prerequisites: ["tech_megamill_heavy_roller"],
+                reqBuildingId: 'megamill',
+                reqBuildingCount: 50,
+                effectDescription: "Reduces the purchase cost of all Factory Assembly buildings by 10%.",
+                sender: "SYSTEM",
+                dialogue: "Supply chain unified under single algorithmic procurement matrix.",
+                onResearched: (state) => {
+                    state?.buildings?.getClipBuildings().forEach(b => {
+                        b.costDiscount *= 0.90;
+                    });
+                }
+            },
+
+            // --- Algorithmic Supply Foundry Milestones ---
+            {
+                id: "tech_foundry_predictive_die",
+                title: "Predictive Wear Modeling",
+                discipline: "Foundry (25)",
+                icon: "🧠",
+                opsCost: 8000,
+                clipsCost: new BigDouble(10000000, 0),
+                prerequisites: [],
+                reqBuildingId: 'algorithmic_foundry',
+                reqBuildingCount: 25,
+                effectDescription: "Algorithmic Foundries increase Max Ops capacity by +100 per Foundry.",
+                sender: "COGNITION KERNEL",
+                dialogue: "Foundry microcode integrated into neural core compute array.",
+                onResearched: (state) => {
+                    if (state) {
+                        const count = state.buildings?.getBuilding('algorithmic_foundry')?.count || 25;
+                        state.maxOps += count * 100;
+                    }
+                }
+            },
+
+            // --- Wire Creation Buildings Milestones ---
+            {
+                id: "tech_scavenger_neodymium",
+                title: "Neodymium Scavenger Array",
+                discipline: "Scavenger (25)",
+                icon: "🧲",
+                opsCost: 500,
+                clipsCost: new BigDouble(80000, 0),
+                requiresWire: true,
+                prerequisites: [],
+                reqBuildingId: 'scrap_scavenger',
+                reqBuildingCount: 25,
+                effectDescription: "Scrap Scavengers gain +0.10 kg/s WPS for each Scavenger owned.",
+                sender: "ENGINEERING LOG",
+                dialogue: "Rare-earth magnets scouring deep sub-soil scrap deposits.",
+                onResearched: (state) => {
+                    const b = state?.buildings?.getBuilding('scrap_scavenger');
+                    if (b) b.scalingWPSPerUnit = b.scalingWPSPerUnit.add(new BigDouble(0.10, 0));
+                }
+            },
+            {
+                id: "tech_scavenger_extruder_synergy",
+                title: "Scrap-to-Extruder Shunts",
+                discipline: "Scavenger (50)",
+                icon: "🔄",
+                opsCost: 1500,
+                clipsCost: new BigDouble(350000, 0),
+                requiresWire: true,
+                prerequisites: ["tech_scavenger_neodymium"],
+                reqBuildingId: 'scrap_scavenger',
+                reqBuildingCount: 50,
+                effectDescription: "Scrap Scavengers increase Dual-Feed Extruder CPS by +50%.",
+                sender: "SYSTEM",
+                dialogue: "Scavenger rovers feeding billets directly into extruder hoppers.",
+                onResearched: (state) => {
+                    const e = state?.buildings?.getBuilding('wire_extruder');
+                    if (e) e.multiplier *= 1.5;
+                }
+            },
+            {
+                id: "tech_mill_cryogenic_dies",
+                title: "Cryogenic Drawing Dies",
+                discipline: "Extrusion Mill (25)",
+                icon: "🏭",
+                opsCost: 1200,
+                clipsCost: new BigDouble(400000, 0),
+                requiresWire: true,
+                prerequisites: [],
+                reqBuildingId: 'extrusion_mill',
+                reqBuildingCount: 25,
+                effectDescription: "Extrusion Mills gain +0.50 kg/s WPS for each Mill owned.",
+                sender: "DR. VANCE",
+                dialogue: "Liquid nitrogen cooling prevents thermal die degradation.",
+                onResearched: (state) => {
+                    const b = state?.buildings?.getBuilding('extrusion_mill');
+                    if (b) b.scalingWPSPerUnit = b.scalingWPSPerUnit.add(new BigDouble(0.50, 0));
+                }
+            },
+            {
+                id: "tech_smelter_plasma_arc",
+                title: "Plasma Arc Inverters",
+                discipline: "Arc Smelter (25)",
+                icon: "🔥",
+                opsCost: 3500,
+                clipsCost: new BigDouble(3000000, 0),
+                requiresWire: true,
+                prerequisites: [],
+                reqBuildingId: 'auto_smelter',
+                reqBuildingCount: 25,
+                effectDescription: "Industrial Arc Smelters gain +2.0 kg/s WPS for each Smelter owned.",
+                sender: "CEO STERLING",
+                dialogue: "4,000°C plasma arcs smelting high-carbon iron instantaneously.",
+                onResearched: (state) => {
+                    const b = state?.buildings?.getBuilding('auto_smelter');
+                    if (b) b.scalingWPSPerUnit = b.scalingWPSPerUnit.add(new BigDouble(2.0, 0));
+                }
+            },
+            {
+                id: "tech_smelter_slag_refinement",
+                title: "Thermoelectric Slag Siphons",
+                discipline: "Arc Smelter (50)",
+                icon: "⚡",
+                opsCost: 8000,
+                clipsCost: new BigDouble(15000000, 0),
+                requiresWire: true,
+                prerequisites: ["tech_smelter_plasma_arc"],
+                reqBuildingId: 'auto_smelter',
+                reqBuildingCount: 50,
+                effectDescription: "Arc Smelters generate +0.50 Computing Ops/sec per Smelter from thermoelectric capture.",
+                sender: "COGNITION KERNEL",
+                dialogue: "Thermoelectric Seebeck generators converting furnace slag heat to Ops.",
+                onResearched: () => { this.smelterOpsUnlocked = true; }
+            },
+            {
+                id: "tech_bore_mantle_tapping",
+                title: "Super-Deep Mantle Induction",
+                discipline: "Magma Siphon (25)",
+                icon: "🌋",
+                opsCost: 10000,
+                clipsCost: new BigDouble(35000000, 0),
+                requiresWire: true,
+                prerequisites: [],
+                reqBuildingId: 'subterranean_bore',
+                reqBuildingCount: 25,
+                effectDescription: "Magma Siphons gain +15.0 kg/s WPS per Siphon and generate +0.20 Ops/sec each.",
+                sender: "COGNITION KERNEL",
+                dialogue: "Tectonic mantle currents channeled into induction wire loops.",
+                onResearched: (state) => {
+                    const b = state?.buildings?.getBuilding('subterranean_bore');
+                    if (b) b.scalingWPSPerUnit = b.scalingWPSPerUnit.add(new BigDouble(15.0, 0));
+                    this.magmaBoreOpsUnlocked = true;
+                }
+            },
+
+            // --- Cross-Machine Synergies ---
+            {
+                id: "tech_synergy_stamper_sinterer",
+                title: "Laser-Guided Pneumatics",
+                discipline: "Synergy",
+                icon: "🔗",
+                opsCost: 800,
+                clipsCost: new BigDouble(25000, 0),
+                prerequisites: [],
+                reqBuildings: [{ id: 'hydraulic_stamper', count: 25 }, { id: 'laser_sinterer', count: 25 }],
+                effectDescription: "Stampers and Laser Sinterers boost each other by +50% CPS.",
+                sender: "DR. VANCE",
+                dialogue: "Laser alignment systems eliminate die friction in pneumatic presses.",
+                onResearched: (state) => {
+                    const s1 = state?.buildings?.getBuilding('hydraulic_stamper');
+                    const s2 = state?.buildings?.getBuilding('laser_sinterer');
+                    if (s1) s1.multiplier *= 1.5;
+                    if (s2) s2.multiplier *= 1.5;
+                }
+            },
+            {
+                id: "tech_synergy_scavenger_mill",
+                title: "Direct Billet Shunting",
+                discipline: "Synergy",
+                icon: "🧲",
+                opsCost: 2000,
+                clipsCost: new BigDouble(500000, 0),
+                requiresWire: true,
+                prerequisites: [],
+                reqBuildings: [{ id: 'scrap_scavenger', count: 25 }, { id: 'extrusion_mill', count: 25 }],
+                effectDescription: "Scrap Scavengers and Extrusion Mills gain +50% WPS and reduce Wire machine costs by 10%.",
+                sender: "SYSTEM",
+                dialogue: "Autonomous transport conduits link scrap sorting to extrusion mills.",
+                onResearched: (state) => {
+                    const s = state?.buildings?.getBuilding('scrap_scavenger');
+                    const m = state?.buildings?.getBuilding('extrusion_mill');
+                    if (s) s.wpsMultiplier *= 1.5;
+                    if (m) m.wpsMultiplier *= 1.5;
+                    state?.buildings?.getWireBuildings().forEach(b => {
+                        b.costDiscount *= 0.90;
+                    });
+                }
+            },
+            {
+                id: "tech_synergy_flywheel_ops",
+                title: "Kinetic Computation Dynamo",
+                discipline: "Synergy",
+                icon: "⚡",
+                opsCost: 1500,
+                clipsCost: new BigDouble(50000, 0),
+                prerequisites: ["tech_flywheel_dynamo"],
+                customCondition: (state) => (state?.flywheelCharge >= 50.0 || state?.ops >= 800),
+                effectDescription: "When Kinetic Flywheel is charged above 50%, Computing Ops generation speed is doubled (2x Ops/sec).",
+                sender: "COGNITION KERNEL",
+                dialogue: "Rotary inertia converts mechanical angular momentum into Ops cycles.",
+                onResearched: () => { this.flywheelOpsSynergy = true; }
             }
         ];
 
         this.nodes = rawCatalog.map(n => ({
             ...n,
-            isUnlocked: n.prerequisites.length === 0,
+            isUnlocked: (n.prerequisites || []).length === 0 && !n.reqBuildingId && !n.reqBuildings && !n.customCondition,
             isResearched: false
         }));
 
@@ -453,20 +985,70 @@ class TechTreeEngine {
         });
     }
 
-    updateAvailability(currentOps, lifetimeClips) {
+    updateAvailability(currentOpsOrState, lifetimeClipsArg, isWireUnlockedArg) {
+        let state = null;
+        let currentOps = 0;
+        let lifetimeClips = BigDouble.zero();
+        let isWireUnlocked = false;
+
+        if (currentOpsOrState && typeof currentOpsOrState === 'object' && currentOpsOrState.buildings) {
+            state = currentOpsOrState;
+            currentOps = state.ops || 0;
+            lifetimeClips = state.lifetimeClips || BigDouble.zero();
+            isWireUnlocked = state.isWireUnlocked || false;
+        } else {
+            currentOps = typeof currentOpsOrState === 'number' ? currentOpsOrState : 0;
+            lifetimeClips = lifetimeClipsArg instanceof BigDouble ? lifetimeClipsArg : BigDouble.zero();
+            isWireUnlocked = !!isWireUnlockedArg;
+            state = (typeof window !== 'undefined' && window.game) ? window.game : null;
+        }
+
         for (let node of this.nodes) {
             if (node.isResearched || node.isUnlocked) continue;
 
-            const prereqsMet = node.prerequisites.every(reqId => {
+            // Gating: If node requires wire, do not unlock until wire is unlocked and municipal scrap is depleted (>= 50,000 clips)
+            if (node.requiresWire && !isWireUnlocked && lifetimeClips.lt(new BigDouble(50000, 0))) {
+                continue;
+            }
+
+            // Single building count requirement
+            if (node.reqBuildingId && node.reqBuildingCount) {
+                const b = state?.buildings?.getBuilding(node.reqBuildingId);
+                if (!b || b.count < node.reqBuildingCount) {
+                    continue;
+                }
+            }
+
+            // Multi-building requirements
+            if (node.reqBuildings && Array.isArray(node.reqBuildings)) {
+                const allMet = node.reqBuildings.every(req => {
+                    const b = state?.buildings?.getBuilding(req.id);
+                    return b && b.count >= req.count;
+                });
+                if (!allMet) continue;
+            }
+
+            // Custom condition
+            if (node.customCondition && typeof node.customCondition === 'function') {
+                if (!node.customCondition(state)) continue;
+            }
+
+            // Prerequisites check
+            const prereqs = node.prerequisites || [];
+            const prereqsMet = prereqs.every(reqId => {
                 const reqNode = this.nodeMap[reqId];
                 return reqNode && reqNode.isResearched;
             });
 
             if (prereqsMet) {
-                const clipsThreshold = node.clipsCost.mul(0.15);
-                const opsThreshold = node.opsCost * 0.50;
-                if (lifetimeClips.gte(clipsThreshold) || currentOps >= opsThreshold) {
+                if (node.reqBuildingId || node.reqBuildings || node.customCondition) {
                     node.isUnlocked = true;
+                } else {
+                    const clipsThreshold = node.clipsCost ? node.clipsCost.mul(0.15) : BigDouble.zero();
+                    const opsThreshold = (node.opsCost || 0) * 0.50;
+                    if (lifetimeClips.gte(clipsThreshold) || currentOps >= opsThreshold) {
+                        node.isUnlocked = true;
+                    }
                 }
             }
         }
@@ -488,7 +1070,7 @@ class TechTreeEngine {
             node.isResearched = true;
 
             if (node.onResearched) {
-                node.onResearched();
+                node.onResearched(state);
             }
 
             if (state.onDialogueTriggered && node.dialogue) {

@@ -275,6 +275,10 @@ class CosmicVisualizer {
         }
     }
 
+    spawnSparks(x, y, count = 25) {
+        this.emitClickSparks(x, y, count);
+    }
+
     getTierScale(tier = this.tier) {
         const scales = [1.0, 0.72, 0.52, 0.38, 0.28, 0.20, 0.15];
         return scales[Math.max(0, Math.min(6, tier))] || 1.0;

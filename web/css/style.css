@@ -200,7 +200,7 @@ body {
 .app-workspace {
     flex: 1;
     display: grid;
-    grid-template-columns: 360px 1fr 360px;
+    grid-template-columns: 360px 1fr 385px;
     height: calc(100vh - 52px);
     overflow: hidden;
     position: relative;
@@ -582,15 +582,15 @@ body {
     transform: translateX(-50%);
     background: linear-gradient(180deg, #2f195c 0%, #15092a 100%);
     border: 4px solid var(--border-ink);
-    border-radius: 24px;
+    border-radius: 26px;
     padding: 22px 28px;
     display: flex;
     align-items: center;
-    gap: 20px;
-    box-shadow: 0 8px 0 var(--border-ink), 0 16px 36px rgba(0, 0, 0, 0.75), 0 0 30px rgba(0, 240, 255, 0.35);
+    gap: 22px;
+    box-shadow: 0 10px 0 var(--border-ink), 0 20px 48px rgba(0, 0, 0, 0.85), 0 0 36px rgba(0, 240, 255, 0.4);
     z-index: 50;
-    max-width: 860px;
-    width: 94%;
+    max-width: 980px;
+    width: 95%;
     animation: popInBounce 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     pointer-events: auto;
 }
@@ -601,56 +601,57 @@ body {
 }
 
 .bubble-avatar {
-    font-size: 46px;
+    font-size: 58px;
     background: #140924;
-    border: 3px solid var(--border-ink);
-    border-radius: 18px;
-    width: 78px;
-    height: 78px;
+    border: 4px solid var(--border-ink);
+    border-radius: 20px;
+    width: 96px;
+    height: 96px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 4px 0 var(--border-ink);
+    box-shadow: 0 5px 0 var(--border-ink);
 }
 
 .bubble-body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     overflow: hidden;
 }
 
 .bubble-sender {
     font-family: var(--font-pixel);
-    font-size: 13px;
+    font-size: 14px;
     color: var(--neon-cyan);
-    letter-spacing: 1px;
-    margin-bottom: 4px;
+    letter-spacing: 1.5px;
+    margin-bottom: 2px;
     text-shadow: 1px 1px 0 var(--border-ink);
+    font-weight: bold;
 }
 
 .bubble-text {
     font-family: var(--font-cartoon);
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 26px;
+    font-weight: 800;
     color: #ffffff;
-    line-height: 1.4;
+    line-height: 1.35;
     text-shadow: 2px 2px 0 var(--border-ink);
 }
 
 .bubble-next-btn {
     background: linear-gradient(180deg, #ffe600 0%, #ff9900 100%);
-    border: 3px solid var(--border-ink);
-    border-radius: 14px;
+    border: 3.5px solid var(--border-ink);
+    border-radius: 16px;
     color: #100620;
     font-family: var(--font-cartoon);
-    font-weight: 800;
-    font-size: 18px;
-    padding: 14px 26px;
+    font-weight: 900;
+    font-size: 20px;
+    padding: 16px 28px;
     cursor: pointer;
-    box-shadow: 0 5px 0 var(--border-ink);
+    box-shadow: 0 6px 0 var(--border-ink);
     transition: all 0.1s ease;
     white-space: nowrap;
     display: flex;
@@ -662,7 +663,7 @@ body {
 .bubble-next-btn:hover {
     transform: translateY(-2px);
     background: linear-gradient(180deg, #fff04d 0%, #ffbe1a 100%);
-    box-shadow: 0 7px 0 var(--border-ink);
+    box-shadow: 0 8px 0 var(--border-ink);
 }
 
 .bubble-next-btn:active {
@@ -674,9 +675,9 @@ body {
     background: transparent;
     border: none;
     color: var(--text-muted);
-    font-size: 24px;
+    font-size: 28px;
     cursor: pointer;
-    padding: 8px;
+    padding: 6px 10px;
     transition: color 0.1s;
     flex-shrink: 0;
 }
@@ -688,8 +689,8 @@ body {
 .dialogue-choices {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 10px;
+    gap: 12px;
+    margin-top: 12px;
 }
 
 .dialogue-choice-btn {
@@ -699,8 +700,8 @@ body {
     color: #ffffff;
     font-family: var(--font-cartoon);
     font-weight: 800;
-    font-size: 14px;
-    padding: 10px 16px;
+    font-size: 16px;
+    padding: 12px 18px;
     cursor: pointer;
     box-shadow: 0 4px 0 var(--border-ink);
     transition: all 0.1s ease;
@@ -742,8 +743,8 @@ body {
     box-shadow: inset 4px 0 12px rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
-    padding: 10px 12px;
-    gap: 8px;
+    padding: 10px 14px;
+    gap: 10px;
     overflow-y: auto;
     z-index: 10;
 }
@@ -755,8 +756,8 @@ body {
     gap: 6px;
     background: #140a28;
     border: 2px solid var(--border-ink);
-    border-radius: 10px;
-    padding: 4px;
+    border-radius: 12px;
+    padding: 5px;
     box-shadow: var(--comic-shadow);
 }
 
@@ -764,7 +765,7 @@ body {
     background: transparent;
     border: 2px solid transparent;
     border-radius: 8px;
-    padding: 7px 6px;
+    padding: 9px 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -772,7 +773,7 @@ body {
     gap: 6px;
     color: var(--text-muted);
     font-family: var(--font-pixel);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
     position: relative;
     transition: all 0.12s ease;
@@ -795,11 +796,12 @@ body {
 }
 
 .tab-icon {
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .tab-label {
     letter-spacing: 0.5px;
+    font-size: 12px;
     text-shadow: 1px 1px 0 var(--border-ink);
 }
 
@@ -811,11 +813,11 @@ body {
     color: var(--border-ink);
     border: 2px solid var(--border-ink);
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     font-family: var(--font-cartoon);
     font-weight: 800;
-    font-size: 11px;
+    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -844,30 +846,30 @@ body {
     justify-content: space-between;
     background: var(--bg-card);
     border: 2px solid var(--border-ink);
-    border-radius: 10px;
-    padding: 8px 10px;
+    border-radius: 12px;
+    padding: 9px 12px;
     box-shadow: var(--comic-shadow);
 }
 
 .mult-label {
     font-family: var(--font-pixel);
-    font-size: 9px;
+    font-size: 11px;
     color: var(--neon-yellow);
 }
 
 .mult-group {
     display: flex;
-    gap: 5px;
+    gap: 6px;
 }
 
 .mult-btn {
     background: #190c33;
     border: 2px solid var(--border-ink);
     color: var(--text-sub);
-    padding: 5px 9px;
-    border-radius: 6px;
+    padding: 6px 11px;
+    border-radius: 7px;
     font-family: var(--font-pixel);
-    font-size: 9px;
+    font-size: 11px;
     font-weight: bold;
     cursor: pointer;
     box-shadow: 0 2px 0 var(--border-ink);
@@ -889,14 +891,14 @@ body {
 .single-upgrade-shelf {
     background: #170b2e;
     border: 2px solid var(--border-ink);
-    border-radius: 12px;
-    padding: 10px;
+    border-radius: 14px;
+    padding: 12px;
     box-shadow: var(--comic-shadow);
 }
 
 .shelf-label {
     font-family: var(--font-pixel);
-    font-size: 9px;
+    font-size: 11px;
     color: var(--neon-cyan);
     margin-bottom: 8px;
     letter-spacing: 0.5px;
@@ -905,27 +907,27 @@ body {
 .next-upgrade-card {
     background: var(--bg-card);
     border: 2px solid var(--border-ink);
-    border-radius: 10px;
-    padding: 10px;
+    border-radius: 12px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     box-shadow: var(--comic-shadow);
 }
 
 .upgrade-top-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .upgrade-icon-box {
-    width: 40px;
-    height: 40px;
+    width: 46px;
+    height: 46px;
     background: #190c33;
     border: 2px solid var(--border-ink);
-    border-radius: 8px;
-    font-size: 22px;
+    border-radius: 10px;
+    font-size: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -940,7 +942,7 @@ body {
 .upgrade-title {
     font-family: var(--font-cartoon);
     font-weight: 800;
-    font-size: 15px;
+    font-size: 17px;
     color: #ffffff;
     white-space: nowrap;
     overflow: hidden;
@@ -949,24 +951,24 @@ body {
 
 .upgrade-discipline {
     font-family: var(--font-pixel);
-    font-size: 8px;
+    font-size: 10px;
     color: var(--neon-pink);
     margin-top: 2px;
 }
 
 .upgrade-effect {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-sub);
-    line-height: 1.3;
+    line-height: 1.35;
 }
 
 .btn-buy-upgrade {
     border: 2px solid var(--border-ink);
-    border-radius: 8px;
-    padding: 8px 10px;
+    border-radius: 10px;
+    padding: 10px 14px;
     font-family: var(--font-cartoon);
     font-weight: 800;
-    font-size: 13px;
+    font-size: 15px;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -995,11 +997,11 @@ body {
 
 .no-upgrades-box {
     text-align: center;
-    padding: 14px;
+    padding: 16px;
     font-family: var(--font-cartoon);
     font-weight: 800;
     color: var(--neon-green);
-    font-size: 14px;
+    font-size: 15px;
 }
 
 /* Buildings Section (Larger text & clear stats) */
@@ -1017,8 +1019,8 @@ body {
     gap: 8px;
     background: rgba(18, 9, 36, 0.6);
     border: 2px solid var(--border-ink);
-    border-radius: 12px;
-    padding: 8px;
+    border-radius: 14px;
+    padding: 9px;
     box-shadow: 0 3px 0 var(--border-ink);
 }
 
@@ -1026,8 +1028,8 @@ body {
     width: 100%;
     background: linear-gradient(180deg, #2b1754 0%, #190c33 100%);
     border: 2px solid var(--border-ink);
-    border-radius: 8px;
-    padding: 8px 10px;
+    border-radius: 10px;
+    padding: 9px 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1050,7 +1052,7 @@ body {
 }
 
 .accordion-chevron {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--neon-yellow);
     transition: transform 0.2s ease;
     display: inline-block;
@@ -1065,19 +1067,19 @@ body {
 }
 
 .accordion-icon {
-    font-size: 16px;
+    font-size: 18px;
 }
 
 .accordion-title {
     font-family: var(--font-pixel);
-    font-size: 10px;
+    font-size: 11px;
     color: var(--neon-yellow);
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
 }
 
 .accordion-rate-pill {
     font-family: var(--font-cartoon);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 800;
     color: var(--neon-green);
     background: #0d061c;
@@ -1093,7 +1095,7 @@ body {
 .store-accordion-content {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .locked-wire-teaser {
@@ -1127,17 +1129,17 @@ body {
 .buildings-container {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .building-card {
     background: #160a2c;
-    border: 2px solid var(--border-ink);
-    border-radius: 12px;
-    padding: 8px 10px;
+    border: 2.5px solid var(--border-ink);
+    border-radius: 14px;
+    padding: 10px 12px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     cursor: pointer;
     box-shadow: var(--comic-shadow);
     transition: all 0.12s ease;
@@ -1190,15 +1192,15 @@ body {
 }
 
 .building-icon {
-    font-size: 26px;
-    width: 36px;
-    height: 36px;
+    font-size: 30px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #110722;
     border: 2px solid var(--border-ink);
-    border-radius: 8px;
+    border-radius: 10px;
     flex-shrink: 0;
 }
 
@@ -1220,7 +1222,7 @@ body {
 .building-name {
     font-family: var(--font-cartoon);
     font-weight: 800;
-    font-size: 14px;
+    font-size: 16px;
     color: #ffffff;
     white-space: nowrap;
     overflow: hidden;
@@ -1229,13 +1231,13 @@ body {
 
 .building-count-badge {
     font-family: var(--font-pixel);
-    font-size: 9px;
+    font-size: 11px;
     font-weight: bold;
     color: var(--neon-cyan);
     background: #0f061e;
     border: 1.5px solid var(--border-ink);
-    border-radius: 6px;
-    padding: 2px 6px;
+    border-radius: 7px;
+    padding: 2px 7px;
     white-space: nowrap;
     flex-shrink: 0;
 }
@@ -1255,11 +1257,11 @@ body {
 .building-price-pill {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     background: #0d041c;
     border: 2px solid #ffe600;
-    border-radius: 6px;
-    padding: 2px 8px;
+    border-radius: 8px;
+    padding: 3px 9px;
     box-shadow: 0 2px 0 var(--border-ink);
 }
 
@@ -1276,12 +1278,12 @@ body {
 }
 
 .price-symbol {
-    font-size: 13px;
+    font-size: 15px;
 }
 
 .building-cost-amount {
     font-family: var(--font-cartoon);
-    font-size: 17px;
+    font-size: 19px;
     font-weight: 900;
     color: #ffe600;
     text-shadow: 1px 1px 0 #000000;
@@ -1299,8 +1301,8 @@ body {
     align-items: center;
     background: rgba(0, 255, 136, 0.12);
     border: 1.5px solid var(--neon-green);
-    border-radius: 6px;
-    padding: 2px 7px;
+    border-radius: 8px;
+    padding: 3px 8px;
 }
 
 .building-card.wire-card .building-rate-pill {
@@ -1315,7 +1317,7 @@ body {
 
 .building-rate-amount {
     font-family: var(--font-cartoon);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 800;
     color: var(--neon-green);
 }
