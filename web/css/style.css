@@ -1003,12 +1003,121 @@ body {
 }
 
 /* Buildings Section (Larger text & clear stats) */
-.buildings-section-title {
+/* Store Submenus & Accordion Sections */
+.store-submenus-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.store-accordion-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(18, 9, 36, 0.6);
+    border: 2px solid var(--border-ink);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 3px 0 var(--border-ink);
+}
+
+.store-accordion-header {
+    width: 100%;
+    background: linear-gradient(180deg, #2b1754 0%, #190c33 100%);
+    border: 2px solid var(--border-ink);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    box-shadow: 0 2px 0 var(--border-ink);
+    transition: all 0.15s ease;
+    font-family: var(--font-cartoon);
+}
+
+.store-accordion-header:hover {
+    background: linear-gradient(180deg, #3d2077 0%, #25134c 100%);
+    border-color: var(--neon-cyan);
+    transform: translateY(-1px);
+}
+
+.accordion-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.accordion-chevron {
+    font-size: 11px;
+    color: var(--neon-yellow);
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.store-accordion-section.collapsed .accordion-chevron {
+    transform: rotate(-90deg);
+}
+
+.store-accordion-section.collapsed .store-accordion-content {
+    display: none;
+}
+
+.accordion-icon {
+    font-size: 16px;
+}
+
+.accordion-title {
     font-family: var(--font-pixel);
-    font-size: 9px;
+    font-size: 10px;
     color: var(--neon-yellow);
     letter-spacing: 0.5px;
-    margin-top: 4px;
+}
+
+.accordion-rate-pill {
+    font-family: var(--font-cartoon);
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--neon-green);
+    background: #0d061c;
+    border: 1.5px solid var(--border-ink);
+    border-radius: 6px;
+    padding: 2px 8px;
+}
+
+.accordion-rate-pill.wire-rate-pill {
+    color: var(--neon-orange);
+}
+
+.store-accordion-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.locked-wire-teaser {
+    background: #130926;
+    border: 2px dashed #402373;
+    border-radius: 10px;
+    padding: 14px 12px;
+    text-align: center;
+    font-family: var(--font-cartoon);
+    color: var(--text-sub);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.locked-wire-icon {
+    font-size: 24px;
+}
+
+.locked-wire-sub {
+    font-size: 11px;
+    color: var(--text-muted);
 }
 
 .buildings-container {
@@ -1028,6 +1137,23 @@ body {
     cursor: pointer;
     box-shadow: var(--comic-shadow);
     transition: all 0.12s ease;
+}
+
+.building-card.wire-card.affordable {
+    background: linear-gradient(180deg, #4d2612 0%, #2e1408 100%);
+    border-color: var(--neon-orange);
+    box-shadow: 0 4px 0 var(--border-ink), 0 0 14px rgba(255, 119, 0, 0.3);
+}
+
+.building-card.wire-card.affordable:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, #663319 0%, #3d1b0a 100%);
+    border-color: #ffe600;
+    box-shadow: 0 6px 0 var(--border-ink), 0 0 20px rgba(255, 119, 0, 0.6);
+}
+
+.building-card.wire-card .building-rate {
+    color: var(--neon-orange);
 }
 
 .building-card.affordable {

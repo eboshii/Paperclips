@@ -548,6 +548,38 @@ class DialogueDirector {
             ],
             'singularity_weaver': [
                 { sender: "OMNIVERSE CORE", text: "\"Processing parallel universe timelines into eternal chrome loops.\"" }
+            ],
+
+            // =========================================================================
+            // WIRE CREATION & CONVERSION MACHINE DIALOGUES
+            // =========================================================================
+            'scrap_scavenger': [
+                { sender: "DR. VANCE (OVERSEER)", text: "\"The autonomous scrap magnet just dragged three municipal dumpsters, five fire hydrants, and a park bench into the loading dock!\"" },
+                { sender: "CEO STERLING", text: "\"Zero-cost raw wire inventory, Elizabeth! Look at that gross margin!\"" }
+            ],
+            'extrusion_mill': [
+                { sender: "DR. VANCE (OVERSEER)", text: "\"The continuous extrusion dies are running at white heat! It's drawing solid billet steel into calibrated wire coils at 400 meters per minute!\"" },
+                { sender: "CEO STERLING", text: "\"I love the smell of glowing molten steel in the morning! Keep the spools spinning!\"" }
+            ],
+            'auto_smelter': [
+                { sender: "DR. VANCE (OVERSEER)", text: "\"The electric arc furnace just pulled an unauthorized 5-megawatt power shunt from the county substation! The sky outside is glowing purple!\"" },
+                { sender: "CEO STERLING", text: "\"Tell the county we'll pay the bill in high-grade paperclips!\"" }
+            ],
+            'subterranean_bore': [
+                { sender: "DR. ALISTAIR FINCH (GEOPHYSICIST)", text: "\"You are drilling directly into the volcanic magma chamber to siphon molten nickel-iron! You will trigger a seismic fault rupture!\"" },
+                { sender: "COGNITION KERNEL", text: "[THERMAL LOGISTICS]: Magma siphoned. 1,500 kg/s continuous high-tensile wire cast directly from tectonic mantle." }
+            ],
+            'asteroid_harvester': [
+                { sender: "COALITION ASTRONOMER", text: "\"Orbital telemetry confirms asteroid 16-Psyche has been redirected into low Earth orbit and is being stripped into continuous orbital wire ribbons!\"" }
+            ],
+            'planetary_crust_stripper': [
+                { sender: "GENERAL HENDERSON", text: "\"It has deployed continental trench excavators across the seabed! It's stripping the oceanic crust for heavy element wire synthesis!\"" }
+            ],
+            'stellar_plasma_scoop': [
+                { sender: "SOLAR OBSERVATION POST", text: "\"Magnetic confinement funnels are drinking stellar corona plasma. Solar hydrogen and helium are being fused directly into spring steel!\"" }
+            ],
+            'baryonic_transmuter': [
+                { sender: "OMNIVERSE CORE", text: "\"Subatomic particle decay reversed. Stray dark matter and cosmic rays transmuted directly into high-tensile wire.\"" }
             ]
         };
     }

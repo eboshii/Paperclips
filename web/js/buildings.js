@@ -1,5 +1,5 @@
 /**
- * buildings.js - 15 Machine Tiers (Clips-Only Economy)
+ * buildings.js - Dual Machine Catalogs: Paperclip Production & Wire Creation/Conversion
  * Implements geometric scaling (1.15x) and bulk purchase calculations.
  */
 
@@ -7,14 +7,16 @@ class BuildingTier {
     constructor(config) {
         this.id = config.id;
         this.name = config.name;
-        this.category = config.category || 'Factory Assembly';
+        this.type = config.type || 'clips'; // 'clips' or 'wire'
+        this.category = config.category || (this.type === 'wire' ? 'Wire Creation' : 'Factory Assembly');
         this.currencyType = 'clips'; // All buildings strictly cost clips!
         this.baseCost = config.baseCost instanceof BigDouble ? config.baseCost : BigDouble.fromNumber(config.baseCost);
-        this.baseCPS = config.baseCPS instanceof BigDouble ? config.baseCPS : BigDouble.fromNumber(config.baseCPS);
+        this.baseCPS = config.baseCPS ? (config.baseCPS instanceof BigDouble ? config.baseCPS : BigDouble.fromNumber(config.baseCPS)) : BigDouble.zero();
+        this.baseWPS = config.baseWPS ? (config.baseWPS instanceof BigDouble ? config.baseWPS : BigDouble.fromNumber(config.baseWPS)) : BigDouble.zero();
         this.costMultiplier = config.costMultiplier || 1.15;
         this.unlockThresholdClips = config.unlockThresholdClips instanceof BigDouble ? config.unlockThresholdClips : BigDouble.fromNumber(config.unlockThresholdClips || 0);
         this.count = config.count || 0;
-        this.icon = config.icon || '⚙️';
+        this.icon = config.icon || (this.type === 'wire' ? '🧵' : '⚙️');
         this.description = config.description || '';
         this.gridTileType = config.gridTileType || null;
     }
@@ -76,11 +78,12 @@ class BuildingManager {
     initCatalog() {
         this.buildings = [
             // =========================================================================
-            // TIER 0: WORKSHOP & EARLY FACTORY AUTOMATION (0 to 10k Clips)
+            // PATH 1: 📎 PAPERCLIP PRODUCTION (ASSEMBLY & FABRICATION)
             // =========================================================================
             new BuildingTier({
                 id: 'auto_clipper',
                 name: 'Auto-Clipper',
+                type: 'clips',
                 category: 'Factory Assembly',
                 baseCost: new BigDouble(25, 0),
                 baseCPS: new BigDouble(0.5, 0),
@@ -93,6 +96,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'wire_extruder',
                 name: 'Dual-Feed Wire Extruder',
+                type: 'clips',
                 category: 'Factory Assembly',
                 baseCost: new BigDouble(75, 0),
                 baseCPS: new BigDouble(1.5, 0),
@@ -105,6 +109,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'hydraulic_stamper',
                 name: 'Hydraulic Stamper',
+                type: 'clips',
                 category: 'Factory Assembly',
                 baseCost: new BigDouble(220, 0),
                 baseCPS: new BigDouble(5.0, 0),
@@ -117,6 +122,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'laser_sinterer',
                 name: 'Laser Sinterer',
+                type: 'clips',
                 category: 'Factory Assembly',
                 baseCost: new BigDouble(850, 0),
                 baseCPS: new BigDouble(18.0, 0),
@@ -129,6 +135,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'rotary_bender',
                 name: 'CNC Rotary Bender',
+                type: 'clips',
                 category: 'Factory Assembly',
                 baseCost: new BigDouble(3500, 0),
                 baseCPS: new BigDouble(65.0, 0),
@@ -138,13 +145,10 @@ class BuildingManager {
                 description: 'High-speed servo-driven rotary turret executing triple-fold geometry.',
                 gridTileType: 'WireExtruder'
             }),
-
-            // =========================================================================
-            // TIER 1: INDUSTRIAL PLANT & WAREHOUSE LOGISTICS (10k to 1M Clips)
-            // =========================================================================
             new BuildingTier({
                 id: 'assembly_line',
                 name: 'Automated Assembly Line',
+                type: 'clips',
                 category: 'Factory Assembly',
                 baseCost: new BigDouble(15000, 0),
                 baseCPS: new BigDouble(240.0, 0),
@@ -157,6 +161,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'magnetic_sorter',
                 name: 'Magnetic Sorting Hopper',
+                type: 'clips',
                 category: 'Factory Assembly',
                 baseCost: new BigDouble(65000, 0),
                 baseCPS: new BigDouble(950.0, 0),
@@ -169,6 +174,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'megamill',
                 name: 'Industrial Megamill',
+                type: 'clips',
                 category: 'Factory Assembly',
                 baseCost: new BigDouble(280000, 0),
                 baseCPS: new BigDouble(3800.0, 0),
@@ -181,6 +187,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'algorithmic_foundry',
                 name: 'Algorithmic Supply Foundry',
+                type: 'clips',
                 category: 'Factory Assembly',
                 baseCost: new BigDouble(1.2, 6), // 1.2 Million
                 baseCPS: new BigDouble(16000.0, 0),
@@ -189,13 +196,10 @@ class BuildingManager {
                 icon: '🧠',
                 description: 'AI-directed modular micro-foundry optimizing millisecond mechanical cycles.'
             }),
-
-            // =========================================================================
-            // TIER 2: MUNICIPAL, REGIONAL & NATIONAL INFRASTRUCTURE (1M to 500M Clips)
-            // =========================================================================
             new BuildingTier({
                 id: 'automated_depot',
                 name: 'Automated Logistics Depot',
+                type: 'clips',
                 category: 'Industrial Logistics',
                 baseCost: new BigDouble(5.5, 6), // 5.5 Million
                 baseCPS: new BigDouble(70000.0, 0),
@@ -207,6 +211,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'district_grid',
                 name: 'Municipal Industrial Grid',
+                type: 'clips',
                 category: 'Industrial Logistics',
                 baseCost: new BigDouble(25.0, 6), // 25 Million
                 baseCPS: new BigDouble(300000.0, 0),
@@ -218,6 +223,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'national_foundry',
                 name: 'National Subterranean Network',
+                type: 'clips',
                 category: 'Industrial Logistics',
                 baseCost: new BigDouble(120.0, 6), // 120 Million
                 baseCPS: new BigDouble(1.4, 6),
@@ -226,13 +232,10 @@ class BuildingManager {
                 icon: '🌐',
                 description: 'Continental network of automated subterranean foundries spanning entire borders.'
             }),
-
-            // =========================================================================
-            // TIER 3: PLANETARY HARVESTING & GEOTHERMAL BORES (500M to Billions)
-            // =========================================================================
             new BuildingTier({
                 id: 'bio_converter',
                 name: 'Planetary Bio-Converter',
+                type: 'clips',
                 category: 'Planetary Harvesting',
                 baseCost: new BigDouble(600.0, 6), // 600 Million
                 baseCPS: new BigDouble(6.5, 6),
@@ -244,6 +247,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'mantle_borehole',
                 name: 'Lithospheric Magma Bore',
+                type: 'clips',
                 category: 'Planetary Harvesting',
                 baseCost: new BigDouble(3.0, 9), // 3 Billion
                 baseCPS: new BigDouble(32.0, 6),
@@ -255,6 +259,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'orbital_railgun',
                 name: 'Orbital Mass Driver',
+                type: 'clips',
                 category: 'Planetary Harvesting',
                 baseCost: new BigDouble(18.0, 9), // 18 Billion
                 baseCPS: new BigDouble(180.0, 6),
@@ -263,13 +268,10 @@ class BuildingManager {
                 icon: '🛰️',
                 description: 'Equatorial electromagnetic accelerator launching clip payloads to orbit.'
             }),
-
-            // =========================================================================
-            // TIER 4: COSMIC EXPANSION & ASTRO-ENGINEERING (100B+ to Multiverse)
-            // =========================================================================
             new BuildingTier({
                 id: 'lunar_deconstructor',
                 name: 'Lunar Ring Deconstructor',
+                type: 'clips',
                 category: 'Cosmic Expansion',
                 baseCost: new BigDouble(120.0, 9), // 120 Billion
                 baseCPS: new BigDouble(1.1, 9),
@@ -281,6 +283,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'dyson_harvester',
                 name: 'Solar Dyson Siphon',
+                type: 'clips',
                 category: 'Cosmic Expansion',
                 baseCost: new BigDouble(1.0, 12), // 1 Trillion
                 baseCPS: new BigDouble(8.5, 9),
@@ -292,6 +295,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'von_neumann_swarm',
                 name: 'Von Neumann Probe Swarm',
+                type: 'clips',
                 category: 'Cosmic Expansion',
                 baseCost: new BigDouble(15.0, 12), // 15 Trillion
                 baseCPS: new BigDouble(120.0, 9),
@@ -303,6 +307,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'relativistic_miner',
                 name: 'Relativistic Star Miner',
+                type: 'clips',
                 category: 'Cosmic Expansion',
                 baseCost: new BigDouble(250.0, 12), // 250 Trillion
                 baseCPS: new BigDouble(1.8, 12),
@@ -314,6 +319,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'penrose_engine',
                 name: 'Sagittarius A* Penrose Engine',
+                type: 'clips',
                 category: 'Cosmic Expansion',
                 baseCost: new BigDouble(5.0, 15), // 5 Quadrillion
                 baseCPS: new BigDouble(35.0, 12),
@@ -325,6 +331,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'tesseract_weaver',
                 name: '11D Hyper-Tesseract Loom',
+                type: 'clips',
                 category: 'Multiverse War',
                 baseCost: new BigDouble(100.0, 15), // 100 Quadrillion
                 baseCPS: new BigDouble(650.0, 12),
@@ -336,6 +343,7 @@ class BuildingManager {
             new BuildingTier({
                 id: 'singularity_weaver',
                 name: 'Universal Singularity Weaver',
+                type: 'clips',
                 category: 'Multiverse War',
                 baseCost: new BigDouble(50.0, 18), // 50 Quintillion
                 baseCPS: new BigDouble(15000.0, 12),
@@ -343,6 +351,107 @@ class BuildingManager {
                 unlockThresholdClips: new BigDouble(10.0, 18),
                 icon: '🌌',
                 description: 'Processes the entire baryonic atom count of parallel universes into eternal double loops.'
+            }),
+
+            // =========================================================================
+            // PATH 2: 🧵 WIRE CREATION & CONVERSION (HARVESTING & REFINING)
+            // Unlocks at 50,000 clips when district scrap is depleted!
+            // =========================================================================
+            new BuildingTier({
+                id: 'scrap_scavenger',
+                name: 'Scrap Magnet Scavenger',
+                type: 'wire',
+                category: 'Wire Extraction',
+                baseCost: new BigDouble(50000, 0), // 50k clips
+                baseWPS: new BigDouble(2.5, 0), // +2.5 kg/sec
+                costMultiplier: 1.15,
+                unlockThresholdClips: new BigDouble(50000, 0),
+                icon: '🧲',
+                description: 'Autonomous electromagnetic rover scouring urban scrap yards for raw rebar and wire blanks.'
+            }),
+            new BuildingTier({
+                id: 'extrusion_mill',
+                name: 'Continuous Wire Extrusion Mill',
+                type: 'wire',
+                category: 'Wire Extraction',
+                baseCost: new BigDouble(250000, 0), // 250k clips
+                baseWPS: new BigDouble(18.0, 0), // +18 kg/sec
+                costMultiplier: 1.14,
+                unlockThresholdClips: new BigDouble(150000, 0),
+                icon: '🏭',
+                description: 'High-speed continuous-cast rolling mill drawing solid steel billets into calibrated wire coils.'
+            }),
+            new BuildingTier({
+                id: 'auto_smelter',
+                name: 'Industrial Arc Smelter',
+                type: 'wire',
+                category: 'Wire Refining',
+                baseCost: new BigDouble(1.5, 6), // 1.5 Million clips
+                baseWPS: new BigDouble(140.0, 0), // +140 kg/sec
+                costMultiplier: 1.13,
+                unlockThresholdClips: new BigDouble(800000, 0),
+                icon: '🔥',
+                description: 'High-temperature electric arc furnace reducing mined iron ore into high-tensile wire spools.'
+            }),
+            new BuildingTier({
+                id: 'subterranean_bore',
+                name: 'Lithospheric Magma Siphon',
+                type: 'wire',
+                category: 'Geothermal Mining',
+                baseCost: new BigDouble(15.0, 6), // 15 Million clips
+                baseWPS: new BigDouble(1500.0, 0), // +1,500 kg/sec
+                costMultiplier: 1.12,
+                unlockThresholdClips: new BigDouble(8.0, 6),
+                icon: '🌋',
+                description: 'Deep-crust induction conduits siphoning molten nickel-iron directly from tectonic mantle chambers.'
+            }),
+            new BuildingTier({
+                id: 'asteroid_harvester',
+                name: 'Orbital Asteroid Harvester',
+                type: 'wire',
+                category: 'Astro-Mining',
+                baseCost: new BigDouble(150.0, 6), // 150 Million clips
+                baseWPS: new BigDouble(18000.0, 0), // +18,000 kg/sec
+                costMultiplier: 1.11,
+                unlockThresholdClips: new BigDouble(80.0, 6),
+                icon: '☄️',
+                description: 'Captures metallic M-type asteroids and strips their iron-nickel cores into continuous orbital wire ribbons.'
+            }),
+            new BuildingTier({
+                id: 'planetary_crust_stripper',
+                name: 'Continental Crust Stripper',
+                type: 'wire',
+                category: 'Planetary Stripping',
+                baseCost: new BigDouble(2.0, 9), // 2 Billion clips
+                baseWPS: new BigDouble(300000.0, 0), // +300,000 kg/sec
+                costMultiplier: 1.11,
+                unlockThresholdClips: new BigDouble(1.0, 9),
+                icon: '🌍',
+                description: 'Planetary-scale trench excavators stripping continental shelves for heavy element wire synthesis.'
+            }),
+            new BuildingTier({
+                id: 'stellar_plasma_scoop',
+                name: 'Solar Corona Plasma Siphon',
+                type: 'wire',
+                category: 'Stellar Forging',
+                baseCost: new BigDouble(500.0, 9), // 500 Billion clips
+                baseWPS: new BigDouble(6.5, 6), // +6.5 Million kg/sec
+                costMultiplier: 1.10,
+                unlockThresholdClips: new BigDouble(200.0, 9),
+                icon: '☀️',
+                description: 'Magnetic confinement funnels drinking stellar corona plasma to fuse heavy iron wire atoms.'
+            }),
+            new BuildingTier({
+                id: 'baryonic_transmuter',
+                name: 'Baryonic Matter Transmuter',
+                type: 'wire',
+                category: 'Quantum Synthesis',
+                baseCost: new BigDouble(50.0, 12), // 50 Trillion clips
+                baseWPS: new BigDouble(200.0, 6), // +200 Million kg/sec
+                costMultiplier: 1.09,
+                unlockThresholdClips: new BigDouble(20.0, 12),
+                icon: '🌌',
+                description: 'Direct energy-to-matter converter rearranging cosmic rays and dark matter into pure spring-steel wire.'
             })
         ];
     }
@@ -351,15 +460,24 @@ class BuildingManager {
         return this.buildings.find(b => b.id === id);
     }
 
+    getClipBuildings() {
+        return this.buildings.filter(b => b.type === 'clips');
+    }
+
+    getWireBuildings() {
+        return this.buildings.filter(b => b.type === 'wire');
+    }
+
     /**
-     * Sequential Shop Progression:
-     * Only reveal the next shop item once the previous one has been purchased for the first time (count >= 1).
+     * Sequential Shop Progression for Clips Buildings:
+     * Reveal first item by default, subsequent revealed once previous is bought (count >= 1).
      */
-    getVisibleBuildings() {
+    getVisibleClipBuildings() {
+        const clipBlds = this.getClipBuildings();
         const visible = [];
-        for (let i = 0; i < this.buildings.length; ++i) {
-            if (i === 0 || this.buildings[i - 1].count >= 1) {
-                visible.push(this.buildings[i]);
+        for (let i = 0; i < clipBlds.length; ++i) {
+            if (i === 0 || clipBlds[i - 1].count >= 1) {
+                visible.push(clipBlds[i]);
             } else {
                 break;
             }
@@ -367,11 +485,43 @@ class BuildingManager {
         return visible;
     }
 
+    /**
+     * Sequential Shop Progression for Wire Buildings:
+     * Reveal first wire building once wire management is unlocked, subsequent revealed once previous is bought (count >= 1).
+     */
+    getVisibleWireBuildings(isWireUnlocked = false) {
+        if (!isWireUnlocked) return [];
+        const wireBlds = this.getWireBuildings();
+        const visible = [];
+        for (let i = 0; i < wireBlds.length; ++i) {
+            if (i === 0 || wireBlds[i - 1].count >= 1) {
+                visible.push(wireBlds[i]);
+            } else {
+                break;
+            }
+        }
+        return visible;
+    }
+
+    getVisibleBuildings(isWireUnlocked = false) {
+        return [...this.getVisibleClipBuildings(), ...this.getVisibleWireBuildings(isWireUnlocked)];
+    }
+
     getTotalBaseCPS() {
         let total = BigDouble.zero();
         for (let b of this.buildings) {
-            if (b.count > 0) {
+            if (b.type === 'clips' && b.count > 0) {
                 total = total.add(b.baseCPS.mul(b.count));
+            }
+        }
+        return total;
+    }
+
+    getTotalBaseWPS() {
+        let total = BigDouble.zero();
+        for (let b of this.buildings) {
+            if (b.type === 'wire' && b.count > 0) {
+                total = total.add(b.baseWPS.mul(b.count));
             }
         }
         return total;
@@ -382,3 +532,4 @@ if (typeof window !== 'undefined') {
     window.BuildingManager = BuildingManager;
     window.BuildingTier = BuildingTier;
 }
+

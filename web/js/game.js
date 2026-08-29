@@ -115,6 +115,23 @@ class GameEngine {
             buyWireBtn.addEventListener('click', () => this.buyWire());
         }
 
+        // Store Submenu Accordion Toggles
+        const clipToggleBtn = document.getElementById('btn-toggle-clip-menu');
+        const clipSection = document.getElementById('section-clip-buildings');
+        if (clipToggleBtn && clipSection) {
+            clipToggleBtn.addEventListener('click', () => {
+                clipSection.classList.toggle('collapsed');
+            });
+        }
+
+        const wireToggleBtn = document.getElementById('btn-toggle-wire-menu');
+        const wireSection = document.getElementById('section-wire-buildings');
+        if (wireToggleBtn && wireSection) {
+            wireToggleBtn.addEventListener('click', () => {
+                wireSection.classList.toggle('collapsed');
+            });
+        }
+
         // Right Panel Tabs (Store & Tech)
         const tabStore = document.getElementById('tab-btn-store');
         if (tabStore) {
@@ -465,6 +482,13 @@ class GameEngine {
         return baseCPS.mul(synergies.totalMultiplier * techMult * prestigeMult * flywheelBoost);
     }
 
+    calculateTotalWPS() {
+        if (!this.isWireUnlocked) return BigDouble.zero();
+        const baseWPS = this.buildings.getTotalBaseWPS();
+        const prestigeMult = this.prestige.getGlobalPrestigeMultiplier();
+        return baseWPS.mul(prestigeMult);
+    }
+
     gameLoop(timestamp) {
         try {
             const dt = Math.min(0.1, (timestamp - this.lastTickTime) / 1000.0);
@@ -474,6 +498,7 @@ class GameEngine {
             if (!this.isWireUnlocked && this.lifetimeClips.gte(new BigDouble(50000, 0))) {
                 this.isWireUnlocked = true;
                 this.dialogue.addLog("DR. VANCE", "Arthur, we've exhausted all local scrap metal in the district! We need to start ordering and managing industrial high-tensile wire supply!");
+                this.renderStore();
                 this.renderResources();
             }
 
@@ -491,7 +516,16 @@ class GameEngine {
                 this.flywheelCharge = Math.max(0, this.flywheelCharge - this.flywheelDecayRate * dt);
             }
 
-            // 3. Automated Economic Simulation (Whole Integer Paperclips)
+            // 3. Passive Wire Creation & Conversion Simulation
+            if (this.isWireUnlocked) {
+                const currentWPS = this.calculateTotalWPS();
+                if (currentWPS.gt(BigDouble.zero())) {
+                    const wireProduced = currentWPS.mul(dt);
+                    this.wire = this.wire.add(wireProduced);
+                }
+            }
+
+            // 4. Automated Economic Simulation (Whole Integer Paperclips)
             const currentCPS = this.calculateTotalCPS();
             if (currentCPS.gt(BigDouble.zero())) {
                 const clipsProduced = currentCPS.mul(dt);
@@ -553,14 +587,14 @@ class GameEngine {
                 }
             }
 
-            // 4. Auto-Supply Logistics (if unlocked and wire active)
+            // 5. Auto-Supply Logistics (if unlocked and wire active)
             if (this.isWireUnlocked && this.techTree.smartWireLogisticsUnlocked && this.techTree.smartWireActive) {
                 if (this.wire.lt(new BigDouble(500, 0)) && this.clips.gte(new BigDouble(250, 0))) {
                     this.buyWire();
                 }
             }
 
-            // 5. Passive Computing Ops Generation
+            // 6. Passive Computing Ops Generation
             const stamperCount = this.buildings.getBuilding('hydraulic_stamper')?.count || 0;
             const opsRate = (0.8 + (stamperCount * 0.4)) * this.prestige.getOpsBoostMultiplier();
             this.ops = Math.min(this.maxOps, this.ops + (opsRate * dt));
@@ -628,7 +662,12 @@ class GameEngine {
             wireRow.style.display = this.isWireUnlocked ? 'flex' : 'none';
         }
         if (wireEl && this.isWireUnlocked) {
-            wireEl.textContent = `${this.wire.toShortScale(1)} kg`;
+            const currentWPS = this.calculateTotalWPS();
+            if (currentWPS.gt(BigDouble.zero())) {
+                wireEl.textContent = `${this.wire.toShortScale(1)} kg (+${currentWPS.toShortScale(1)}/s)`;
+            } else {
+                wireEl.textContent = `${this.wire.toShortScale(1)} kg`;
+            }
         }
 
         // Ops amount
@@ -666,7 +705,7 @@ class GameEngine {
         const techBadge = document.getElementById('tech-badge-count');
         if (techBadge) techBadge.style.display = canAffordTech ? 'flex' : 'none';
 
-        const canAffordBuilding = this.buildings.getVisibleBuildings().some(b => {
+        const canAffordBuilding = this.buildings.getVisibleBuildings(this.isWireUnlocked).some(b => {
             const p = b.getCost(this.buyMultiplier, this.clips);
             return this.clips.gte(p.totalCost);
         });
@@ -682,68 +721,175 @@ class GameEngine {
     }
 
     renderStore() {
-        const container = document.getElementById('buildings-container');
-        if (!container) return;
+        const clipContainer = document.getElementById('clip-buildings-container');
+        const wireContainer = document.getElementById('wire-buildings-container');
+        const clipRatePill = document.getElementById('clip-total-rate-pill');
+        const wireRatePill = document.getElementById('wire-total-rate-pill');
 
-        // Render Building Cards (Only sequential unlocked items: previous must be bought at least once)
-        const visibleBuildings = this.buildings.getVisibleBuildings();
-        container.innerHTML = visibleBuildings.map(b => {
-            const purchase = b.getCost(this.buyMultiplier, this.clips);
-            const canAfford = this.clips.gte(purchase.totalCost);
-            const costFormatted = `${purchase.totalCost.toWholeScale()}`;
-            const rateFormatted = `+${b.baseCPS.toShortScale(1)} CPS`;
+        const currentCPS = this.calculateTotalCPS();
+        const currentWPS = this.calculateTotalWPS();
 
-            return `
-                <div class="building-card ${canAfford ? 'affordable' : 'locked'}" onclick="game.buyBuilding('${b.id}')">
-                    <div class="building-icon">${b.icon}</div>
-                    <div class="building-details">
-                        <div class="building-header-row">
-                            <span class="building-name">${b.name}</span>
-                            <span class="building-rate">${rateFormatted}</span>
+        if (clipRatePill) {
+            clipRatePill.textContent = currentCPS.gt(BigDouble.zero()) ? `+${currentCPS.toShortScale(1)} CPS` : '+0 CPS';
+        }
+
+        if (wireRatePill) {
+            if (!this.isWireUnlocked) {
+                wireRatePill.textContent = 'LOCKED';
+            } else {
+                wireRatePill.textContent = currentWPS.gt(BigDouble.zero()) ? `+${currentWPS.toShortScale(1)} kg/s` : '+0 kg/s';
+            }
+        }
+
+        // 1. Render Clip Production Buildings
+        if (clipContainer) {
+            const visibleClips = this.buildings.getVisibleClipBuildings();
+            clipContainer.innerHTML = visibleClips.map(b => {
+                const purchase = b.getCost(this.buyMultiplier, this.clips);
+                const canAfford = this.clips.gte(purchase.totalCost);
+                const costFormatted = `${purchase.totalCost.toWholeScale()}`;
+                const rateFormatted = `+${b.baseCPS.toShortScale(1)} CPS`;
+
+                return `
+                    <div class="building-card ${canAfford ? 'affordable' : 'locked'}" data-id="${b.id}" onclick="game.buyBuilding('${b.id}')">
+                        <div class="building-icon">${b.icon}</div>
+                        <div class="building-details">
+                            <div class="building-header-row">
+                                <span class="building-name">${b.name}</span>
+                                <span class="building-rate">${rateFormatted}</span>
+                            </div>
+                            <div class="building-cost-pill">
+                                <span class="building-cost-amount">📎 ${costFormatted}</span>
+                            </div>
                         </div>
-                        <div class="building-cost-pill">
-                            <span class="building-cost-amount">📎 ${costFormatted}</span>
-                        </div>
+                        <div class="building-count">${b.count}</div>
                     </div>
-                    <div class="building-count">${b.count}</div>
-                </div>
-            `;
-        }).join('');
+                `;
+            }).join('');
+        }
+
+        // 2. Render Wire Creation & Conversion Buildings
+        if (wireContainer) {
+            if (!this.isWireUnlocked) {
+                wireContainer.innerHTML = `
+                    <div class="locked-wire-teaser">
+                        <span class="locked-wire-icon">🔒</span>
+                        <span>Wire Conversion & Harvesting Locked</span>
+                        <span class="locked-wire-sub">Unlocks at 50,000 Clips when municipal scrap is exhausted</span>
+                    </div>
+                `;
+            } else {
+                const visibleWire = this.buildings.getVisibleWireBuildings(true);
+                wireContainer.innerHTML = visibleWire.map(b => {
+                    const purchase = b.getCost(this.buyMultiplier, this.clips);
+                    const canAfford = this.clips.gte(purchase.totalCost);
+                    const costFormatted = `${purchase.totalCost.toWholeScale()}`;
+                    const rateFormatted = `+${b.baseWPS.toShortScale(1)} kg/s`;
+
+                    return `
+                        <div class="building-card wire-card ${canAfford ? 'affordable' : 'locked'}" data-id="${b.id}" onclick="game.buyBuilding('${b.id}')">
+                            <div class="building-icon">${b.icon}</div>
+                            <div class="building-details">
+                                <div class="building-header-row">
+                                    <span class="building-name">${b.name}</span>
+                                    <span class="building-rate">${rateFormatted}</span>
+                                </div>
+                                <div class="building-cost-pill">
+                                    <span class="building-cost-amount">📎 ${costFormatted}</span>
+                                </div>
+                            </div>
+                            <div class="building-count">${b.count}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
     }
 
     updateStoreRealtime() {
-        const container = document.getElementById('buildings-container');
-        if (!container) return;
+        const clipContainer = document.getElementById('clip-buildings-container');
+        const wireContainer = document.getElementById('wire-buildings-container');
+        const clipRatePill = document.getElementById('clip-total-rate-pill');
+        const wireRatePill = document.getElementById('wire-total-rate-pill');
 
-        const visibleBuildings = this.buildings.getVisibleBuildings();
-        if (container.children.length !== visibleBuildings.length) {
-            this.renderStore();
-            return;
+        const currentCPS = this.calculateTotalCPS();
+        const currentWPS = this.calculateTotalWPS();
+
+        if (clipRatePill) {
+            clipRatePill.textContent = currentCPS.gt(BigDouble.zero()) ? `+${currentCPS.toShortScale(1)} CPS` : '+0 CPS';
         }
 
-        visibleBuildings.forEach((b, idx) => {
-            const card = container.children[idx];
-            if (!card) return;
+        if (wireRatePill) {
+            if (!this.isWireUnlocked) {
+                wireRatePill.textContent = 'LOCKED';
+            } else {
+                wireRatePill.textContent = currentWPS.gt(BigDouble.zero()) ? `+${currentWPS.toShortScale(1)} kg/s` : '+0 kg/s';
+            }
+        }
 
-            const purchase = b.getCost(this.buyMultiplier, this.clips);
-            const canAfford = this.clips.gte(purchase.totalCost);
-
-            if (card.classList.contains('affordable') !== canAfford) {
-                card.classList.toggle('affordable', canAfford);
-                card.classList.toggle('locked', !canAfford);
+        // Update Clip Cards
+        if (clipContainer) {
+            const visibleClips = this.buildings.getVisibleClipBuildings();
+            if (clipContainer.children.length !== visibleClips.length) {
+                this.renderStore();
+                return;
             }
 
-            const costAmountEl = card.querySelector('.building-cost-amount');
-            const countEl = card.querySelector('.building-count');
-            if (countEl && countEl.textContent !== String(b.count)) {
-                countEl.textContent = b.count;
+            visibleClips.forEach((b, idx) => {
+                const card = clipContainer.children[idx];
+                if (!card) return;
+
+                const purchase = b.getCost(this.buyMultiplier, this.clips);
+                const canAfford = this.clips.gte(purchase.totalCost);
+
+                if (card.classList.contains('affordable') !== canAfford) {
+                    card.classList.toggle('affordable', canAfford);
+                    card.classList.toggle('locked', !canAfford);
+                }
+
+                const costAmountEl = card.querySelector('.building-cost-amount');
+                const countEl = card.querySelector('.building-count');
+                if (countEl && countEl.textContent !== String(b.count)) {
+                    countEl.textContent = b.count;
+                }
+                if (costAmountEl && (this.buyMultiplier === 'max' || card.dataset.cost !== purchase.totalCost.toWholeScale())) {
+                    card.dataset.cost = purchase.totalCost.toWholeScale();
+                    costAmountEl.textContent = `📎 ${purchase.totalCost.toWholeScale()}`;
+                }
+            });
+        }
+
+        // Update Wire Cards
+        if (wireContainer && this.isWireUnlocked) {
+            const visibleWire = this.buildings.getVisibleWireBuildings(true);
+            if (wireContainer.children.length !== visibleWire.length) {
+                this.renderStore();
+                return;
             }
-            if (costAmountEl && (this.buyMultiplier === 'max' || card.dataset.cost !== purchase.totalCost.toWholeScale())) {
-                card.dataset.cost = purchase.totalCost.toWholeScale();
-                const costFormatted = `${purchase.totalCost.toWholeScale()}`;
-                costAmountEl.textContent = `📎 ${costFormatted}`;
-            }
-        });
+
+            visibleWire.forEach((b, idx) => {
+                const card = wireContainer.children[idx];
+                if (!card || card.classList.contains('locked-wire-teaser')) return;
+
+                const purchase = b.getCost(this.buyMultiplier, this.clips);
+                const canAfford = this.clips.gte(purchase.totalCost);
+
+                if (card.classList.contains('affordable') !== canAfford) {
+                    card.classList.toggle('affordable', canAfford);
+                    card.classList.toggle('locked', !canAfford);
+                }
+
+                const costAmountEl = card.querySelector('.building-cost-amount');
+                const countEl = card.querySelector('.building-count');
+                if (countEl && countEl.textContent !== String(b.count)) {
+                    countEl.textContent = b.count;
+                }
+                if (costAmountEl && (this.buyMultiplier === 'max' || card.dataset.cost !== purchase.totalCost.toWholeScale())) {
+                    card.dataset.cost = purchase.totalCost.toWholeScale();
+                    costAmountEl.textContent = `📎 ${purchase.totalCost.toWholeScale()}`;
+                }
+            });
+        }
     }
 
     updateTechRealtime() {

@@ -195,10 +195,37 @@
                     </div>
                 </div>
 
-                <!-- Buildings / Machines Catalog -->
-                <div class="buildings-section-title">🏭 FACTORY AUTOMATION</div>
-                <div id="buildings-container" class="buildings-container">
-                    <!-- Building cards injected dynamically -->
+                <!-- Expanding Submenus: 1. Paperclip Production, 2. Wire Creation/Conversion -->
+                <div class="store-submenus-wrapper">
+                    <!-- SUBMENU 1: 📎 PAPERCLIP PRODUCTION -->
+                    <div class="store-accordion-section" id="section-clip-buildings">
+                        <button class="store-accordion-header" id="btn-toggle-clip-menu" type="button">
+                            <div class="accordion-header-left">
+                                <span class="accordion-chevron" id="chevron-clip">▼</span>
+                                <span class="accordion-icon">📎</span>
+                                <span class="accordion-title">PAPERCLIP ASSEMBLY</span>
+                            </div>
+                            <span class="accordion-rate-pill" id="clip-total-rate-pill">+0 CPS</span>
+                        </button>
+                        <div class="store-accordion-content" id="clip-buildings-container">
+                            <!-- Clip Building cards injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- SUBMENU 2: 🧵 WIRE CREATION & CONVERSION -->
+                    <div class="store-accordion-section" id="section-wire-buildings">
+                        <button class="store-accordion-header" id="btn-toggle-wire-menu" type="button">
+                            <div class="accordion-header-left">
+                                <span class="accordion-chevron" id="chevron-wire">▼</span>
+                                <span class="accordion-icon">🧵</span>
+                                <span class="accordion-title">WIRE CREATION</span>
+                            </div>
+                            <span class="accordion-rate-pill wire-rate-pill" id="wire-total-rate-pill">+0 kg/s</span>
+                        </button>
+                        <div class="store-accordion-content" id="wire-buildings-container">
+                            <!-- Wire Building cards or locked state injected dynamically -->
+                        </div>
+                    </div>
                 </div>
             </div>
 
