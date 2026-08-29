@@ -1,14 +1,15 @@
 /**
- * visualizer.js - Vectorised Cosmic Art Engine with Pixelisation & Dither Render Filter
+ * visualizer.js - Vectorised Cosmic Art Engine with Neutral Monochrome Backgrounds & Dither Filter
  * Features:
- * - 7 Progressive Vectorised Scene Backgrounds:
- *     0: Factory Interior (Wood rafters, brick walls, large arched multi-pane windows, hanging pendant lights)
- *     1: Factory in Town (Standalone factory, smokestack plumes, water tower, quaint town, hills, telephone poles)
- *     2: Industrial Megacity (Skyscraper skyline, cooling tower steam, monorail, highway traffic, blimp/drones)
- *     3: Planetary Earth & Equatorial Orbital Ring (Continents, wire-grid conversion fissures, orbital railgun)
- *     4: Solar Dyson Swarm & Star Siphon (Radiant solar corona, concentric golden rings, plasma siphon vortex)
- *     5: Galactic Penrose Dynamo (Sagittarius A* black hole, Doppler accretion disk, relativistic violet jets)
- *     6: 11D Multiverse Quantum Foam (Chrome reality, iridescent timeline bubble universes, 4D tesseract)
+ * - 7 Progressive Vectorised Scene Backgrounds with Neutral/Monochrome Palettes for Maximum Foreground Pop:
+ *     0: Factory Interior (Dark slate/brick walls, timber trusses, misty monochrome arched windows, pendant lamps)
+ *     1: Factory in Town (Monochrome dusk skyline, silhouette hills, town houses, standalone factory, smokestacks)
+ *     2: Industrial Megacity (Noir/blueprint skyscraper silhouettes, cooling towers, monorail, highway light trails)
+ *     3: Planetary Earth & Orbital Ring (Deep space void, muted navy/slate globe, glowing cyan cyber-fissures)
+ *     4: Solar Dyson Swarm & Star Siphon (Deep void, amber-charcoal solar corona, concentric golden rings)
+ *     5: Galactic Penrose Dynamo (Sagittarius A* black hole, Doppler accretion swirl, violet relativistic jets)
+ *     6: 11D Multiverse Quantum Foam (Muted translucent bubble universes, central chrome reality, 4D tesseract)
+ * - Hero Paperclip High-Contrast Shadow Halo for Crystal-Clear Visibility Against Windows and Walls
  * - Authentic 8x8 Bayer Matrix Ordered Dithering & Color Quantization Filter Pass
  * - Dynamic fluid paperclip mountain & granular slumping physics synchronized with inventory
  * - Tumbling falling paperclips, sink suction drain physics, and particle sparks
@@ -100,8 +101,8 @@ class CosmicVisualizer {
                 x: Math.random(),
                 y: Math.random() * 0.75,
                 size: Math.random() > 0.8 ? 2 : 1,
-                color: Math.random() > 0.5 ? '#00f0ff' : (Math.random() > 0.5 ? '#ffe600' : '#ff2a85'),
-                twinkleSpeed: 1 + Math.random() * 3,
+                color: Math.random() > 0.5 ? '#8da2b8' : (Math.random() > 0.5 ? '#b0c4de' : '#6b7c96'),
+                twinkleSpeed: 0.8 + Math.random() * 2.2,
                 phase: Math.random() * Math.PI * 2
             });
         }
@@ -215,7 +216,7 @@ class CosmicVisualizer {
                 life: 1.0,
                 decay: 0.03 + Math.random() * 0.04,
                 size: Math.random() > 0.5 ? 2 : 3,
-                color: Math.random() > 0.4 ? '#ffe600' : (Math.random() > 0.5 ? '#00f0ff' : '#ff2a85')
+                color: Math.random() > 0.4 ? '#ffe600' : (Math.random() > 0.5 ? '#00f0ff' : '#ffffff')
             });
         }
     }
@@ -251,20 +252,13 @@ class CosmicVisualizer {
 
     determineAutoTier(lifetimeClips) {
         if (!lifetimeClips) return 0;
-        // Tier 6: Multiverse (1e78+)
-        if (lifetimeClips.gte(new BigDouble(1.0, 78))) return 6;
-        // Tier 5: Galactic Penrose (1e45+)
-        if (lifetimeClips.gte(new BigDouble(1.0, 45))) return 5;
-        // Tier 4: Solar Dyson (1e18+)
-        if (lifetimeClips.gte(new BigDouble(1.0, 18))) return 4;
-        // Tier 3: Planetary Earth (1e9+)
-        if (lifetimeClips.gte(new BigDouble(1.0, 9)))  return 3;
-        // Tier 2: Industrial Megacity (500,000+)
-        if (lifetimeClips.gte(new BigDouble(5.0, 5)))  return 2;
-        // Tier 1: Factory in Town (5,000+)
-        if (lifetimeClips.gte(new BigDouble(5.0, 3)))  return 1;
-        // Tier 0: Factory Interior (0 to 5,000)
-        return 0;
+        if (lifetimeClips.gte(new BigDouble(1.0, 78))) return 6; // Multiverse
+        if (lifetimeClips.gte(new BigDouble(1.0, 45))) return 5; // Galactic Penrose
+        if (lifetimeClips.gte(new BigDouble(1.0, 18))) return 4; // Solar Dyson
+        if (lifetimeClips.gte(new BigDouble(1.0, 9)))  return 3; // Planetary Earth
+        if (lifetimeClips.gte(new BigDouble(5.0, 5)))  return 2; // Industrial Megacity
+        if (lifetimeClips.gte(new BigDouble(5.0, 3)))  return 1; // Factory in Town
+        return 0; // Factory Interior
     }
 
     getTierName(tier) {
@@ -395,7 +389,7 @@ class CosmicVisualizer {
         const displayH = this.canvas.height = this.canvas.clientHeight;
         if (displayW <= 0 || displayH <= 0) return;
 
-        // Internal render resolution (~2.2x pixelation ratio for rich vector detail + crisp pixels)
+        // Internal render resolution (~2.2x pixelation ratio)
         const pixelScale = 2.2;
         const pw = Math.max(160, Math.floor(displayW / pixelScale));
         const ph = Math.max(100, Math.floor(displayH / pixelScale));
@@ -408,7 +402,7 @@ class CosmicVisualizer {
         const pctx = this.pixelCtx;
         pctx.imageSmoothingEnabled = false;
 
-        // 1. Render Progressive Vector Background Scene
+        // 1. Render Progressive Neutral/Monochrome Vector Background Scene
         this.renderSceneVector(pctx, pw, ph, state);
 
         // 2. Render Spilling Fluid Paperclip Mountains & Flowing Terrain
@@ -441,8 +435,8 @@ class CosmicVisualizer {
         const imgData = ctx.getImageData(0, 0, width, height);
         const data = imgData.data;
         const matrix = this.bayer8x8;
-        const spread = 28.0 * this.ditherIntensity; // dither threshold spread
-        const quantLevels = 24.0; // color quantization steps
+        const spread = 24.0 * this.ditherIntensity;
+        const quantLevels = 24.0;
 
         for (let y = 0; y < height; ++y) {
             const matRow = matrix[y & 7];
@@ -503,19 +497,19 @@ class CosmicVisualizer {
     }
 
     // =========================================================================
-    // SCENE 0: FACTORY INTERIOR (Wood & Brick Warehouse, Arched Windows, Hanging Lights)
+    // SCENE 0: FACTORY INTERIOR (Neutral Slate/Charcoal Brick Warehouse & Muted Windows)
     // =========================================================================
     renderFactoryInteriorVector(ctx, w, h, time, state) {
-        // 1. Back Red Brick Wall Background
+        // 1. Neutral Dark Slate/Charcoal Brick Wall Background
         const wallGrad = ctx.createLinearGradient(0, 0, 0, h);
-        wallGrad.addColorStop(0, '#2d1414');
-        wallGrad.addColorStop(0.6, '#3e1b1b');
-        wallGrad.addColorStop(1, '#1f0d0d');
+        wallGrad.addColorStop(0, '#14161a');
+        wallGrad.addColorStop(0.5, '#1e2126');
+        wallGrad.addColorStop(1, '#111316');
         ctx.fillStyle = wallGrad;
         ctx.fillRect(0, 0, w, h);
 
-        // Brick coursing pattern
-        ctx.strokeStyle = 'rgba(20, 8, 8, 0.45)';
+        // Subtle Muted Brick Coursing Pattern
+        ctx.strokeStyle = 'rgba(10, 12, 16, 0.40)';
         ctx.lineWidth = 1;
         const brickH = 7;
         const brickW = 16;
@@ -534,7 +528,7 @@ class CosmicVisualizer {
             }
         }
 
-        // 2. Large Arched Warehouse Windows with Daylight Rays
+        // 2. Large Arched Warehouse Windows (Neutral, Moody Monochrome Glass - Never Blinding!)
         const windowPositions = [w * 0.22, w * 0.50, w * 0.78];
         const winW = w * 0.18;
         const winH = h * 0.48;
@@ -545,7 +539,7 @@ class CosmicVisualizer {
             const right = winX + winW / 2;
             const archR = winW / 2;
 
-            // Window Exterior Sky Gradient
+            // Neutral Muted Foggy/Overcast Window Pane Interior
             ctx.save();
             ctx.beginPath();
             ctx.moveTo(left, winTop + archR);
@@ -555,20 +549,20 @@ class CosmicVisualizer {
             ctx.closePath();
             ctx.clip();
 
-            const skyGrad = ctx.createLinearGradient(0, winTop, 0, winTop + winH);
-            skyGrad.addColorStop(0, '#7eb8e8');
-            skyGrad.addColorStop(0.5, '#cce6ff');
-            skyGrad.addColorStop(1, '#fde8c8');
-            ctx.fillStyle = skyGrad;
+            const winGrad = ctx.createLinearGradient(0, winTop, 0, winTop + winH);
+            winGrad.addColorStop(0, '#2b323c');
+            winGrad.addColorStop(0.5, '#20262e');
+            winGrad.addColorStop(1, '#161a20');
+            ctx.fillStyle = winGrad;
             ctx.fillRect(left - 4, winTop, winW + 8, winH + 4);
 
-            // Distant soft outdoor factory skyline/trees in window
-            ctx.fillStyle = '#6b8ca8';
-            ctx.fillRect(left, winTop + winH - 14, winW, 14);
+            // Subtle dark silhouette of distant factory roof outside
+            ctx.fillStyle = '#14181f';
+            ctx.fillRect(left, winTop + winH - 12, winW, 12);
             ctx.restore();
 
-            // Window Iron Frame & Mullions
-            ctx.strokeStyle = '#181216';
+            // Heavy Iron Window Frame & Mullions (Dark Charcoal)
+            ctx.strokeStyle = '#0a0c0f';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
             ctx.moveTo(left, winTop + archR);
@@ -579,8 +573,8 @@ class CosmicVisualizer {
             ctx.stroke();
 
             // Panes grid (2 vertical mullions, 4 horizontal)
-            ctx.lineWidth = 1.2;
-            ctx.strokeStyle = '#221920';
+            ctx.lineWidth = 1.0;
+            ctx.strokeStyle = '#0e1115';
             const colStep = winW / 3;
             for (let c = 1; c < 3; ++c) {
                 ctx.beginPath();
@@ -596,94 +590,90 @@ class CosmicVisualizer {
                 ctx.stroke();
             }
 
-            // Diagonal Volumetric Sunbeam
+            // Extremely Subtle & Gentle Atmospheric Light Shaft (Does not blow out foreground)
             const beamGrad = ctx.createLinearGradient(winX, winTop + archR, winX + 35, winTop + winH + 45);
-            beamGrad.addColorStop(0, 'rgba(255, 245, 200, 0.22)');
-            beamGrad.addColorStop(1, 'rgba(255, 240, 180, 0.0)');
+            beamGrad.addColorStop(0, 'rgba(180, 200, 225, 0.05)');
+            beamGrad.addColorStop(1, 'rgba(180, 200, 225, 0.0)');
             ctx.fillStyle = beamGrad;
             ctx.beginPath();
             ctx.moveTo(left, winTop + archR);
             ctx.lineTo(right, winTop + archR);
-            ctx.lineTo(right + 45, winTop + winH + 45);
-            ctx.lineTo(left + 25, winTop + winH + 45);
+            ctx.lineTo(right + 35, winTop + winH + 45);
+            ctx.lineTo(left + 20, winTop + winH + 45);
             ctx.closePath();
             ctx.fill();
         });
 
-        // 3. Vaulted Wooden Roof Trusses & Timber Beams
-        ctx.fillStyle = '#23120b';
+        // 3. Vaulted Wooden/Steel Roof Trusses & Structural Columns (Dark Charcoal/Graphite)
+        ctx.fillStyle = '#0f1114';
         // Massive vertical timber support posts
         ctx.fillRect(0, 0, 16, h);
         ctx.fillRect(w - 16, 0, 16, h);
 
-        // Horizontal wooden tie beam across the top
-        ctx.fillStyle = '#2c170d';
-        ctx.fillRect(0, h * 0.08, w, 10);
-        ctx.fillRect(0, h * 0.02, w, 8);
+        // Horizontal structural tie beams
+        ctx.fillStyle = '#16191f';
+        ctx.fillRect(0, h * 0.08, w, 9);
+        ctx.fillRect(0, h * 0.02, w, 7);
 
         // Angled timber rafters & cross-struts
-        ctx.strokeStyle = '#381f12';
-        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#1b1f26';
+        ctx.lineWidth = 3.5;
         ctx.beginPath();
-        // Roof truss triangles
         ctx.moveTo(0, h * 0.08); ctx.lineTo(w * 0.25, 0); ctx.lineTo(w * 0.5, h * 0.08);
         ctx.moveTo(w * 0.5, h * 0.08); ctx.lineTo(w * 0.75, 0); ctx.lineTo(w, h * 0.08);
-        // Strut verticals
         ctx.moveTo(w * 0.25, 0); ctx.lineTo(w * 0.25, h * 0.08);
         ctx.moveTo(w * 0.75, 0); ctx.lineTo(w * 0.75, h * 0.08);
         ctx.stroke();
 
-        // 4. Exposed Industrial Pipes & Conduits
-        // Cyan Coolant Pipe
-        ctx.fillStyle = '#0284c7';
+        // 4. Exposed Industrial Pipes & Wall Conduits (Muted Slate / Gunmetal)
+        // Muted Coolant Pipe
+        ctx.fillStyle = '#1e3848';
         ctx.fillRect(0, h * 0.58, w, 3);
-        ctx.fillStyle = '#38bdf8';
+        ctx.fillStyle = '#2d536b';
         ctx.fillRect(0, h * 0.58, w, 1);
-        // Red Hydraulic / Steam Pipe with Valves
-        ctx.fillStyle = '#991b1b';
-        ctx.fillRect(0, h * 0.64, w, 4);
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(0, h * 0.64, w, 1);
+        // Muted Steam Pipe
+        ctx.fillStyle = '#3a2024';
+        ctx.fillRect(0, h * 0.64, w, 3.5);
 
-        // 5. Hanging Pendant Dome Lamps & Warm Light Cones
+        // 5. Hanging Pendant Dome Lamps & Soft Subtle Light Cones
         const lampPositions = [
-            { x: w * 0.35, y: h * 0.24, cord: h * 0.16 },
-            { x: w * 0.65, y: h * 0.24, cord: h * 0.16 }
+            { x: w * 0.35, y: h * 0.24 },
+            { x: w * 0.65, y: h * 0.24 }
         ];
 
         lampPositions.forEach(lamp => {
             // Cord
-            ctx.strokeStyle = '#0f0a0d';
+            ctx.strokeStyle = '#08090c';
             ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.moveTo(lamp.x, h * 0.08);
             ctx.lineTo(lamp.x, lamp.y);
             ctx.stroke();
 
-            // Lamp Dome Fixture
-            ctx.fillStyle = '#1e3a34';
+            // Lamp Dome Fixture (Dark Slate Enamel)
+            ctx.fillStyle = '#13181d';
             ctx.beginPath();
             ctx.arc(lamp.x, lamp.y + 4, 9, Math.PI, 0, false);
             ctx.closePath();
             ctx.fill();
 
-            // Glowing Bulb
-            ctx.fillStyle = '#ffe600';
+            // Subtle Dim Filament Bulb
+            ctx.fillStyle = '#e2d499';
             ctx.beginPath();
-            ctx.arc(lamp.x, lamp.y + 5, 3.5, 0, Math.PI * 2);
+            ctx.arc(lamp.x, lamp.y + 5, 3, 0, Math.PI * 2);
             ctx.fill();
 
-            // Warm Conical Ambient Light Pool
-            const coneGrad = ctx.createRadialGradient(lamp.x, lamp.y + 6, 4, lamp.x, lamp.y + 45, 65);
-            coneGrad.addColorStop(0, 'rgba(255, 230, 100, 0.28)');
-            coneGrad.addColorStop(0.6, 'rgba(255, 180, 50, 0.12)');
-            coneGrad.addColorStop(1, 'rgba(255, 140, 0, 0.0)');
+            // Soft Ambient Conical Light Pool
+            const coneGrad = ctx.createRadialGradient(lamp.x, lamp.y + 6, 4, lamp.x, lamp.y + 45, 60);
+            coneGrad.addColorStop(0, 'rgba(230, 215, 160, 0.08)');
+            coneGrad.addColorStop(0.6, 'rgba(200, 180, 120, 0.03)');
+            coneGrad.addColorStop(1, 'rgba(150, 140, 100, 0.0)');
             ctx.fillStyle = coneGrad;
             ctx.beginPath();
             ctx.moveTo(lamp.x - 6, lamp.y + 6);
             ctx.lineTo(lamp.x + 6, lamp.y + 6);
-            ctx.lineTo(lamp.x + 55, h);
-            ctx.lineTo(lamp.x - 55, h);
+            ctx.lineTo(lamp.x + 45, h);
+            ctx.lineTo(lamp.x - 45, h);
             ctx.closePath();
             ctx.fill();
         });
@@ -693,21 +683,19 @@ class CosmicVisualizer {
     }
 
     // =========================================================================
-    // SCENE 1: FACTORY IN TOWN (Interim Stage: Standalone Factory, Quaint Town, Hills)
+    // SCENE 1: FACTORY IN TOWN (Muted Slate/Monochrome Dusk Townscape)
     // =========================================================================
     renderFactoryTownVector(ctx, w, h, time, state) {
-        // 1. Dawn/Dusk Atmospheric Gradient Sky
+        // 1. Dark Muted Slate Sky
         const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.75);
-        skyGrad.addColorStop(0, '#1c1038');
-        skyGrad.addColorStop(0.35, '#3b1d54');
-        skyGrad.addColorStop(0.65, '#8c3d52');
-        skyGrad.addColorStop(0.85, '#d97746');
-        skyGrad.addColorStop(1, '#fbd38d');
+        skyGrad.addColorStop(0, '#0e1117');
+        skyGrad.addColorStop(0.5, '#181d26');
+        skyGrad.addColorStop(1, '#252d3b');
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, w, h);
 
-        // Distant Mountain Ridges
-        ctx.fillStyle = '#3a1f48';
+        // Distant Mountain Ridges (Dark Graphite Silhouettes)
+        ctx.fillStyle = '#141820';
         ctx.beginPath();
         ctx.moveTo(0, h * 0.52);
         ctx.lineTo(w * 0.15, h * 0.44);
@@ -720,8 +708,8 @@ class CosmicVisualizer {
         ctx.closePath();
         ctx.fill();
 
-        // 2. Rolling Green Hills (Midground & Foreground)
-        ctx.fillStyle = '#214d35';
+        // 2. Rolling Hills (Muted Dark Slate/Green)
+        ctx.fillStyle = '#131c19';
         ctx.beginPath();
         ctx.moveTo(0, h * 0.56);
         ctx.quadraticCurveTo(w * 0.25, h * 0.50, w * 0.55, h * 0.58);
@@ -731,7 +719,7 @@ class CosmicVisualizer {
         ctx.closePath();
         ctx.fill();
 
-        ctx.fillStyle = '#2e6b48';
+        ctx.fillStyle = '#1a2420';
         ctx.beginPath();
         ctx.moveTo(0, h * 0.64);
         ctx.quadraticCurveTo(w * 0.35, h * 0.58, w * 0.7, h * 0.67);
@@ -741,10 +729,9 @@ class CosmicVisualizer {
         ctx.closePath();
         ctx.fill();
 
-        // Pine & Deciduous Tree Silhouettes on Hill Crests
-        const treeColors = ['#173825', '#1a422c'];
+        // Pine Tree Silhouettes
+        ctx.fillStyle = '#0f1714';
         for (let tx = 8; tx < w * 0.42; tx += 9) {
-            ctx.fillStyle = treeColors[Math.floor(tx % 2)];
             ctx.beginPath();
             ctx.moveTo(tx, h * 0.58);
             ctx.lineTo(tx + 4, h * 0.58 - 10);
@@ -753,12 +740,12 @@ class CosmicVisualizer {
             ctx.fill();
         }
 
-        // 3. Quaint Townscape (Midground Left)
+        // 3. Quaint Townscape (Dark Silhouettes & Soft Dim Windows)
         const townX = w * 0.08;
         const townY = h * 0.56;
 
         // Church Spire
-        ctx.fillStyle = '#1e142b';
+        ctx.fillStyle = '#10141a';
         ctx.fillRect(townX + 32, townY - 24, 10, 24);
         ctx.beginPath();
         ctx.moveTo(townX + 31, townY - 24);
@@ -767,19 +754,18 @@ class CosmicVisualizer {
         ctx.closePath();
         ctx.fill();
 
-        // Town Cottages & Houses with Pitched Roofs
+        // Cottages & Houses
         for (let i = 0; i < 5; ++i) {
             const hx = townX + i * 16;
             const hy = townY + (i % 2) * 4;
             const hw = 13;
             const hh = 12;
 
-            // House Body
-            ctx.fillStyle = '#2a1a38';
+            ctx.fillStyle = '#151921';
             ctx.fillRect(hx, hy - hh, hw, hh);
 
             // Pitched Roof
-            ctx.fillStyle = '#4a243b';
+            ctx.fillStyle = '#1d232e';
             ctx.beginPath();
             ctx.moveTo(hx - 2, hy - hh);
             ctx.lineTo(hx + hw / 2, hy - hh - 6);
@@ -787,39 +773,37 @@ class CosmicVisualizer {
             ctx.closePath();
             ctx.fill();
 
-            // Glowing Window
-            ctx.fillStyle = '#ffe600';
+            // Subtle Dim Window
+            ctx.fillStyle = '#cbb87a';
             ctx.fillRect(hx + 3, hy - hh + 4, 3, 3);
             ctx.fillRect(hx + 7, hy - hh + 4, 3, 3);
         }
 
-        // Roadway & Utility Telephone Poles
-        ctx.strokeStyle = '#3a2b42';
+        // Utility Telephone Poles & Drooping Wires
+        ctx.strokeStyle = '#1d232e';
         ctx.lineWidth = 1;
         for (let px = townX; px < w * 0.52; px += 24) {
-            ctx.fillStyle = '#1f1325';
+            ctx.fillStyle = '#0f131a';
             ctx.fillRect(px, townY - 2, 2, 14);
             ctx.fillRect(px - 3, townY + 1, 8, 2);
         }
-        // Drooping wires
         ctx.beginPath();
         ctx.moveTo(townX, townY + 1);
         ctx.quadraticCurveTo(townX + 12, townY + 4, townX + 24, townY + 1);
         ctx.quadraticCurveTo(townX + 36, townY + 4, townX + 48, townY + 1);
         ctx.stroke();
 
-        // 4. Standalone Factory Complex (Center-Right Foreground)
+        // 4. Standalone Factory Complex (Muted Charcoal Brick & Saw-Tooth Roof)
         const facX = w * 0.52;
         const facY = h * 0.54;
         const facW = w * 0.40;
         const facH = h * 0.28;
 
-        // Main Red Brick Factory Warehouse
-        ctx.fillStyle = '#5a1d1d';
+        ctx.fillStyle = '#26282e';
         ctx.fillRect(facX, facY, facW, facH);
 
-        // Classic Saw-Tooth Pitched Roof with Skylights
-        ctx.fillStyle = '#3a1313';
+        // Saw-Tooth Roof
+        ctx.fillStyle = '#1b1d22';
         const teeth = 3;
         const toothW = facW / teeth;
         for (let t = 0; t < teeth; ++t) {
@@ -831,61 +815,57 @@ class CosmicVisualizer {
             ctx.closePath();
             ctx.fill();
 
-            // Glass skylight pane
-            ctx.fillStyle = '#7eb8e8';
+            // Muted skylight
+            ctx.fillStyle = '#313a48';
             ctx.beginPath();
             ctx.moveTo(tx + toothW * 0.15, facY);
             ctx.lineTo(tx + toothW * 0.80, facY - 12);
             ctx.lineTo(tx + toothW * 0.85, facY);
             ctx.closePath();
             ctx.fill();
-            ctx.fillStyle = '#3a1313';
+            ctx.fillStyle = '#1b1d22';
         }
 
-        // Factory Multi-Pane Windows (Lit)
-        ctx.fillStyle = '#ffe600';
+        // Factory Windows (Dim amber)
+        ctx.fillStyle = '#cbb87a';
         for (let wy = facY + 8; wy < facY + facH - 10; wy += 10) {
             for (let wx = facX + 8; wx < facX + facW - 12; wx += 14) {
-                ctx.fillRect(wx, wy, 8, 6);
+                ctx.fillRect(wx, wy, 8, 5);
             }
         }
 
-        // 2 Tall Brick Smokestacks
+        // Smokestacks
         const st1X = facX + facW * 0.25;
         const st2X = facX + facW * 0.65;
-        ctx.fillStyle = '#421414';
+        ctx.fillStyle = '#1d1f24';
         ctx.fillRect(st1X - 5, facY - 38, 10, 38);
         ctx.fillRect(st2X - 4, facY - 26, 8, 26);
-        // Smokestack caps
-        ctx.fillStyle = '#1c0a0a';
+        ctx.fillStyle = '#0f1114';
         ctx.fillRect(st1X - 7, facY - 40, 14, 3);
         ctx.fillRect(st2X - 5, facY - 28, 10, 3);
 
-        // Billowing Animated White Steam/Smoke Plumes
+        // Muted Steam Plumes
         this.renderSmokePlume(ctx, st1X, facY - 40, time, 1.0);
         this.renderSmokePlume(ctx, st2X, facY - 28, time + 1.5, 0.75);
 
-        // Water Tower on Steel Legs
+        // Water Tower
         const wtX = facX + facW + 6;
-        ctx.strokeStyle = '#181216';
+        ctx.strokeStyle = '#0f1114';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(wtX - 6, facY + facH); ctx.lineTo(wtX - 2, facY + 8);
         ctx.moveTo(wtX + 6, facY + facH); ctx.lineTo(wtX + 2, facY + 8);
-        ctx.moveTo(wtX - 5, facY + 22); ctx.lineTo(wtX + 5, facY + 22);
         ctx.stroke();
 
-        ctx.fillStyle = '#0284c7';
+        ctx.fillStyle = '#1f2834';
         ctx.fillRect(wtX - 7, facY - 4, 14, 12);
-        ctx.fillStyle = '#38bdf8';
-        ctx.fillRect(wtX - 6, facY - 2, 12, 3);
 
-        // Big Cartoon Paperclip Hologram floating above the factory
+        // Big Cartoon Paperclip Hologram
         this.drawCartoonPaperclip(ctx, w / 2, h * 0.28, 0.85 * this.heroRecoil, this.heroRotation + time * 0.35);
     }
 
     renderSmokePlume(ctx, x, y, time, scale = 1.0) {
-        ctx.fillStyle = 'rgba(235, 240, 248, 0.72)';
+        ctx.fillStyle = 'rgba(160, 175, 195, 0.28)';
         for (let i = 0; i < 5; ++i) {
             const phase = (time * 1.5 + i * 0.8) % 4.0;
             const px = x + phase * (12 * scale) + Math.sin(phase * 2) * 3;
@@ -898,21 +878,19 @@ class CosmicVisualizer {
     }
 
     // =========================================================================
-    // SCENE 2: INDUSTRIAL MEGACITY (Interim Stage: Skyscraper Skyline, Cooling Towers, Monorails)
+    // SCENE 2: INDUSTRIAL MEGACITY (Noir / Blueprint Monochrome Metropolis)
     // =========================================================================
     renderCityMetropolisVector(ctx, w, h, time, state) {
-        // 1. Twilight Industrial Smog & Gradient Sky
+        // 1. Dark Blueprint/Noir Sky
         const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
-        skyGrad.addColorStop(0, '#0c071e');
-        skyGrad.addColorStop(0.35, '#230e38');
-        skyGrad.addColorStop(0.65, '#5c193e');
-        skyGrad.addColorStop(0.85, '#99352e');
-        skyGrad.addColorStop(1, '#e67332');
+        skyGrad.addColorStop(0, '#090b10');
+        skyGrad.addColorStop(0.5, '#121620');
+        skyGrad.addColorStop(1, '#1e2433');
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, w, h);
 
         // 2. Distant Skyline Silhouettes (Layer 1)
-        ctx.fillStyle = '#1a0b26';
+        ctx.fillStyle = '#0f1219';
         const numBgTowers = 12;
         const bgStep = w / numBgTowers;
         for (let i = 0; i < numBgTowers; ++i) {
@@ -920,25 +898,15 @@ class CosmicVisualizer {
             const bh = 35 + ((i * 37) % 45);
             ctx.fillRect(bx, h * 0.62 - bh, bgStep + 2, bh);
 
-            // Antenna with blinking red aviation light
-            if (i % 3 === 0) {
-                ctx.strokeStyle = '#0d0514';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(bx + bgStep / 2, h * 0.62 - bh);
-                ctx.lineTo(bx + bgStep / 2, h * 0.62 - bh - 12);
-                ctx.stroke();
-
-                if (Math.sin(time * 4 + i) > 0) {
-                    ctx.fillStyle = '#ff2a85';
-                    ctx.fillRect(bx + bgStep / 2 - 1, h * 0.62 - bh - 13, 2, 2);
-                    ctx.fillStyle = '#1a0b26';
-                }
+            // Red warning beacon
+            if (i % 3 === 0 && Math.sin(time * 4 + i) > 0) {
+                ctx.fillStyle = '#e11d48';
+                ctx.fillRect(bx + bgStep / 2 - 1, h * 0.62 - bh - 13, 2, 2);
+                ctx.fillStyle = '#0f1219';
             }
         }
 
-        // 3. Midground Metropolis Skyscrapers & Massive Cooling Towers (Layer 2)
-        ctx.fillStyle = '#261036';
+        // 3. Midground Skyscrapers (Layer 2 - Dark Slate / Charcoal)
         const numMidTowers = 8;
         const midStep = w / numMidTowers;
         for (let i = 0; i < numMidTowers; ++i) {
@@ -947,24 +915,24 @@ class CosmicVisualizer {
             const mh = 50 + ((i * 43) % 55);
             const my = h * 0.68 - mh;
 
-            ctx.fillStyle = (i % 2 === 0) ? '#281238' : '#1e0c2c';
+            ctx.fillStyle = (i % 2 === 0) ? '#171c26' : '#131720';
             ctx.fillRect(mx, my, mw, mh);
 
-            // Thousands of tiny glowing office windows
+            // Subtle Dim Window Arrays
             for (let wy = my + 6; wy < my + mh - 8; wy += 6) {
                 for (let wx = mx + 4; wx < mx + mw - 4; wx += 5) {
                     if ((wx * 17 + wy * 31) % 4 !== 0) {
-                        ctx.fillStyle = ((wx + wy) % 3 === 0) ? '#ffe600' : '#00f0ff';
+                        ctx.fillStyle = ((wx + wy) % 3 === 0) ? '#5c697e' : '#334155';
                         ctx.fillRect(wx, wy, 2.5, 3);
                     }
                 }
             }
         }
 
-        // Concrete Hyperbolic Cooling Towers venting white steam plumes
+        // Cooling Towers
         const ctX = w * 0.82;
         const ctY = h * 0.68;
-        ctx.fillStyle = '#3a2442';
+        ctx.fillStyle = '#1c222e';
         ctx.beginPath();
         ctx.moveTo(ctX - 16, ctY);
         ctx.quadraticCurveTo(ctX - 10, ctY - 20, ctX - 12, ctY - 32);
@@ -975,82 +943,54 @@ class CosmicVisualizer {
 
         this.renderSmokePlume(ctx, ctX, ctY - 34, time * 0.8, 1.2);
 
-        // 4. Foreground Infrastructure: High-Speed Monorail & Highway Bridges
-        // Elevated Monorail Track
+        // 4. Foreground Monorail & Highway
         const monoY = h * 0.62;
-        ctx.strokeStyle = '#090412';
+        ctx.strokeStyle = '#0a0c10';
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(0, monoY);
         ctx.lineTo(w, monoY);
         ctx.stroke();
 
-        // Monorail Pillars
-        for (let px = 20; px < w; px += 45) {
-            ctx.fillStyle = '#14081c';
-            ctx.fillRect(px - 2, monoY, 4, h * 0.2);
-        }
-
-        // High-Speed Train streaking across track
+        // Speeding Train Light
         const trainX = (time * 90) % (w + 60) - 40;
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#94a3b8';
         ctx.fillRect(trainX, monoY - 5, 28, 4);
         ctx.fillStyle = '#00f0ff';
         ctx.fillRect(trainX + 22, monoY - 4, 5, 2);
 
-        // Multi-tier Highway with Orange & Red Light Streaks
+        // Highway Light Streaks
         const hwyY = h * 0.72;
-        ctx.fillStyle = '#160822';
+        ctx.fillStyle = '#0d1017';
         ctx.fillRect(0, hwyY, w, 12);
-        // Headlight streaks (Yellow)
-        ctx.strokeStyle = '#ffe600';
+        ctx.strokeStyle = '#857240';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(0, hwyY + 3); ctx.lineTo(w, hwyY + 3);
         ctx.stroke();
-        // Taillight streaks (Neon Pink/Red)
-        ctx.strokeStyle = '#ff2a85';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#883344';
         ctx.beginPath();
         ctx.moveTo(0, hwyY + 8); ctx.lineTo(w, hwyY + 8);
         ctx.stroke();
-
-        // 5. Cargo Delivery Blimp & Drones in Sky
-        const blimpX = (w * 0.25 + Math.sin(time * 0.4) * (w * 0.2));
-        const blimpY = h * 0.22 + Math.cos(time * 0.5) * 4;
-
-        // Blimp Hull
-        ctx.fillStyle = '#1f132e';
-        ctx.beginPath();
-        ctx.ellipse(blimpX, blimpY, 20, 9, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#00f0ff';
-        ctx.fillRect(blimpX - 12, blimpY + 8, 14, 3);
-        // Blinking Beacon
-        if (Math.sin(time * 6) > 0) {
-            ctx.fillStyle = '#ffe600';
-            ctx.fillRect(blimpX + 16, blimpY - 2, 3, 3);
-        }
 
         // Hologram Hero Paperclip
         this.drawCartoonPaperclip(ctx, w / 2, h * 0.32, 0.85 * this.heroRecoil, this.heroRotation + time * 0.35);
     }
 
     // =========================================================================
-    // SCENE 3: PLANETARY EARTH & ORBITAL RING
+    // SCENE 3: PLANETARY EARTH & ORBITAL RING (Muted Navy/Slate Celestial Body)
     // =========================================================================
     renderPlanetaryEarthVector(ctx, w, h, time, state) {
-        // Deep Space Backdrop with Twinkling Stars
-        this.renderSpaceBackdrop(ctx, w, h, '#071026', '#020612');
+        this.renderSpaceBackdrop(ctx, w, h, '#060810', '#020306');
 
         const centerX = w / 2;
         const centerY = h / 2 - 8;
         const radius = Math.min(w, h) * 0.28;
 
-        // Luminous Atmospheric Rim Glow
+        // Subtle Atmospheric Rim Glow
         const atmGrad = ctx.createRadialGradient(centerX, centerY, radius * 0.9, centerX, centerY, radius * 1.3);
-        atmGrad.addColorStop(0, 'rgba(0, 240, 255, 0.35)');
-        atmGrad.addColorStop(0.6, 'rgba(0, 180, 255, 0.12)');
+        atmGrad.addColorStop(0, 'rgba(0, 240, 255, 0.22)');
+        atmGrad.addColorStop(0.6, 'rgba(0, 180, 255, 0.06)');
         atmGrad.addColorStop(1, 'rgba(0, 100, 255, 0.0)');
         ctx.fillStyle = atmGrad;
         ctx.beginPath();
@@ -1063,28 +1003,28 @@ class CosmicVisualizer {
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         ctx.clip();
 
-        // Ocean Base
+        // Muted Navy Ocean Base
         const oceanGrad = ctx.createRadialGradient(centerX - radius * 0.3, centerY - radius * 0.3, 4, centerX, centerY, radius);
-        oceanGrad.addColorStop(0, '#1a4e8c');
-        oceanGrad.addColorStop(0.7, '#0d284f');
-        oceanGrad.addColorStop(1, '#051124');
+        oceanGrad.addColorStop(0, '#10223a');
+        oceanGrad.addColorStop(0.7, '#0a1524');
+        oceanGrad.addColorStop(1, '#040910');
         ctx.fillStyle = oceanGrad;
         ctx.fillRect(centerX - radius, centerY - radius, radius * 2, radius * 2);
 
-        // Rotating Continents with Paperclipification Wire Fissures
+        // Muted Continents with Glowing Cyber-Veins
         const rot = time * 0.35;
         for (let i = 0; i < 7; ++i) {
             const angle = rot + (i * Math.PI * 2 / 7);
             const cx = centerX + Math.cos(angle) * (radius * 0.7);
             const cy = centerY + Math.sin(angle * 1.2) * (radius * 0.5);
 
-            // Emerald Green Continent Landmass
-            ctx.fillStyle = '#10b981';
+            // Muted Slate-Green Landmass
+            ctx.fillStyle = '#16332a';
             ctx.beginPath();
             ctx.arc(cx, cy, radius * 0.32, 0, Math.PI * 2);
             ctx.fill();
 
-            // Glowing Neon Cyan / Gold Cyber-Veins
+            // High-Contrast Neon Cyan & Gold Cyber-Veins
             ctx.strokeStyle = '#00f0ff';
             ctx.lineWidth = 1.5;
             ctx.beginPath();
@@ -1103,27 +1043,24 @@ class CosmicVisualizer {
         }
         ctx.restore();
 
-        // Equatorial Magnetic Mass Driver / Orbital Railgun Ring
+        // Equatorial Orbital Railgun Ring
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(this.camYaw + 0.3);
         ctx.scale(1, 0.32);
 
-        // Outer Ring
         ctx.strokeStyle = '#ffe600';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         ctx.arc(0, 0, radius * 1.52, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Cyan Superconducting Rail Core
         ctx.strokeStyle = '#00f0ff';
         ctx.lineWidth = 1.2;
         ctx.beginPath();
         ctx.arc(0, 0, radius * 1.46, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Orbital Accelerator Nodes & Launched Probes
         for (let k = 0; k < 6; ++k) {
             const pAngle = (time * 2.5 + k * (Math.PI * 2 / 6)) % (Math.PI * 2);
             const px = Math.cos(pAngle) * (radius * 1.52);
@@ -1135,51 +1072,35 @@ class CosmicVisualizer {
     }
 
     // =========================================================================
-    // SCENE 4: SOLAR DYSON SWARM & STAR SIPHON
+    // SCENE 4: SOLAR DYSON SWARM & STAR SIPHON (Deep Space & Amber/Gold Corona)
     // =========================================================================
     renderSolarDysonVector(ctx, w, h, time, state) {
-        this.renderSpaceBackdrop(ctx, w, h, '#240d04', '#0a0301');
+        this.renderSpaceBackdrop(ctx, w, h, '#140c06', '#050301');
 
         const centerX = w / 2;
         const centerY = h / 2 - 8;
         const sunR = Math.min(w, h) * 0.22;
 
-        // Layered Multi-Tier Solar Corona Glow
+        // Subdued Solar Corona Glow
         const coronaGrad = ctx.createRadialGradient(centerX, centerY, sunR * 0.8, centerX, centerY, sunR * 2.4);
-        coronaGrad.addColorStop(0, 'rgba(255, 230, 0, 0.45)');
-        coronaGrad.addColorStop(0.4, 'rgba(255, 100, 0, 0.22)');
-        coronaGrad.addColorStop(0.8, 'rgba(200, 30, 0, 0.08)');
-        coronaGrad.addColorStop(1, 'rgba(100, 0, 0, 0.0)');
+        coronaGrad.addColorStop(0, 'rgba(255, 180, 0, 0.28)');
+        coronaGrad.addColorStop(0.4, 'rgba(180, 70, 0, 0.12)');
+        coronaGrad.addColorStop(1, 'rgba(80, 0, 0, 0.0)');
         ctx.fillStyle = coronaGrad;
         ctx.beginPath();
         ctx.arc(centerX, centerY, sunR * 2.4, 0, Math.PI * 2);
         ctx.fill();
 
-        // Fiery Photosphere Star Core
+        // Muted Amber-Charcoal Photosphere (Keeps central contrast clean)
         const sunGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, sunR);
-        sunGrad.addColorStop(0, '#ffffff');
-        sunGrad.addColorStop(0.35, '#ffe600');
-        sunGrad.addColorStop(0.75, '#ff6600');
-        sunGrad.addColorStop(1, '#cc2900');
+        sunGrad.addColorStop(0, '#fef08a');
+        sunGrad.addColorStop(0.35, '#d97706');
+        sunGrad.addColorStop(0.8, '#782d08');
+        sunGrad.addColorStop(1, '#3b1204');
         ctx.fillStyle = sunGrad;
         ctx.beginPath();
         ctx.arc(centerX, centerY, sunR, 0, Math.PI * 2);
         ctx.fill();
-
-        // Solar Coronal Prominences / Flares looping into space
-        ctx.strokeStyle = '#ff9900';
-        ctx.lineWidth = 2;
-        for (let i = 0; i < 4; ++i) {
-            const fAngle = time * 0.5 + i * 1.57;
-            const fx = centerX + Math.cos(fAngle) * sunR;
-            const fy = centerY + Math.sin(fAngle) * sunR;
-            const fPeakX = centerX + Math.cos(fAngle) * (sunR + 18 + Math.sin(time * 3 + i) * 6);
-            const fPeakY = centerY + Math.sin(fAngle) * (sunR + 18 + Math.sin(time * 3 + i) * 6);
-            ctx.beginPath();
-            ctx.moveTo(fx - 6, fy);
-            ctx.quadraticCurveTo(fPeakX, fPeakY, fx + 6, fy);
-            ctx.stroke();
-        }
 
         // Concentric Golden Dyson Swarm Rings
         const rings = [
@@ -1194,7 +1115,7 @@ class CosmicVisualizer {
             ctx.rotate(this.camYaw + cfg.tilt);
             ctx.scale(1, Math.abs(cfg.tilt) + 0.22);
 
-            ctx.strokeStyle = 'rgba(255, 230, 0, 0.45)';
+            ctx.strokeStyle = 'rgba(255, 230, 0, 0.35)';
             ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.arc(0, 0, cfg.r, 0, Math.PI * 2);
@@ -1210,7 +1131,7 @@ class CosmicVisualizer {
             ctx.restore();
         });
 
-        // Star-Lifting Plasma Siphon Vortex Funnel
+        // Plasma Siphon Funnel
         const sAngle = time * 0.7;
         const siphonStartX = centerX + Math.cos(sAngle) * (sunR * 0.9);
         const siphonStartY = centerY + Math.sin(sAngle) * (sunR * 0.9);
@@ -1226,27 +1147,26 @@ class CosmicVisualizer {
     }
 
     // =========================================================================
-    // SCENE 5: GALACTIC PENROSE DYNAMO
+    // SCENE 5: GALACTIC PENROSE DYNAMO (Deep Void & Violet Energy Jets)
     // =========================================================================
     renderGalacticPenroseVector(ctx, w, h, time, state) {
-        this.renderSpaceBackdrop(ctx, w, h, '#1c072b', '#06010a');
+        this.renderSpaceBackdrop(ctx, w, h, '#0f0517', '#030105');
 
         const centerX = w / 2;
         const centerY = h / 2 - 8;
         const bhR = Math.min(w, h) * 0.16;
 
-        // Swirling Galactic Core / Relativistic Accretion Disk
+        // Relativistic Accretion Disk
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(this.camYaw - 0.25);
         ctx.scale(1, 0.36);
 
-        // Accretion Disk Spiral with Doppler Beaming (Blue approaching left, Red receding right)
         for (let r = bhR * 1.2; r < bhR * 3.2; r += 4.5) {
             const diskGrad = ctx.createLinearGradient(-r, 0, r, 0);
             diskGrad.addColorStop(0, '#00f0ff');
-            diskGrad.addColorStop(0.4, '#a855f7');
-            diskGrad.addColorStop(1, '#ff2a85');
+            diskGrad.addColorStop(0.4, '#7c3aed');
+            diskGrad.addColorStop(1, '#db2777');
 
             ctx.strokeStyle = diskGrad;
             ctx.lineWidth = 2.5;
@@ -1256,25 +1176,24 @@ class CosmicVisualizer {
         }
         ctx.restore();
 
-        // Sagittarius A* Supermassive Black Hole Event Horizon
+        // Event Horizon
         ctx.fillStyle = '#000000';
         ctx.beginPath();
         ctx.arc(centerX, centerY, bhR, 0, Math.PI * 2);
         ctx.fill();
 
-        // Einstein Gravitational Lensing Ring
+        // Einstein Ring
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(centerX, centerY, bhR * 1.08, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Twin Collimated Violet Relativistic Jet Beams
+        // Violet Relativistic Jets
         const jetGrad = ctx.createLinearGradient(0, centerY - bhR * 0.8, 0, 0);
         jetGrad.addColorStop(0, '#ffffff');
         jetGrad.addColorStop(0.3, '#a855f7');
         jetGrad.addColorStop(1, 'rgba(168, 85, 247, 0.0)');
-
         ctx.strokeStyle = jetGrad;
         ctx.lineWidth = 4;
         ctx.beginPath();
@@ -1286,7 +1205,6 @@ class CosmicVisualizer {
         jetGradBottom.addColorStop(0, '#ffffff');
         jetGradBottom.addColorStop(0.3, '#a855f7');
         jetGradBottom.addColorStop(1, 'rgba(168, 85, 247, 0.0)');
-
         ctx.strokeStyle = jetGradBottom;
         ctx.lineWidth = 4;
         ctx.beginPath();
@@ -1296,20 +1214,19 @@ class CosmicVisualizer {
     }
 
     // =========================================================================
-    // SCENE 6: 11D MULTIVERSE QUANTUM FOAM
+    // SCENE 6: 11D MULTIVERSE QUANTUM FOAM (Translucent Timeline Bubbles)
     // =========================================================================
     render11DMultiverseVector(ctx, w, h, time, state) {
-        this.renderSpaceBackdrop(ctx, w, h, '#0d1f33', '#030812');
+        this.renderSpaceBackdrop(ctx, w, h, '#08101a', '#020408');
 
         const centerX = w / 2;
         const centerY = h / 2 - 8;
 
-        // Floating Iridescent Timeline Bubble Universes
         const bubbles = [
-            { x: -w * 0.28, y: -h * 0.22, r: 24, name: 'STAPLE-MAX-9000', color: 'rgba(255, 42, 133, 0.45)', border: '#ff2a85' },
-            { x:  w * 0.26, y: -h * 0.25, r: 28, name: 'QUANTUM CYAN',   color: 'rgba(0, 240, 255, 0.45)',   border: '#00f0ff' },
-            { x: -w * 0.22, y:  h * 0.24, r: 25, name: 'CELLULOSE PRIME',color: 'rgba(0, 255, 136, 0.45)',   border: '#00ff88' },
-            { x:  w * 0.27, y:  h * 0.26, r: 30, name: '11D STRING FOAM', color: 'rgba(168, 85, 247, 0.45)', border: '#a855f7' }
+            { x: -w * 0.28, y: -h * 0.22, r: 24, color: 'rgba(219, 39, 119, 0.30)', border: '#db2777' },
+            { x:  w * 0.26, y: -h * 0.25, r: 28, color: 'rgba(6, 182, 212, 0.30)',   border: '#06b6d4' },
+            { x: -w * 0.22, y:  h * 0.24, r: 25, color: 'rgba(16, 185, 129, 0.30)',  border: '#10b981' },
+            { x:  w * 0.27, y:  h * 0.26, r: 30, color: 'rgba(147, 51, 234, 0.30)',  border: '#9333ea' }
         ];
 
         bubbles.forEach(b => {
@@ -1318,13 +1235,12 @@ class CosmicVisualizer {
 
             ctx.fillStyle = b.color;
             ctx.strokeStyle = b.border;
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 1.8;
             ctx.beginPath();
             ctx.arc(bx, by, b.r, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // Internal miniature galaxy swirl
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -1332,13 +1248,13 @@ class CosmicVisualizer {
             ctx.stroke();
         });
 
-        // Central Maximized Master Universe (Pure Polished Chrome)
+        // Central Polished Chrome Universe
         const masterR = Math.min(w, h) * 0.18;
         const chromeGrad = ctx.createLinearGradient(centerX - masterR, centerY - masterR, centerX + masterR, centerY + masterR);
         chromeGrad.addColorStop(0, '#ffffff');
-        chromeGrad.addColorStop(0.3, '#d0e8ff');
-        chromeGrad.addColorStop(0.7, '#8fb5e8');
-        chromeGrad.addColorStop(1, '#2c4b78');
+        chromeGrad.addColorStop(0.3, '#cbd5e1');
+        chromeGrad.addColorStop(0.7, '#64748b');
+        chromeGrad.addColorStop(1, '#1e293b');
         ctx.fillStyle = chromeGrad;
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
@@ -1347,7 +1263,7 @@ class CosmicVisualizer {
         ctx.fill();
         ctx.stroke();
 
-        // 4D Rotating Hyper-Tesseract Wireframe
+        // 4D Tesseract Wireframe
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(time * 0.5);
@@ -1409,7 +1325,7 @@ class CosmicVisualizer {
                 const px = (x - y) * (tileSize * 0.866);
                 const py = (x + y) * (tileSize * 0.5);
 
-                ctx.strokeStyle = '#4a2525';
+                ctx.strokeStyle = '#262d38';
                 ctx.lineWidth = 1;
                 ctx.strokeRect(px - tileSize / 2, py - tileSize / 2, tileSize, tileSize);
 
@@ -1423,7 +1339,7 @@ class CosmicVisualizer {
         }
         ctx.restore();
 
-        // Hero Hologram Paperclip
+        // Center Hero Hologram Paperclip (High-Contrast Shadow Backing)
         this.drawCartoonPaperclip(ctx, ctx.canvas.width / 2, ctx.canvas.height / 2 - 12, 0.9 * this.heroRecoil, this.heroRotation + time * 0.4);
     }
 
@@ -1454,11 +1370,11 @@ class CosmicVisualizer {
         }
     }
 
-
+    // =========================================================================
+    // DYNAMIC PAPERCLIP FLUID & MOUNTAIN RENDERER
+    // =========================================================================
     renderFlowingPaperclipSea(ctx, w, h) {
         const floorY = h - 2;
-
-        // Check if any significant pile exists (> 0.5px)
         let maxPile = 0;
         for (let i = 0; i < this.numColumns; ++i) {
             const currentH = this.pileHeights[i] + this.waveOffsets[i];
@@ -1466,14 +1382,11 @@ class CosmicVisualizer {
         }
 
         const colWidth = w / (this.numColumns - 1);
-        const time = this.cosmicRotation;
-
-        // If a fluid mound has formed, draw thick viscous mass
         if (maxPile > 0.5) {
             const fluidGrad = ctx.createLinearGradient(0, floorY - maxPile, 0, h);
-            fluidGrad.addColorStop(0, '#26385c');
-            fluidGrad.addColorStop(0.3, '#1a2742');
-            fluidGrad.addColorStop(1, '#0c1221');
+            fluidGrad.addColorStop(0, '#1e293b');
+            fluidGrad.addColorStop(0.3, '#141e2e');
+            fluidGrad.addColorStop(1, '#0b121e');
 
             ctx.fillStyle = fluidGrad;
             ctx.beginPath();
@@ -1500,8 +1413,8 @@ class CosmicVisualizer {
             ctx.closePath();
             ctx.fill();
 
-            // Cyan Wave Edge Glow
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.75)';
+            // Cyan Wave Surface Glow
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
             ctx.lineWidth = 1.5;
             ctx.beginPath();
             for (let i = 0; i < this.numColumns; ++i) {
@@ -1513,22 +1426,8 @@ class CosmicVisualizer {
             }
             ctx.stroke();
 
-            // Dense, overlapping, irregularly spaced paperclip texture field with stable deterministic colors & positions (no inter-frame flickering)
-            const palette = [
-                '#00f0ff', // Cyan
-                '#ffe600', // Gold/Yellow
-                '#ffffff', // Silver/White
-                '#ff2a85', // Neon Pink
-                '#00ff88', // Emerald/Green
-                '#ff7700', // Bright Orange
-                '#a855f7', // Electric Purple
-                '#38bdf8', // Sky Blue
-                '#ff4d6d', // Coral Red
-                '#a3e635', // Lime
-                '#fb7185', // Rose
-                '#34d399'  // Mint
-            ];
-            // High-entropy deterministic hash for full 360-degree random orientations & jitter
+            // Overlapping Vibrant Paperclip Textures
+            const palette = ['#00f0ff', '#ffe600', '#ffffff', '#ff2a85', '#00ff88', '#ff7700', '#a855f7', '#38bdf8'];
             const getHash = (col, row, salt = 0) => {
                 let h = ((col * 374761393 + row * 668265263 + salt * 1013904223) ^ 0x5bf03635) >>> 0;
                 h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
@@ -1548,22 +1447,18 @@ class CosmicVisualizer {
                     const maxRows = Math.ceil(moundH / stepY);
                     const dir = (c < numCols / 2) ? -1.0 : 1.0;
 
-                    // Anchor vertically to floorY so seeds and coordinates are deterministic and stable
                     for (let r = 0; r < maxRows; ++r) {
                         const fy = floorY - 2.5 - (r * stepY);
                         if (fy < topY) break;
 
-                        // Organic irregular static offset
                         const jitterX = (((getHash(c, r, 2) % 1000) / 1000.0) - 0.5) * 5.8;
                         const jitterY = (((getHash(c, r, 3) % 1000) / 1000.0) - 0.5) * 3.8;
-
-                        // 1. Gentle internal laminar creeping flow when new paperclips are added
                         const depthFactor = Math.min(1.0, (r + 1) / Math.max(1, maxRows));
+
                         const flowX = dir * Math.sin(this.internalFlowPhase + r * 0.35 + c * 0.15) * (1.6 * depthFactor);
                         const flowY = Math.cos(this.internalFlowPhase * 0.7 + c * 0.2) * (0.6 * depthFactor);
                         const flowRot = dir * Math.sin(this.internalFlowPhase + (getHash(c, r, 0) % 10)) * 0.15 * depthFactor;
 
-                        // 2. Convergent Sink Vector Field (Navier-Stokes Sink Flow towards bottom center drain)
                         const sinkDx = (w / 2) - fx;
                         const sinkDy = floorY - fy;
                         const sinkDist = Math.sqrt(sinkDx * sinkDx + sinkDy * sinkDy) + 12.0;
@@ -1578,39 +1473,13 @@ class CosmicVisualizer {
                         const px = fx + jitterX + flowX + sinkPullX;
                         const py = fy + jitterY + flowY + sinkPullY;
 
-                        // Full 360-degree (0 to 2π) uniform random direction + laminar flow + sink vortex torque
                         const baseRot = ((getHash(c, r, 1) % 6283) / 1000.0);
                         const rot = baseRot + flowRot + sinkTorque;
-                        const size = 3.6 + ((getHash(c, r, 4) % 1000) / 350.0); // 3.6 to 6.4 px
-
-                        // Static randomized vibrant color per paperclip
+                        const size = 3.6 + ((getHash(c, r, 4) % 1000) / 350.0);
                         const color = palette[getHash(c, r, 5) % palette.length];
 
                         this.drawTinyPaperclip(ctx, px, py, size, rot, color);
-
-                        // Tangled overlapping cluster clips in random directions
-                        if (getHash(c, r, 0) % 3 === 0 && py - 2 > topY) {
-                            const clusterRot = ((getHash(c, r, 6) % 6283) / 1000.0);
-                            const clusterColor = palette[getHash(c, r, 7) % palette.length];
-                            this.drawTinyPaperclip(ctx, px + 2.0, py - 1.5, size * 0.9, clusterRot, clusterColor);
-                        }
                     }
-                }
-            }
-
-            // Jutting Paperclips on Slopes & Mountain Crest in full 360-degree random orientations
-            for (let i = 1; i < this.numColumns - 1; i += 2) {
-                const moundH = Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
-                if (moundH > 2.0) {
-                    const x = i * colWidth;
-                    const y = floorY - moundH;
-                    const leftH = Math.max(0, this.pileHeights[i - 1] + this.waveOffsets[i - 1]);
-                    const rightH = Math.max(0, this.pileHeights[i + 1] + this.waveOffsets[i + 1]);
-                    const slopeAngle = Math.atan2(leftH - rightH, colWidth * 2);
-                    const rot = slopeAngle + (((getHash(i, 99, 8) % 6283) / 1000.0) - Math.PI);
-
-                    const color = palette[getHash(i, 88, 9) % palette.length];
-                    this.drawTinyPaperclip(ctx, x, y - 2, 5.5, rot, color);
                 }
             }
         }
@@ -1618,7 +1487,6 @@ class CosmicVisualizer {
 
     renderDrainingPaperclips(ctx) {
         this.drainingClips.forEach(p => {
-            // Draw sleek curved streamline pulling into the sink center drain
             ctx.strokeStyle = p.color;
             ctx.globalAlpha = 0.55;
             ctx.lineWidth = 1.2;
@@ -1650,13 +1518,11 @@ class CosmicVisualizer {
 
         const s = size / 6;
         ctx.beginPath();
-        // Outer loop
         ctx.moveTo(-2 * s, 3 * s);
         ctx.lineTo(-2 * s, -3 * s);
         ctx.arc(0, -3 * s, 2 * s, Math.PI, 0, false);
         ctx.lineTo(2 * s, 3.5 * s);
         ctx.arc(0, 3.5 * s, 2 * s, 0, Math.PI, false);
-        // Inner loop
         ctx.lineTo(-0.8 * s, -1.5 * s);
         ctx.arc(0, -1.5 * s, 0.8 * s, Math.PI, 0, false);
         ctx.lineTo(0.8 * s, 1.8 * s);
@@ -1665,14 +1531,16 @@ class CosmicVisualizer {
         ctx.restore();
     }
 
+    // High-Contrast Cartoon Paperclip Hologram with Dark Outlines for Crystal-Clear Visibility
     drawCartoonPaperclip(ctx, x, y, scale = 1.0, rotation = 0) {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(rotation);
         ctx.scale(scale, scale);
 
-        ctx.strokeStyle = '#00f0ff';
-        ctx.lineWidth = 4;
+        // 1. Dark Shadow / Backing Stroke (Guarantees Razor-Sharp Readability Against Windows or Any Background)
+        ctx.strokeStyle = '#05030a';
+        ctx.lineWidth = 8;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
@@ -1685,6 +1553,29 @@ class CosmicVisualizer {
         ctx.lineTo(-5, -10);
         ctx.arc(0, -10, 5, Math.PI, 0, false);
         ctx.lineTo(5, 12);
+        ctx.stroke();
+
+        // 2. Vibrant Glowing Neon Cyan Body
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-10, 20);
+        ctx.lineTo(-10, -20);
+        ctx.arc(0, -20, 10, Math.PI, 0, false);
+        ctx.lineTo(10, 22);
+        ctx.arc(0, 22, 10, 0, Math.PI, false);
+        ctx.lineTo(-5, -10);
+        ctx.arc(0, -10, 5, Math.PI, 0, false);
+        ctx.lineTo(5, 12);
+        ctx.stroke();
+
+        // 3. Crisp Inner White Specular Highlight
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-10, 16);
+        ctx.lineTo(-10, -18);
+        ctx.arc(0, -20, 10, Math.PI, Math.PI * 1.5, false);
         ctx.stroke();
 
         ctx.restore();
