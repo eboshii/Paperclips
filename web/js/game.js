@@ -163,6 +163,32 @@ class GameEngine {
             });
         }
 
+        // Scene Switcher Buttons
+        const sceneButtons = document.querySelectorAll('.scene-nav-btn');
+        sceneButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tier = parseInt(btn.dataset.tier, 10);
+                if (this.visualizer) {
+                    this.visualizer.setTier(tier);
+                }
+                sceneButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Dither Filter Toggle Button
+        const ditherBtn = document.getElementById('btn-toggle-dither');
+        if (ditherBtn) {
+            ditherBtn.addEventListener('click', () => {
+                if (this.visualizer) {
+                    const isEnabled = this.visualizer.toggleDither();
+                    ditherBtn.textContent = isEnabled ? '🎨 DITHER: ON' : '🎨 DITHER: OFF';
+                    ditherBtn.classList.toggle('active', isEnabled);
+                    ditherBtn.classList.toggle('off', !isEnabled);
+                }
+            });
+        }
+
         // Save & Reset Controls
         const saveBtn = document.getElementById('btn-save');
         if (saveBtn) saveBtn.addEventListener('click', () => { this.saveGame(); alert('Simulation saved locally!'); });

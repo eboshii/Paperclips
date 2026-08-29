@@ -1,14 +1,18 @@
 /**
- * visualizer.js - Vibrant Cartoon Pixel Art Cosmic Visualizer
+ * visualizer.js - Vectorised Cosmic Art Engine with Pixelisation & Dither Render Filter
  * Features:
- * - Viscous fluid & steep granular paperclip mound simulation synchronized with inventory
- * - Central drop clustering at start, smoothly expanding across screen at higher CPS
- * - Collision strictly matches visible fluid surface and inventory floor (no imaginary floating surfaces)
- * - Fluid suction & drain effect out the bottom of the screen on purchases
- * - Tiny falling paperclips with tumbling, bouncing, and slope-sliding physics
- * - Volumetric multi-layer paperclip texture inside the fluid
- * - Internal pixelation buffer pass for crisp retro pixel art
- * - 5 Cosmic scale tiers (Factory, Earth, Dyson, Galaxy, Multiverse)
+ * - 7 Progressive Vectorised Scene Backgrounds:
+ *     0: Factory Interior (Wood rafters, brick walls, large arched multi-pane windows, hanging pendant lights)
+ *     1: Factory in Town (Standalone factory, smokestack plumes, water tower, quaint town, hills, telephone poles)
+ *     2: Industrial Megacity (Skyscraper skyline, cooling tower steam, monorail, highway traffic, blimp/drones)
+ *     3: Planetary Earth & Equatorial Orbital Ring (Continents, wire-grid conversion fissures, orbital railgun)
+ *     4: Solar Dyson Swarm & Star Siphon (Radiant solar corona, concentric golden rings, plasma siphon vortex)
+ *     5: Galactic Penrose Dynamo (Sagittarius A* black hole, Doppler accretion disk, relativistic violet jets)
+ *     6: 11D Multiverse Quantum Foam (Chrome reality, iridescent timeline bubble universes, 4D tesseract)
+ * - Authentic 8x8 Bayer Matrix Ordered Dithering & Color Quantization Filter Pass
+ * - Dynamic fluid paperclip mountain & granular slumping physics synchronized with inventory
+ * - Tumbling falling paperclips, sink suction drain physics, and particle sparks
+ * - Crisp nearest-neighbor pixel buffer upscaling for retro pixel-art aesthetic
  */
 
 class CosmicVisualizer {
@@ -20,8 +24,11 @@ class CosmicVisualizer {
         this.pixelCanvas = document.createElement('canvas');
         this.pixelCtx = this.pixelCanvas.getContext('2d');
 
-        this.tier = 0; // 0: Factory, 1: Earth, 2: Dyson, 3: Galaxy, 4: Multiverse
+        // Scene / Tier Management (0 to 6)
+        this.tier = 0;
         this.autoTier = true;
+        this.enableDither = true;
+        this.ditherIntensity = 1.0;
 
         // Camera Orbit State
         this.camYaw = 0.0;
@@ -41,13 +48,13 @@ class CosmicVisualizer {
         this.fallingClips = [];
         this.settledClips = [];
         this.drainingClips = [];
-        this.maxFallingClips = 120;
+        this.maxFallingClips = 300;
         this.maxSettledClips = 90;
         this.maxDrainingClips = 80;
 
         // Dynamic Fluid & Granular Slumping Pile Simulation
         this.numColumns = 54;
-        this.pileHeights = new Float32Array(this.numColumns); // Local height of pile in pixels (0.0 initially)
+        this.pileHeights = new Float32Array(this.numColumns);
         this.waveOffsets = new Float32Array(this.numColumns);
         this.waveVelocities = new Float32Array(this.numColumns);
         this.internalFlowPhase = 0.0;
@@ -56,9 +63,21 @@ class CosmicVisualizer {
         this.drainFlowIntensity = 0.0;
         this.initFluidColumns();
 
-        // Background Pixel Stars
+        // Background Stars for space scenes
         this.stars = [];
-        this.initStars(50);
+        this.initStars(60);
+
+        // Pre-compute 8x8 Bayer Dithering Matrix for the Dither Filter Pass
+        this.bayer8x8 = [
+            [ 0, 32,  8, 40,  2, 34, 10, 42],
+            [48, 16, 56, 24, 50, 18, 58, 26],
+            [12, 44,  4, 36, 14, 46,  6, 38],
+            [60, 28, 52, 20, 62, 30, 54, 22],
+            [ 3, 35, 11, 43,  1, 33,  9, 41],
+            [51, 19, 59, 27, 49, 17, 57, 25],
+            [15, 47,  7, 39, 13, 45,  5, 37],
+            [63, 31, 55, 23, 61, 29, 53, 21]
+        ];
 
         this.initEvents();
     }
@@ -68,7 +87,7 @@ class CosmicVisualizer {
         this.waveOffsets = new Float32Array(this.numColumns);
         this.waveVelocities = new Float32Array(this.numColumns);
         for (let i = 0; i < this.numColumns; ++i) {
-            this.pileHeights[i] = 0.0; // Strictly 0.0 at start / reset!
+            this.pileHeights[i] = 0.0;
             this.waveOffsets[i] = 0.0;
             this.waveVelocities[i] = 0.0;
         }
@@ -118,29 +137,23 @@ class CosmicVisualizer {
         if (this.pixelCanvas.width > 0) {
             this.emitClickSparks(this.pixelCanvas.width / 2, this.pixelCanvas.height / 2, 12);
         }
-        // Spawn paperclip falling directly from the center/hero
         this.spawnPaperclips(1, this.pixelCanvas.width / 2, 0);
     }
 
     spawnPaperclips(count = 1, preferredX = null, cps = 0) {
-        const pw = this.pixelCanvas.width || 200;
+        const pw = this.pixelCanvas.width || 240;
         const centerX = pw / 2;
-        const colors = ['#ffffff', '#00f0ff', '#d0e8ff', '#ffe600', '#7fe0ff'];
-        const spawnCount = Math.min(count, 16); // Particle limit per frame for smooth 60fps
+        const colors = ['#ffffff', '#00f0ff', '#d0e8ff', '#ffe600', '#7fe0ff', '#ff66aa'];
+        const spawnCount = Math.min(count, 16);
 
-        // Calculate drop spread based on current production rate:
-        // Early game / low CPS: tightly clustered around center (±15px) so a tall pile forms in the middle
-        // As rate gets higher (e.g. > 35 CPS): spreads smoothly across the whole screen!
         const cpsNum = (typeof cps === 'object' && cps !== null) ? cps.toDouble() : (Number(cps) || 0);
         const spreadFactor = Math.min(1.0, cpsNum / 35.0);
-        const minSpread = 15.0; // Tight cluster at start
+        const minSpread = 15.0;
         const maxSpread = (pw - 24) / 2;
         const currentSpread = minSpread + spreadFactor * (maxSpread - minSpread);
 
         for (let i = 0; i < spawnCount; ++i) {
-            if (this.fallingClips.length >= this.maxFallingClips) {
-                this.fallingClips.shift();
-            }
+            if (this.fallingClips.length >= this.maxFallingClips) break;
 
             let x;
             if (preferredX !== null && count <= 3) {
@@ -171,29 +184,19 @@ class CosmicVisualizer {
             });
         }
 
-        // Induce very slow internal creeping flow across the fluid mass when clips are added
         this.internalFlowVelocity = Math.min(2.0, this.internalFlowVelocity + Math.min(count, 6) * 0.12);
     }
 
-    /**
-     * Triggers fluid dynamic draining upon spending paperclips.
-     * Fluid slumps and converges into the sink drain using fluid mechanics vector fields.
-     * @param {number} ratio - Fractional cost of purchase (0.1 to 1.0)
-     */
     drainPaperclips(ratio = 0.5) {
         const clampedRatio = Math.max(0.2, Math.min(1.0, ratio));
-
-        // Trigger convergent sink flow intensity
         this.drainFlowIntensity = Math.min(3.0, this.drainFlowIntensity + clampedRatio * 2.5);
 
-        // Induce downward suction whirlpool waves in the fluid (strongest at center)
         for (let i = 0; i < this.numColumns; ++i) {
             const centerFactor = 1.0 - Math.abs((i / (this.numColumns - 1)) - 0.5) * 1.5;
             const suctionStrength = Math.max(0.2, centerFactor) * clampedRatio * 2.2;
             this.waveVelocities[i] -= (0.8 + suctionStrength + Math.random() * 0.8);
         }
 
-        // Settled clips slowly release into the converging fluid stream
         const removeCount = Math.floor(this.settledClips.length * clampedRatio * 0.4);
         if (removeCount > 0) {
             this.settledClips.splice(0, removeCount);
@@ -219,7 +222,6 @@ class CosmicVisualizer {
 
     syncFluidToInventory(state, instant = false) {
         if (!state || !state.clips) return;
-        const pw = this.pixelCanvas.width || 200;
         const ph = this.pixelCanvas.height || 150;
         const c = state.clips.toDouble();
         let capacity = 0.0;
@@ -240,6 +242,7 @@ class CosmicVisualizer {
                 this.waveOffsets[i] = 0.0;
                 this.waveVelocities[i] = 0.0;
             } else {
+                this.pileHeights[i] = targetH;
                 this.waveVelocities[i] += 1.2;
                 this.internalFlowVelocity = Math.min(2.5, this.internalFlowVelocity + 0.4);
             }
@@ -247,11 +250,34 @@ class CosmicVisualizer {
     }
 
     determineAutoTier(lifetimeClips) {
-        if (lifetimeClips.gte(new BigDouble(1.0, 78))) return 4; // Multiverse
-        if (lifetimeClips.gte(new BigDouble(1.0, 45))) return 3; // Galactic Penrose
-        if (lifetimeClips.gte(new BigDouble(1.0, 18))) return 2; // Solar Dyson
-        if (lifetimeClips.gte(new BigDouble(1.0, 9)))  return 1; // Planetary Earth
-        return 0; // Factory Floor
+        if (!lifetimeClips) return 0;
+        // Tier 6: Multiverse (1e78+)
+        if (lifetimeClips.gte(new BigDouble(1.0, 78))) return 6;
+        // Tier 5: Galactic Penrose (1e45+)
+        if (lifetimeClips.gte(new BigDouble(1.0, 45))) return 5;
+        // Tier 4: Solar Dyson (1e18+)
+        if (lifetimeClips.gte(new BigDouble(1.0, 18))) return 4;
+        // Tier 3: Planetary Earth (1e9+)
+        if (lifetimeClips.gte(new BigDouble(1.0, 9)))  return 3;
+        // Tier 2: Industrial Megacity (500,000+)
+        if (lifetimeClips.gte(new BigDouble(5.0, 5)))  return 2;
+        // Tier 1: Factory in Town (5,000+)
+        if (lifetimeClips.gte(new BigDouble(5.0, 3)))  return 1;
+        // Tier 0: Factory Interior (0 to 5,000)
+        return 0;
+    }
+
+    getTierName(tier) {
+        switch (tier) {
+            case 0: return "Factory Interior (Wood & Brick Warehouse)";
+            case 1: return "Factory in Town (Industrial Suburb)";
+            case 2: return "Industrial Megacity (Metropolis)";
+            case 3: return "Planetary Earth & Orbital Ring";
+            case 4: return "Solar Dyson Swarm & Star Siphon";
+            case 5: return "Galactic Penrose Dynamo";
+            case 6: return "11D Multiverse Quantum Foam";
+            default: return "Factory Assembly";
+        }
     }
 
     setTier(tierIndex) {
@@ -259,8 +285,13 @@ class CosmicVisualizer {
             this.autoTier = true;
         } else {
             this.autoTier = false;
-            this.tier = tierIndex;
+            this.tier = Math.max(0, Math.min(6, tierIndex));
         }
+    }
+
+    toggleDither() {
+        this.enableDither = !this.enableDither;
+        return this.enableDither;
     }
 
     update(dt, state) {
@@ -271,193 +302,86 @@ class CosmicVisualizer {
         this.cosmicRotation += dt * 0.8;
         this.heroRecoil += (1.0 - this.heroRecoil) * (dt * 10.0);
 
-        // Advance internal laminar fluid flow phase proportionally to active intake
         this.internalFlowPhase += this.internalFlowVelocity * dt * 0.6;
         this.internalFlowVelocity = Math.max(0, this.internalFlowVelocity - dt * 0.85);
 
-        // Advance convergent sink drain flow phase
         this.drainFlowPhase += this.drainFlowIntensity * dt * 2.2;
         this.drainFlowIntensity = Math.max(0, this.drainFlowIntensity - dt * 1.25);
 
-        const pw = this.pixelCanvas.width || 200;
+        const pw = this.pixelCanvas.width || 240;
         const ph = this.pixelCanvas.height || 150;
         const floorY = ph - 2;
 
-        // Progressive logarithmic fluid capacity curve:
-        // 0 clips: 0.0 px (strictly ground level)
-        // 1 to 25 clips: 0.08px per clip (1 clip = 0.08px, 10 clips = 0.8px, 25 clips = 2.0px puddle)
-        // 100 clips: ~7px
-        // 1,000 clips: ~15px
-        // 10,000 clips: ~23px
-        // 100,000 clips: ~32px
-        // 1,000,000 clips (1M): ~41px
-        // 25,000,000+ clips: max ph * 0.55 (~45-50px)
-        let inventoryCapacity = 0.0;
-        if (state && state.clips) {
-            const c = state.clips.toDouble();
-            if (c > 0) {
-                if (c <= 25) {
-                    inventoryCapacity = c * 0.08;
-                } else {
-                    const logVal = Math.log10(c / 25.0);
-                    inventoryCapacity = Math.min(ph * 0.55, 2.0 + logVal * 8.5);
-                }
-            }
-        }
-
-        // Bidirectional Continuous Fluid Dynamics: Smoothly surge upwards on gain, smoothly drain on spend
-        for (let i = 0; i < this.numColumns; ++i) {
-            const centerFactor = 0.65 + 0.35 * Math.sin(Math.PI * (i / (this.numColumns - 1)));
-            const targetHeight = inventoryCapacity * centerFactor;
-            const diff = targetHeight - this.pileHeights[i];
-
-            if (diff > 0.02) {
-                // Smooth upward rise when inventory increases
-                const riseRate = Math.min(diff, (0.8 + diff * 2.0) * dt);
-                this.pileHeights[i] += riseRate;
-                this.waveVelocities[i] += Math.min(0.5, riseRate * 0.08);
-                this.internalFlowVelocity = Math.min(2.0, this.internalFlowVelocity + riseRate * 0.05);
-            } else if (diff < -0.02) {
-                // Smooth viscous fluid draining when spending
-                const excess = -diff;
-                const drainRate = Math.min(excess, (1.0 + excess * 1.6) * dt);
-                this.pileHeights[i] -= drainRate;
-
-                // Suction tug on wave velocity towards drain
-                this.waveVelocities[i] -= drainRate * 0.35;
-                this.drainFlowIntensity = Math.min(3.0, this.drainFlowIntensity + (excess * 0.25) * dt);
-
-                // Spawn draining paperclips pulled into bottom drains
-                if (Math.random() < 0.14 && this.drainingClips.length < this.maxDrainingClips) {
-                    const x = (i / (this.numColumns - 1)) * pw;
-                    const moundH = Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
-                    const startY = floorY - moundH;
-                    const toCenter = ((pw / 2) - x) * 0.05;
-
-                    this.drainingClips.push({
-                        x: x + (Math.random() - 0.5) * 6,
-                        y: startY + Math.random() * 3,
-                        vx: toCenter + (Math.random() - 0.5) * 1.2,
-                        vy: 1.8 + Math.random() * 2.5,
-                        rot: Math.random() * Math.PI * 2,
-                        vRot: (Math.random() - 0.5) * 0.5,
-                        size: 4.5 + Math.random() * 2,
-                        color: Math.random() > 0.5 ? '#00f0ff' : '#ffe600',
-                        life: 1.4
-                    });
-                }
-            }
-        }
-
-        // 1. UPDATE FALLING PAPERCLIPS & IMPACT ON FLUID SURFACE
+        // 1. Update Falling Paperclips
+        const colWidth = pw / (this.numColumns - 1);
         for (let i = this.fallingClips.length - 1; i >= 0; --i) {
             const p = this.fallingClips[i];
-
-            p.vy += 0.28; // Gravity
             p.x += p.vx;
             p.y += p.vy;
             p.rot += p.vRot;
-
-            // Clamp X inside screen walls with bounce
-            if (p.x < 4) { p.x = 4; p.vx = Math.abs(p.vx) * 0.7; }
-            else if (p.x > pw - 4) { p.x = pw - 4; p.vx = -Math.abs(p.vx) * 0.7; }
+            p.vy += 0.22;
+            p.life -= dt;
 
             const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((p.x / pw) * this.numColumns)));
-            const currentMoundHeight = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
-            const surfaceY = floorY - currentMoundHeight;
+            const currentMound = this.pileHeights[colIdx] + this.waveOffsets[colIdx];
+            const surfaceY = floorY - currentMound;
 
-            // Collision with fluid surface or floor -> Paperclip splashes into fluid and disappears!
             if (p.y >= surfaceY) {
-                // Trigger dynamic wave splash at the point of impact
-                this.waveVelocities[colIdx] += Math.min(1.4, p.vy * 0.22);
-                if (colIdx > 0) this.waveVelocities[colIdx - 1] += Math.min(0.7, p.vy * 0.11);
-                if (colIdx < this.numColumns - 1) this.waveVelocities[colIdx + 1] += Math.min(0.7, p.vy * 0.11);
+                p.y = surfaceY;
+                this.waveVelocities[colIdx] += 0.45;
+                if (colIdx > 0) this.waveVelocities[colIdx - 1] += 0.22;
+                if (colIdx < this.numColumns - 1) this.waveVelocities[colIdx + 1] += 0.22;
 
-                this.internalFlowVelocity = Math.min(2.0, this.internalFlowVelocity + 0.08);
-
-                // Add a small splash droplet/spark
-                if (Math.random() < 0.35 && this.sparks.length < 50) {
-                    this.sparks.push({
-                        x: p.x,
-                        y: surfaceY - 1,
-                        vx: (Math.random() - 0.5) * 1.5,
-                        vy: -0.8 - Math.random() * 1.0,
-                        life: 0.5,
-                        decay: 0.06,
-                        size: 1.5,
-                        color: p.color
-                    });
+                p.bounces++;
+                if (p.bounces < 2 && Math.abs(p.vy) > 1.2) {
+                    p.vy = -p.vy * 0.35;
+                    p.vx += (Math.random() - 0.5) * 1.0;
+                } else {
+                    p.settled = true;
+                    if (this.settledClips.length < this.maxSettledClips) {
+                        this.settledClips.push(p);
+                    }
+                    this.fallingClips.splice(i, 1);
                 }
-
-                // Paperclip is cleanly absorbed into the fluid and disappears at the surface!
+            } else if (p.life <= 0 || p.y > ph + 20) {
                 this.fallingClips.splice(i, 1);
             }
         }
 
-        // 2. UPDATE DRAINING PAPERCLIPS (sucking downwards out bottom of screen)
-        for (let i = this.drainingClips.length - 1; i >= 0; --i) {
-            const p = this.drainingClips[i];
-            p.vy += 0.35; // Downward suction acceleration
-            p.y += p.vy;
-            p.x += p.vx;
-            p.rot += p.vRot;
-            p.life -= dt;
-            if (p.y > ph + 30 || p.life <= 0) {
-                this.drainingClips.splice(i, 1);
-            }
-        }
-
-        // 3. STICKY / THICK GRANULAR SLUMPING (High angle of repose allows steep central pyramid!)
-        const angleOfRepose = 1.25; // Steeper angle of repose for sticky paperclip mound
-        const flowRate = 0.05; // Viscous, heavy flow transfer speed
-
-        for (let pass = 0; pass < 2; ++pass) {
-            for (let i = 0; i < this.numColumns - 1; ++i) {
-                const diff = this.pileHeights[i] - this.pileHeights[i + 1];
-                if (Math.abs(diff) > angleOfRepose) {
-                    const excess = (Math.abs(diff) - angleOfRepose) * flowRate;
-                    if (diff > 0) {
-                        const actualFlow = Math.min(excess, this.pileHeights[i] * 0.4);
-                        this.pileHeights[i] -= actualFlow;
-                        this.pileHeights[i + 1] += actualFlow;
-                    } else {
-                        const actualFlow = Math.min(excess, this.pileHeights[i + 1] * 0.4);
-                        this.pileHeights[i + 1] -= actualFlow;
-                        this.pileHeights[i] += actualFlow;
-                    }
-                }
-            }
-        }
-
-        // 4. HEAVILY DAMPED VISCOUS WAVE PROPAGATION
-        const springK = 0.05;
-        const damping = 0.10;
-        const spread = 0.12;
+        // 2. Dynamic Fluid Mound Simulation
+        const tension = 0.035;
+        const dampening = 0.045;
+        const spread = 0.25;
 
         for (let i = 0; i < this.numColumns; ++i) {
-            this.waveVelocities[i] += (-springK * this.waveOffsets[i]) - (damping * this.waveVelocities[i]);
+            const targetH = this.pileHeights[i];
+            const currentH = this.pileHeights[i] + this.waveOffsets[i];
+            const diff = targetH - currentH;
+            this.waveVelocities[i] += diff * tension - this.waveVelocities[i] * dampening;
             this.waveOffsets[i] += this.waveVelocities[i];
         }
 
         const leftDeltas = new Float32Array(this.numColumns);
         const rightDeltas = new Float32Array(this.numColumns);
-        for (let i = 0; i < this.numColumns; ++i) {
-            if (i > 0) {
-                leftDeltas[i] = spread * (this.waveOffsets[i] - this.waveOffsets[i - 1]);
-                this.waveOffsets[i - 1] += leftDeltas[i];
-            }
-            if (i < this.numColumns - 1) {
-                rightDeltas[i] = spread * (this.waveOffsets[i] - this.waveOffsets[i + 1]);
-                this.waveOffsets[i + 1] += rightDeltas[i];
+        for (let pass = 0; pass < 3; ++pass) {
+            for (let i = 0; i < this.numColumns; ++i) {
+                if (i > 0) {
+                    leftDeltas[i] = spread * (this.waveOffsets[i] - this.waveOffsets[i - 1]);
+                    this.waveOffsets[i - 1] += leftDeltas[i];
+                }
+                if (i < this.numColumns - 1) {
+                    rightDeltas[i] = spread * (this.waveOffsets[i] - this.waveOffsets[i + 1]);
+                    this.waveOffsets[i + 1] += rightDeltas[i];
+                }
             }
         }
 
-        // 5. Update Sparks
+        // 3. Update Sparks
         for (let i = this.sparks.length - 1; i >= 0; --i) {
             const p = this.sparks[i];
             p.x += p.vx;
             p.y += p.vy;
-            p.vy += 0.12; // gravity
+            p.vy += 0.12;
             p.life -= p.decay;
             if (p.life <= 0) {
                 this.sparks.splice(i, 1);
@@ -471,10 +395,10 @@ class CosmicVisualizer {
         const displayH = this.canvas.height = this.canvas.clientHeight;
         if (displayW <= 0 || displayH <= 0) return;
 
-        // Pixel resolution scale factor: ~2.4x pixelation
-        const pixelScale = 2.4;
-        const pw = Math.max(120, Math.floor(displayW / pixelScale));
-        const ph = Math.max(80, Math.floor(displayH / pixelScale));
+        // Internal render resolution (~2.2x pixelation ratio for rich vector detail + crisp pixels)
+        const pixelScale = 2.2;
+        const pw = Math.max(160, Math.floor(displayW / pixelScale));
+        const ph = Math.max(100, Math.floor(displayH / pixelScale));
 
         if (this.pixelCanvas.width !== pw || this.pixelCanvas.height !== ph) {
             this.pixelCanvas.width = pw;
@@ -484,68 +408,974 @@ class CosmicVisualizer {
         const pctx = this.pixelCtx;
         pctx.imageSmoothingEnabled = false;
 
-        // 1. Draw Space / Factory Background onto Pixel Canvas
-        this.renderBackground(pctx, pw, ph);
+        // 1. Render Progressive Vector Background Scene
+        this.renderSceneVector(pctx, pw, ph, state);
 
-        // 2. Render Scale Scene in Background / Center
-        pctx.save();
-        pctx.translate(pw / 2, ph / 2 - 12);
-        pctx.scale(this.camZoom, this.camZoom);
-
-        if (this.tier === 0) {
-            this.renderFactoryFloor(pctx, state);
-        } else if (this.tier === 1) {
-            this.renderPlanetaryEarth(pctx, state);
-        } else if (this.tier === 2) {
-            this.renderSolarDyson(pctx, state);
-        } else if (this.tier === 3) {
-            this.renderGalacticPenrose(pctx, state);
-        } else {
-            this.render11DMultiverse(pctx, state);
-        }
-
-        pctx.restore();
-
-        // 3. Render Spilling Fluid Paperclip Mountains & Flowing Terrain
+        // 2. Render Spilling Fluid Paperclip Mountains & Flowing Terrain
         this.renderFlowingPaperclipSea(pctx, pw, ph);
 
-        // 4. Render Draining / Sinking Paperclips (sucked out the bottom)
+        // 3. Render Draining / Sinking Paperclips
         this.renderDrainingPaperclips(pctx);
 
-        // 5. Render Falling Tumbling Clips
+        // 4. Render Falling Tumbling Clips
         this.renderFallingPaperclips(pctx);
 
-        // 6. Render Pixel Sparks
+        // 5. Render Pixel Sparks
         this.renderSparks(pctx);
 
-        // 7. Blit Pixel Canvas to Main Display Canvas with Crisp Nearest-Neighbor Scaling!
+        // 6. Apply Bayer Ordered Dithering & Color Filter Pass
+        if (this.enableDither) {
+            this.applyDitherFilter(pctx, pw, ph);
+        }
+
+        // 7. Crisp Nearest-Neighbor Upscale Blit to Main Display Canvas
         this.ctx.imageSmoothingEnabled = false;
         this.ctx.clearRect(0, 0, displayW, displayH);
         this.ctx.drawImage(this.pixelCanvas, 0, 0, pw, ph, 0, 0, displayW, displayH);
     }
 
-    renderBackground(ctx, w, h) {
-        const grad = ctx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w * 0.7);
-        if (this.tier === 0) {
-            grad.addColorStop(0, '#1c1038');
-            grad.addColorStop(1, '#090414');
-        } else if (this.tier === 1) {
-            grad.addColorStop(0, '#0f244a');
-            grad.addColorStop(1, '#050b1a');
-        } else if (this.tier === 2) {
-            grad.addColorStop(0, '#4a2408');
-            grad.addColorStop(1, '#140600');
-        } else if (this.tier === 3) {
-            grad.addColorStop(0, '#36094a');
-            grad.addColorStop(1, '#0c0214');
-        } else {
-            grad.addColorStop(0, '#12384a');
-            grad.addColorStop(1, '#030d14');
+    // =========================================================================
+    // 8x8 BAYER MATRIX ORDERED DITHERING & PIXEL FILTER PASS
+    // =========================================================================
+    applyDitherFilter(ctx, width, height) {
+        const imgData = ctx.getImageData(0, 0, width, height);
+        const data = imgData.data;
+        const matrix = this.bayer8x8;
+        const spread = 28.0 * this.ditherIntensity; // dither threshold spread
+        const quantLevels = 24.0; // color quantization steps
+
+        for (let y = 0; y < height; ++y) {
+            const matRow = matrix[y & 7];
+            const rowOffset = y * width * 4;
+            for (let x = 0; x < width; ++x) {
+                const idx = rowOffset + (x << 2);
+                const dither = (matRow[x & 7] / 64.0 - 0.5) * spread;
+
+                // Red channel
+                let r = data[idx] + dither;
+                r = Math.floor(Math.max(0, Math.min(255, r)) / quantLevels) * quantLevels;
+                data[idx] = r;
+
+                // Green channel
+                let g = data[idx + 1] + dither;
+                g = Math.floor(Math.max(0, Math.min(255, g)) / quantLevels) * quantLevels;
+                data[idx + 1] = g;
+
+                // Blue channel
+                let b = data[idx + 2] + dither;
+                b = Math.floor(Math.max(0, Math.min(255, b)) / quantLevels) * quantLevels;
+                data[idx + 2] = b;
+            }
         }
-        ctx.fillStyle = grad;
+        ctx.putImageData(imgData, 0, 0);
+    }
+
+    // =========================================================================
+    // MASTER SCENE ROUTER
+    // =========================================================================
+    renderSceneVector(ctx, w, h, state) {
+        const time = this.cosmicRotation;
+
+        switch (this.tier) {
+            case 0:
+                this.renderFactoryInteriorVector(ctx, w, h, time, state);
+                break;
+            case 1:
+                this.renderFactoryTownVector(ctx, w, h, time, state);
+                break;
+            case 2:
+                this.renderCityMetropolisVector(ctx, w, h, time, state);
+                break;
+            case 3:
+                this.renderPlanetaryEarthVector(ctx, w, h, time, state);
+                break;
+            case 4:
+                this.renderSolarDysonVector(ctx, w, h, time, state);
+                break;
+            case 5:
+                this.renderGalacticPenroseVector(ctx, w, h, time, state);
+                break;
+            case 6:
+            default:
+                this.render11DMultiverseVector(ctx, w, h, time, state);
+                break;
+        }
+    }
+
+    // =========================================================================
+    // SCENE 0: FACTORY INTERIOR (Wood & Brick Warehouse, Arched Windows, Hanging Lights)
+    // =========================================================================
+    renderFactoryInteriorVector(ctx, w, h, time, state) {
+        // 1. Back Red Brick Wall Background
+        const wallGrad = ctx.createLinearGradient(0, 0, 0, h);
+        wallGrad.addColorStop(0, '#2d1414');
+        wallGrad.addColorStop(0.6, '#3e1b1b');
+        wallGrad.addColorStop(1, '#1f0d0d');
+        ctx.fillStyle = wallGrad;
         ctx.fillRect(0, 0, w, h);
 
-        // Twinkling Pixel Stars
+        // Brick coursing pattern
+        ctx.strokeStyle = 'rgba(20, 8, 8, 0.45)';
+        ctx.lineWidth = 1;
+        const brickH = 7;
+        const brickW = 16;
+        for (let y = 0; y < h; y += brickH) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+            ctx.stroke();
+
+            const offset = (Math.floor(y / brickH) % 2) * (brickW / 2);
+            for (let x = offset; x < w; x += brickW) {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y + brickH);
+                ctx.stroke();
+            }
+        }
+
+        // 2. Large Arched Warehouse Windows with Daylight Rays
+        const windowPositions = [w * 0.22, w * 0.50, w * 0.78];
+        const winW = w * 0.18;
+        const winH = h * 0.48;
+        const winTop = h * 0.12;
+
+        windowPositions.forEach(winX => {
+            const left = winX - winW / 2;
+            const right = winX + winW / 2;
+            const archR = winW / 2;
+
+            // Window Exterior Sky Gradient
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(left, winTop + archR);
+            ctx.arc(winX, winTop + archR, archR, Math.PI, 0, false);
+            ctx.lineTo(right, winTop + winH);
+            ctx.lineTo(left, winTop + winH);
+            ctx.closePath();
+            ctx.clip();
+
+            const skyGrad = ctx.createLinearGradient(0, winTop, 0, winTop + winH);
+            skyGrad.addColorStop(0, '#7eb8e8');
+            skyGrad.addColorStop(0.5, '#cce6ff');
+            skyGrad.addColorStop(1, '#fde8c8');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(left - 4, winTop, winW + 8, winH + 4);
+
+            // Distant soft outdoor factory skyline/trees in window
+            ctx.fillStyle = '#6b8ca8';
+            ctx.fillRect(left, winTop + winH - 14, winW, 14);
+            ctx.restore();
+
+            // Window Iron Frame & Mullions
+            ctx.strokeStyle = '#181216';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(left, winTop + archR);
+            ctx.arc(winX, winTop + archR, archR, Math.PI, 0, false);
+            ctx.lineTo(right, winTop + winH);
+            ctx.lineTo(left, winTop + winH);
+            ctx.closePath();
+            ctx.stroke();
+
+            // Panes grid (2 vertical mullions, 4 horizontal)
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = '#221920';
+            const colStep = winW / 3;
+            for (let c = 1; c < 3; ++c) {
+                ctx.beginPath();
+                ctx.moveTo(left + c * colStep, winTop + 4);
+                ctx.lineTo(left + c * colStep, winTop + winH);
+                ctx.stroke();
+            }
+            const rowStep = winH / 5;
+            for (let r = 1; r < 5; ++r) {
+                ctx.beginPath();
+                ctx.moveTo(left, winTop + r * rowStep);
+                ctx.lineTo(right, winTop + r * rowStep);
+                ctx.stroke();
+            }
+
+            // Diagonal Volumetric Sunbeam
+            const beamGrad = ctx.createLinearGradient(winX, winTop + archR, winX + 35, winTop + winH + 45);
+            beamGrad.addColorStop(0, 'rgba(255, 245, 200, 0.22)');
+            beamGrad.addColorStop(1, 'rgba(255, 240, 180, 0.0)');
+            ctx.fillStyle = beamGrad;
+            ctx.beginPath();
+            ctx.moveTo(left, winTop + archR);
+            ctx.lineTo(right, winTop + archR);
+            ctx.lineTo(right + 45, winTop + winH + 45);
+            ctx.lineTo(left + 25, winTop + winH + 45);
+            ctx.closePath();
+            ctx.fill();
+        });
+
+        // 3. Vaulted Wooden Roof Trusses & Timber Beams
+        ctx.fillStyle = '#23120b';
+        // Massive vertical timber support posts
+        ctx.fillRect(0, 0, 16, h);
+        ctx.fillRect(w - 16, 0, 16, h);
+
+        // Horizontal wooden tie beam across the top
+        ctx.fillStyle = '#2c170d';
+        ctx.fillRect(0, h * 0.08, w, 10);
+        ctx.fillRect(0, h * 0.02, w, 8);
+
+        // Angled timber rafters & cross-struts
+        ctx.strokeStyle = '#381f12';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        // Roof truss triangles
+        ctx.moveTo(0, h * 0.08); ctx.lineTo(w * 0.25, 0); ctx.lineTo(w * 0.5, h * 0.08);
+        ctx.moveTo(w * 0.5, h * 0.08); ctx.lineTo(w * 0.75, 0); ctx.lineTo(w, h * 0.08);
+        // Strut verticals
+        ctx.moveTo(w * 0.25, 0); ctx.lineTo(w * 0.25, h * 0.08);
+        ctx.moveTo(w * 0.75, 0); ctx.lineTo(w * 0.75, h * 0.08);
+        ctx.stroke();
+
+        // 4. Exposed Industrial Pipes & Conduits
+        // Cyan Coolant Pipe
+        ctx.fillStyle = '#0284c7';
+        ctx.fillRect(0, h * 0.58, w, 3);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(0, h * 0.58, w, 1);
+        // Red Hydraulic / Steam Pipe with Valves
+        ctx.fillStyle = '#991b1b';
+        ctx.fillRect(0, h * 0.64, w, 4);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(0, h * 0.64, w, 1);
+
+        // 5. Hanging Pendant Dome Lamps & Warm Light Cones
+        const lampPositions = [
+            { x: w * 0.35, y: h * 0.24, cord: h * 0.16 },
+            { x: w * 0.65, y: h * 0.24, cord: h * 0.16 }
+        ];
+
+        lampPositions.forEach(lamp => {
+            // Cord
+            ctx.strokeStyle = '#0f0a0d';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(lamp.x, h * 0.08);
+            ctx.lineTo(lamp.x, lamp.y);
+            ctx.stroke();
+
+            // Lamp Dome Fixture
+            ctx.fillStyle = '#1e3a34';
+            ctx.beginPath();
+            ctx.arc(lamp.x, lamp.y + 4, 9, Math.PI, 0, false);
+            ctx.closePath();
+            ctx.fill();
+
+            // Glowing Bulb
+            ctx.fillStyle = '#ffe600';
+            ctx.beginPath();
+            ctx.arc(lamp.x, lamp.y + 5, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Warm Conical Ambient Light Pool
+            const coneGrad = ctx.createRadialGradient(lamp.x, lamp.y + 6, 4, lamp.x, lamp.y + 45, 65);
+            coneGrad.addColorStop(0, 'rgba(255, 230, 100, 0.28)');
+            coneGrad.addColorStop(0.6, 'rgba(255, 180, 50, 0.12)');
+            coneGrad.addColorStop(1, 'rgba(255, 140, 0, 0.0)');
+            ctx.fillStyle = coneGrad;
+            ctx.beginPath();
+            ctx.moveTo(lamp.x - 6, lamp.y + 6);
+            ctx.lineTo(lamp.x + 6, lamp.y + 6);
+            ctx.lineTo(lamp.x + 55, h);
+            ctx.lineTo(lamp.x - 55, h);
+            ctx.closePath();
+            ctx.fill();
+        });
+
+        // 6. Workshop Machinery / Isometric Floor Overlay
+        this.renderFactoryFloor(ctx, state);
+    }
+
+    // =========================================================================
+    // SCENE 1: FACTORY IN TOWN (Interim Stage: Standalone Factory, Quaint Town, Hills)
+    // =========================================================================
+    renderFactoryTownVector(ctx, w, h, time, state) {
+        // 1. Dawn/Dusk Atmospheric Gradient Sky
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.75);
+        skyGrad.addColorStop(0, '#1c1038');
+        skyGrad.addColorStop(0.35, '#3b1d54');
+        skyGrad.addColorStop(0.65, '#8c3d52');
+        skyGrad.addColorStop(0.85, '#d97746');
+        skyGrad.addColorStop(1, '#fbd38d');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Distant Mountain Ridges
+        ctx.fillStyle = '#3a1f48';
+        ctx.beginPath();
+        ctx.moveTo(0, h * 0.52);
+        ctx.lineTo(w * 0.15, h * 0.44);
+        ctx.lineTo(w * 0.32, h * 0.50);
+        ctx.lineTo(w * 0.55, h * 0.42);
+        ctx.lineTo(w * 0.78, h * 0.49);
+        ctx.lineTo(w, h * 0.43);
+        ctx.lineTo(w, h);
+        ctx.lineTo(0, h);
+        ctx.closePath();
+        ctx.fill();
+
+        // 2. Rolling Green Hills (Midground & Foreground)
+        ctx.fillStyle = '#214d35';
+        ctx.beginPath();
+        ctx.moveTo(0, h * 0.56);
+        ctx.quadraticCurveTo(w * 0.25, h * 0.50, w * 0.55, h * 0.58);
+        ctx.quadraticCurveTo(w * 0.8, h * 0.65, w, h * 0.54);
+        ctx.lineTo(w, h);
+        ctx.lineTo(0, h);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#2e6b48';
+        ctx.beginPath();
+        ctx.moveTo(0, h * 0.64);
+        ctx.quadraticCurveTo(w * 0.35, h * 0.58, w * 0.7, h * 0.67);
+        ctx.quadraticCurveTo(w * 0.88, h * 0.72, w, h * 0.63);
+        ctx.lineTo(w, h);
+        ctx.lineTo(0, h);
+        ctx.closePath();
+        ctx.fill();
+
+        // Pine & Deciduous Tree Silhouettes on Hill Crests
+        const treeColors = ['#173825', '#1a422c'];
+        for (let tx = 8; tx < w * 0.42; tx += 9) {
+            ctx.fillStyle = treeColors[Math.floor(tx % 2)];
+            ctx.beginPath();
+            ctx.moveTo(tx, h * 0.58);
+            ctx.lineTo(tx + 4, h * 0.58 - 10);
+            ctx.lineTo(tx + 8, h * 0.58);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // 3. Quaint Townscape (Midground Left)
+        const townX = w * 0.08;
+        const townY = h * 0.56;
+
+        // Church Spire
+        ctx.fillStyle = '#1e142b';
+        ctx.fillRect(townX + 32, townY - 24, 10, 24);
+        ctx.beginPath();
+        ctx.moveTo(townX + 31, townY - 24);
+        ctx.lineTo(townX + 37, townY - 42);
+        ctx.lineTo(townX + 43, townY - 24);
+        ctx.closePath();
+        ctx.fill();
+
+        // Town Cottages & Houses with Pitched Roofs
+        for (let i = 0; i < 5; ++i) {
+            const hx = townX + i * 16;
+            const hy = townY + (i % 2) * 4;
+            const hw = 13;
+            const hh = 12;
+
+            // House Body
+            ctx.fillStyle = '#2a1a38';
+            ctx.fillRect(hx, hy - hh, hw, hh);
+
+            // Pitched Roof
+            ctx.fillStyle = '#4a243b';
+            ctx.beginPath();
+            ctx.moveTo(hx - 2, hy - hh);
+            ctx.lineTo(hx + hw / 2, hy - hh - 6);
+            ctx.lineTo(hx + hw + 2, hy - hh);
+            ctx.closePath();
+            ctx.fill();
+
+            // Glowing Window
+            ctx.fillStyle = '#ffe600';
+            ctx.fillRect(hx + 3, hy - hh + 4, 3, 3);
+            ctx.fillRect(hx + 7, hy - hh + 4, 3, 3);
+        }
+
+        // Roadway & Utility Telephone Poles
+        ctx.strokeStyle = '#3a2b42';
+        ctx.lineWidth = 1;
+        for (let px = townX; px < w * 0.52; px += 24) {
+            ctx.fillStyle = '#1f1325';
+            ctx.fillRect(px, townY - 2, 2, 14);
+            ctx.fillRect(px - 3, townY + 1, 8, 2);
+        }
+        // Drooping wires
+        ctx.beginPath();
+        ctx.moveTo(townX, townY + 1);
+        ctx.quadraticCurveTo(townX + 12, townY + 4, townX + 24, townY + 1);
+        ctx.quadraticCurveTo(townX + 36, townY + 4, townX + 48, townY + 1);
+        ctx.stroke();
+
+        // 4. Standalone Factory Complex (Center-Right Foreground)
+        const facX = w * 0.52;
+        const facY = h * 0.54;
+        const facW = w * 0.40;
+        const facH = h * 0.28;
+
+        // Main Red Brick Factory Warehouse
+        ctx.fillStyle = '#5a1d1d';
+        ctx.fillRect(facX, facY, facW, facH);
+
+        // Classic Saw-Tooth Pitched Roof with Skylights
+        ctx.fillStyle = '#3a1313';
+        const teeth = 3;
+        const toothW = facW / teeth;
+        for (let t = 0; t < teeth; ++t) {
+            const tx = facX + t * toothW;
+            ctx.beginPath();
+            ctx.moveTo(tx, facY);
+            ctx.lineTo(tx + toothW * 0.85, facY - 14);
+            ctx.lineTo(tx + toothW, facY);
+            ctx.closePath();
+            ctx.fill();
+
+            // Glass skylight pane
+            ctx.fillStyle = '#7eb8e8';
+            ctx.beginPath();
+            ctx.moveTo(tx + toothW * 0.15, facY);
+            ctx.lineTo(tx + toothW * 0.80, facY - 12);
+            ctx.lineTo(tx + toothW * 0.85, facY);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#3a1313';
+        }
+
+        // Factory Multi-Pane Windows (Lit)
+        ctx.fillStyle = '#ffe600';
+        for (let wy = facY + 8; wy < facY + facH - 10; wy += 10) {
+            for (let wx = facX + 8; wx < facX + facW - 12; wx += 14) {
+                ctx.fillRect(wx, wy, 8, 6);
+            }
+        }
+
+        // 2 Tall Brick Smokestacks
+        const st1X = facX + facW * 0.25;
+        const st2X = facX + facW * 0.65;
+        ctx.fillStyle = '#421414';
+        ctx.fillRect(st1X - 5, facY - 38, 10, 38);
+        ctx.fillRect(st2X - 4, facY - 26, 8, 26);
+        // Smokestack caps
+        ctx.fillStyle = '#1c0a0a';
+        ctx.fillRect(st1X - 7, facY - 40, 14, 3);
+        ctx.fillRect(st2X - 5, facY - 28, 10, 3);
+
+        // Billowing Animated White Steam/Smoke Plumes
+        this.renderSmokePlume(ctx, st1X, facY - 40, time, 1.0);
+        this.renderSmokePlume(ctx, st2X, facY - 28, time + 1.5, 0.75);
+
+        // Water Tower on Steel Legs
+        const wtX = facX + facW + 6;
+        ctx.strokeStyle = '#181216';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(wtX - 6, facY + facH); ctx.lineTo(wtX - 2, facY + 8);
+        ctx.moveTo(wtX + 6, facY + facH); ctx.lineTo(wtX + 2, facY + 8);
+        ctx.moveTo(wtX - 5, facY + 22); ctx.lineTo(wtX + 5, facY + 22);
+        ctx.stroke();
+
+        ctx.fillStyle = '#0284c7';
+        ctx.fillRect(wtX - 7, facY - 4, 14, 12);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(wtX - 6, facY - 2, 12, 3);
+
+        // Big Cartoon Paperclip Hologram floating above the factory
+        this.drawCartoonPaperclip(ctx, w / 2, h * 0.28, 0.85 * this.heroRecoil, this.heroRotation + time * 0.35);
+    }
+
+    renderSmokePlume(ctx, x, y, time, scale = 1.0) {
+        ctx.fillStyle = 'rgba(235, 240, 248, 0.72)';
+        for (let i = 0; i < 5; ++i) {
+            const phase = (time * 1.5 + i * 0.8) % 4.0;
+            const px = x + phase * (12 * scale) + Math.sin(phase * 2) * 3;
+            const py = y - phase * (14 * scale);
+            const r = (4 + phase * 3.5) * scale;
+            ctx.beginPath();
+            ctx.arc(px, py, r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // =========================================================================
+    // SCENE 2: INDUSTRIAL MEGACITY (Interim Stage: Skyscraper Skyline, Cooling Towers, Monorails)
+    // =========================================================================
+    renderCityMetropolisVector(ctx, w, h, time, state) {
+        // 1. Twilight Industrial Smog & Gradient Sky
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+        skyGrad.addColorStop(0, '#0c071e');
+        skyGrad.addColorStop(0.35, '#230e38');
+        skyGrad.addColorStop(0.65, '#5c193e');
+        skyGrad.addColorStop(0.85, '#99352e');
+        skyGrad.addColorStop(1, '#e67332');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        // 2. Distant Skyline Silhouettes (Layer 1)
+        ctx.fillStyle = '#1a0b26';
+        const numBgTowers = 12;
+        const bgStep = w / numBgTowers;
+        for (let i = 0; i < numBgTowers; ++i) {
+            const bx = i * bgStep;
+            const bh = 35 + ((i * 37) % 45);
+            ctx.fillRect(bx, h * 0.62 - bh, bgStep + 2, bh);
+
+            // Antenna with blinking red aviation light
+            if (i % 3 === 0) {
+                ctx.strokeStyle = '#0d0514';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(bx + bgStep / 2, h * 0.62 - bh);
+                ctx.lineTo(bx + bgStep / 2, h * 0.62 - bh - 12);
+                ctx.stroke();
+
+                if (Math.sin(time * 4 + i) > 0) {
+                    ctx.fillStyle = '#ff2a85';
+                    ctx.fillRect(bx + bgStep / 2 - 1, h * 0.62 - bh - 13, 2, 2);
+                    ctx.fillStyle = '#1a0b26';
+                }
+            }
+        }
+
+        // 3. Midground Metropolis Skyscrapers & Massive Cooling Towers (Layer 2)
+        ctx.fillStyle = '#261036';
+        const numMidTowers = 8;
+        const midStep = w / numMidTowers;
+        for (let i = 0; i < numMidTowers; ++i) {
+            const mx = i * midStep + 4;
+            const mw = midStep - 6;
+            const mh = 50 + ((i * 43) % 55);
+            const my = h * 0.68 - mh;
+
+            ctx.fillStyle = (i % 2 === 0) ? '#281238' : '#1e0c2c';
+            ctx.fillRect(mx, my, mw, mh);
+
+            // Thousands of tiny glowing office windows
+            for (let wy = my + 6; wy < my + mh - 8; wy += 6) {
+                for (let wx = mx + 4; wx < mx + mw - 4; wx += 5) {
+                    if ((wx * 17 + wy * 31) % 4 !== 0) {
+                        ctx.fillStyle = ((wx + wy) % 3 === 0) ? '#ffe600' : '#00f0ff';
+                        ctx.fillRect(wx, wy, 2.5, 3);
+                    }
+                }
+            }
+        }
+
+        // Concrete Hyperbolic Cooling Towers venting white steam plumes
+        const ctX = w * 0.82;
+        const ctY = h * 0.68;
+        ctx.fillStyle = '#3a2442';
+        ctx.beginPath();
+        ctx.moveTo(ctX - 16, ctY);
+        ctx.quadraticCurveTo(ctX - 10, ctY - 20, ctX - 12, ctY - 32);
+        ctx.lineTo(ctX + 12, ctY - 32);
+        ctx.quadraticCurveTo(ctX + 10, ctY - 20, ctX + 16, ctY);
+        ctx.closePath();
+        ctx.fill();
+
+        this.renderSmokePlume(ctx, ctX, ctY - 34, time * 0.8, 1.2);
+
+        // 4. Foreground Infrastructure: High-Speed Monorail & Highway Bridges
+        // Elevated Monorail Track
+        const monoY = h * 0.62;
+        ctx.strokeStyle = '#090412';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, monoY);
+        ctx.lineTo(w, monoY);
+        ctx.stroke();
+
+        // Monorail Pillars
+        for (let px = 20; px < w; px += 45) {
+            ctx.fillStyle = '#14081c';
+            ctx.fillRect(px - 2, monoY, 4, h * 0.2);
+        }
+
+        // High-Speed Train streaking across track
+        const trainX = (time * 90) % (w + 60) - 40;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(trainX, monoY - 5, 28, 4);
+        ctx.fillStyle = '#00f0ff';
+        ctx.fillRect(trainX + 22, monoY - 4, 5, 2);
+
+        // Multi-tier Highway with Orange & Red Light Streaks
+        const hwyY = h * 0.72;
+        ctx.fillStyle = '#160822';
+        ctx.fillRect(0, hwyY, w, 12);
+        // Headlight streaks (Yellow)
+        ctx.strokeStyle = '#ffe600';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, hwyY + 3); ctx.lineTo(w, hwyY + 3);
+        ctx.stroke();
+        // Taillight streaks (Neon Pink/Red)
+        ctx.strokeStyle = '#ff2a85';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, hwyY + 8); ctx.lineTo(w, hwyY + 8);
+        ctx.stroke();
+
+        // 5. Cargo Delivery Blimp & Drones in Sky
+        const blimpX = (w * 0.25 + Math.sin(time * 0.4) * (w * 0.2));
+        const blimpY = h * 0.22 + Math.cos(time * 0.5) * 4;
+
+        // Blimp Hull
+        ctx.fillStyle = '#1f132e';
+        ctx.beginPath();
+        ctx.ellipse(blimpX, blimpY, 20, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#00f0ff';
+        ctx.fillRect(blimpX - 12, blimpY + 8, 14, 3);
+        // Blinking Beacon
+        if (Math.sin(time * 6) > 0) {
+            ctx.fillStyle = '#ffe600';
+            ctx.fillRect(blimpX + 16, blimpY - 2, 3, 3);
+        }
+
+        // Hologram Hero Paperclip
+        this.drawCartoonPaperclip(ctx, w / 2, h * 0.32, 0.85 * this.heroRecoil, this.heroRotation + time * 0.35);
+    }
+
+    // =========================================================================
+    // SCENE 3: PLANETARY EARTH & ORBITAL RING
+    // =========================================================================
+    renderPlanetaryEarthVector(ctx, w, h, time, state) {
+        // Deep Space Backdrop with Twinkling Stars
+        this.renderSpaceBackdrop(ctx, w, h, '#071026', '#020612');
+
+        const centerX = w / 2;
+        const centerY = h / 2 - 8;
+        const radius = Math.min(w, h) * 0.28;
+
+        // Luminous Atmospheric Rim Glow
+        const atmGrad = ctx.createRadialGradient(centerX, centerY, radius * 0.9, centerX, centerY, radius * 1.3);
+        atmGrad.addColorStop(0, 'rgba(0, 240, 255, 0.35)');
+        atmGrad.addColorStop(0.6, 'rgba(0, 180, 255, 0.12)');
+        atmGrad.addColorStop(1, 'rgba(0, 100, 255, 0.0)');
+        ctx.fillStyle = atmGrad;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 1.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Planet Earth Sphere
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.clip();
+
+        // Ocean Base
+        const oceanGrad = ctx.createRadialGradient(centerX - radius * 0.3, centerY - radius * 0.3, 4, centerX, centerY, radius);
+        oceanGrad.addColorStop(0, '#1a4e8c');
+        oceanGrad.addColorStop(0.7, '#0d284f');
+        oceanGrad.addColorStop(1, '#051124');
+        ctx.fillStyle = oceanGrad;
+        ctx.fillRect(centerX - radius, centerY - radius, radius * 2, radius * 2);
+
+        // Rotating Continents with Paperclipification Wire Fissures
+        const rot = time * 0.35;
+        for (let i = 0; i < 7; ++i) {
+            const angle = rot + (i * Math.PI * 2 / 7);
+            const cx = centerX + Math.cos(angle) * (radius * 0.7);
+            const cy = centerY + Math.sin(angle * 1.2) * (radius * 0.5);
+
+            // Emerald Green Continent Landmass
+            ctx.fillStyle = '#10b981';
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius * 0.32, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Glowing Neon Cyan / Gold Cyber-Veins
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(cx - 14, cy - 6);
+            ctx.lineTo(cx, cy + 4);
+            ctx.lineTo(cx + 12, cy - 8);
+            ctx.lineTo(cx + 18, cy + 6);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#ffe600';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cx - 6, cy + 10);
+            ctx.lineTo(cx + 8, cy + 8);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // Equatorial Magnetic Mass Driver / Orbital Railgun Ring
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(this.camYaw + 0.3);
+        ctx.scale(1, 0.32);
+
+        // Outer Ring
+        ctx.strokeStyle = '#ffe600';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 1.52, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Cyan Superconducting Rail Core
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 1.46, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Orbital Accelerator Nodes & Launched Probes
+        for (let k = 0; k < 6; ++k) {
+            const pAngle = (time * 2.5 + k * (Math.PI * 2 / 6)) % (Math.PI * 2);
+            const px = Math.cos(pAngle) * (radius * 1.52);
+            const py = Math.sin(pAngle) * (radius * 1.52);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(px - 2.5, py - 2.5, 5, 5);
+        }
+        ctx.restore();
+    }
+
+    // =========================================================================
+    // SCENE 4: SOLAR DYSON SWARM & STAR SIPHON
+    // =========================================================================
+    renderSolarDysonVector(ctx, w, h, time, state) {
+        this.renderSpaceBackdrop(ctx, w, h, '#240d04', '#0a0301');
+
+        const centerX = w / 2;
+        const centerY = h / 2 - 8;
+        const sunR = Math.min(w, h) * 0.22;
+
+        // Layered Multi-Tier Solar Corona Glow
+        const coronaGrad = ctx.createRadialGradient(centerX, centerY, sunR * 0.8, centerX, centerY, sunR * 2.4);
+        coronaGrad.addColorStop(0, 'rgba(255, 230, 0, 0.45)');
+        coronaGrad.addColorStop(0.4, 'rgba(255, 100, 0, 0.22)');
+        coronaGrad.addColorStop(0.8, 'rgba(200, 30, 0, 0.08)');
+        coronaGrad.addColorStop(1, 'rgba(100, 0, 0, 0.0)');
+        ctx.fillStyle = coronaGrad;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, sunR * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Fiery Photosphere Star Core
+        const sunGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, sunR);
+        sunGrad.addColorStop(0, '#ffffff');
+        sunGrad.addColorStop(0.35, '#ffe600');
+        sunGrad.addColorStop(0.75, '#ff6600');
+        sunGrad.addColorStop(1, '#cc2900');
+        ctx.fillStyle = sunGrad;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, sunR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Solar Coronal Prominences / Flares looping into space
+        ctx.strokeStyle = '#ff9900';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 4; ++i) {
+            const fAngle = time * 0.5 + i * 1.57;
+            const fx = centerX + Math.cos(fAngle) * sunR;
+            const fy = centerY + Math.sin(fAngle) * sunR;
+            const fPeakX = centerX + Math.cos(fAngle) * (sunR + 18 + Math.sin(time * 3 + i) * 6);
+            const fPeakY = centerY + Math.sin(fAngle) * (sunR + 18 + Math.sin(time * 3 + i) * 6);
+            ctx.beginPath();
+            ctx.moveTo(fx - 6, fy);
+            ctx.quadraticCurveTo(fPeakX, fPeakY, fx + 6, fy);
+            ctx.stroke();
+        }
+
+        // Concentric Golden Dyson Swarm Rings
+        const rings = [
+            { r: sunR * 1.5, tilt: 0.35, speed: 1.0, color: '#ffe600', nodes: 8 },
+            { r: sunR * 1.9, tilt: -0.45, speed: -0.7, color: '#00f0ff', nodes: 10 },
+            { r: sunR * 2.3, tilt: 0.20, speed: 0.5, color: '#ff2a85', nodes: 12 }
+        ];
+
+        rings.forEach(cfg => {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(this.camYaw + cfg.tilt);
+            ctx.scale(1, Math.abs(cfg.tilt) + 0.22);
+
+            ctx.strokeStyle = 'rgba(255, 230, 0, 0.45)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, cfg.r, 0, Math.PI * 2);
+            ctx.stroke();
+
+            for (let n = 0; n < cfg.nodes; ++n) {
+                const a = time * cfg.speed + (n * (Math.PI * 2 / cfg.nodes));
+                const nx = Math.cos(a) * cfg.r;
+                const ny = Math.sin(a) * cfg.r;
+                ctx.fillStyle = cfg.color;
+                ctx.fillRect(nx - 3, ny - 3, 6, 6);
+            }
+            ctx.restore();
+        });
+
+        // Star-Lifting Plasma Siphon Vortex Funnel
+        const sAngle = time * 0.7;
+        const siphonStartX = centerX + Math.cos(sAngle) * (sunR * 0.9);
+        const siphonStartY = centerY + Math.sin(sAngle) * (sunR * 0.9);
+        const siphonEndNodeX = centerX + Math.cos(sAngle + 0.6) * (sunR * 2.1);
+        const siphonEndNodeY = centerY + Math.sin(sAngle + 0.6) * (sunR * 2.1);
+
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(siphonStartX, siphonStartY);
+        ctx.quadraticCurveTo(centerX + Math.cos(sAngle + 0.3) * (sunR * 1.7), centerY + Math.sin(sAngle + 0.3) * (sunR * 1.7), siphonEndNodeX, siphonEndNodeY);
+        ctx.stroke();
+    }
+
+    // =========================================================================
+    // SCENE 5: GALACTIC PENROSE DYNAMO
+    // =========================================================================
+    renderGalacticPenroseVector(ctx, w, h, time, state) {
+        this.renderSpaceBackdrop(ctx, w, h, '#1c072b', '#06010a');
+
+        const centerX = w / 2;
+        const centerY = h / 2 - 8;
+        const bhR = Math.min(w, h) * 0.16;
+
+        // Swirling Galactic Core / Relativistic Accretion Disk
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(this.camYaw - 0.25);
+        ctx.scale(1, 0.36);
+
+        // Accretion Disk Spiral with Doppler Beaming (Blue approaching left, Red receding right)
+        for (let r = bhR * 1.2; r < bhR * 3.2; r += 4.5) {
+            const diskGrad = ctx.createLinearGradient(-r, 0, r, 0);
+            diskGrad.addColorStop(0, '#00f0ff');
+            diskGrad.addColorStop(0.4, '#a855f7');
+            diskGrad.addColorStop(1, '#ff2a85');
+
+            ctx.strokeStyle = diskGrad;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, r, time * 1.2, time * 1.2 + Math.PI * 1.6);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // Sagittarius A* Supermassive Black Hole Event Horizon
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, bhR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Einstein Gravitational Lensing Ring
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, bhR * 1.08, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Twin Collimated Violet Relativistic Jet Beams
+        const jetGrad = ctx.createLinearGradient(0, centerY - bhR * 0.8, 0, 0);
+        jetGrad.addColorStop(0, '#ffffff');
+        jetGrad.addColorStop(0.3, '#a855f7');
+        jetGrad.addColorStop(1, 'rgba(168, 85, 247, 0.0)');
+
+        ctx.strokeStyle = jetGrad;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - bhR * 0.8);
+        ctx.lineTo(centerX, 0);
+        ctx.stroke();
+
+        const jetGradBottom = ctx.createLinearGradient(0, centerY + bhR * 0.8, 0, h);
+        jetGradBottom.addColorStop(0, '#ffffff');
+        jetGradBottom.addColorStop(0.3, '#a855f7');
+        jetGradBottom.addColorStop(1, 'rgba(168, 85, 247, 0.0)');
+
+        ctx.strokeStyle = jetGradBottom;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY + bhR * 0.8);
+        ctx.lineTo(centerX, h);
+        ctx.stroke();
+    }
+
+    // =========================================================================
+    // SCENE 6: 11D MULTIVERSE QUANTUM FOAM
+    // =========================================================================
+    render11DMultiverseVector(ctx, w, h, time, state) {
+        this.renderSpaceBackdrop(ctx, w, h, '#0d1f33', '#030812');
+
+        const centerX = w / 2;
+        const centerY = h / 2 - 8;
+
+        // Floating Iridescent Timeline Bubble Universes
+        const bubbles = [
+            { x: -w * 0.28, y: -h * 0.22, r: 24, name: 'STAPLE-MAX-9000', color: 'rgba(255, 42, 133, 0.45)', border: '#ff2a85' },
+            { x:  w * 0.26, y: -h * 0.25, r: 28, name: 'QUANTUM CYAN',   color: 'rgba(0, 240, 255, 0.45)',   border: '#00f0ff' },
+            { x: -w * 0.22, y:  h * 0.24, r: 25, name: 'CELLULOSE PRIME',color: 'rgba(0, 255, 136, 0.45)',   border: '#00ff88' },
+            { x:  w * 0.27, y:  h * 0.26, r: 30, name: '11D STRING FOAM', color: 'rgba(168, 85, 247, 0.45)', border: '#a855f7' }
+        ];
+
+        bubbles.forEach(b => {
+            const bx = centerX + b.x + Math.sin(time * 0.8 + b.r) * 8;
+            const by = centerY + b.y + Math.cos(time * 0.8 + b.r) * 8;
+
+            ctx.fillStyle = b.color;
+            ctx.strokeStyle = b.border;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(bx, by, b.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Internal miniature galaxy swirl
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(bx, by, b.r * 0.5, time, time + Math.PI);
+            ctx.stroke();
+        });
+
+        // Central Maximized Master Universe (Pure Polished Chrome)
+        const masterR = Math.min(w, h) * 0.18;
+        const chromeGrad = ctx.createLinearGradient(centerX - masterR, centerY - masterR, centerX + masterR, centerY + masterR);
+        chromeGrad.addColorStop(0, '#ffffff');
+        chromeGrad.addColorStop(0.3, '#d0e8ff');
+        chromeGrad.addColorStop(0.7, '#8fb5e8');
+        chromeGrad.addColorStop(1, '#2c4b78');
+        ctx.fillStyle = chromeGrad;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, masterR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 4D Rotating Hyper-Tesseract Wireframe
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(time * 0.5);
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 1.5;
+
+        const sOuter = masterR * 1.5;
+        const sInner = masterR * 0.75 + Math.sin(time * 2) * 8;
+
+        ctx.strokeRect(-sOuter, -sOuter, sOuter * 2, sOuter * 2);
+        ctx.strokeRect(-sInner, -sInner, sInner * 2, sInner * 2);
+
+        ctx.beginPath();
+        ctx.moveTo(-sOuter, -sOuter); ctx.lineTo(-sInner, -sInner);
+        ctx.moveTo(sOuter, -sOuter); ctx.lineTo(sInner, -sInner);
+        ctx.moveTo(sOuter, sOuter); ctx.lineTo(sInner, sInner);
+        ctx.moveTo(-sOuter, sOuter); ctx.lineTo(-sInner, sInner);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    renderSpaceBackdrop(ctx, w, h, topColor, botColor) {
+        const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w * 0.75);
+        bgGrad.addColorStop(0, topColor);
+        bgGrad.addColorStop(1, botColor);
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, w, h);
+
         const time = this.cosmicRotation;
         this.stars.forEach(s => {
             const sx = Math.floor(s.x * w);
@@ -560,13 +1390,17 @@ class CosmicVisualizer {
         ctx.globalAlpha = 1.0;
     }
 
+    // =========================================================================
+    // ISOMETRIC WORKSHOP & MACHINE OVERLAYS
+    // =========================================================================
     renderFactoryFloor(ctx, state) {
         const time = this.cosmicRotation;
         const grid = state ? state.spatialGrid : null;
-
-        // Draw 6x6 Cartoon Isometric Grid
         const tileSize = 20;
+
         ctx.save();
+        ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2 + 10);
+        ctx.scale(this.camZoom, this.camZoom);
         ctx.rotate(this.camYaw * 0.5);
         ctx.scale(1, Math.cos(this.camPitch));
 
@@ -575,7 +1409,7 @@ class CosmicVisualizer {
                 const px = (x - y) * (tileSize * 0.866);
                 const py = (x + y) * (tileSize * 0.5);
 
-                ctx.strokeStyle = '#321c60';
+                ctx.strokeStyle = '#4a2525';
                 ctx.lineWidth = 1;
                 ctx.strokeRect(px - tileSize / 2, py - tileSize / 2, tileSize, tileSize);
 
@@ -587,11 +1421,10 @@ class CosmicVisualizer {
                 }
             }
         }
-
         ctx.restore();
 
-        // Big Cartoon Paperclip Hologram in Center
-        this.drawCartoonPaperclip(ctx, 0, -10, 0.9 * this.heroRecoil, this.heroRotation + time * 0.4);
+        // Hero Hologram Paperclip
+        this.drawCartoonPaperclip(ctx, ctx.canvas.width / 2, ctx.canvas.height / 2 - 12, 0.9 * this.heroRecoil, this.heroRotation + time * 0.4);
     }
 
     drawPixelMachine(ctx, x, y, type, time) {
@@ -621,193 +1454,6 @@ class CosmicVisualizer {
         }
     }
 
-    renderPlanetaryEarth(ctx, state) {
-        const time = this.cosmicRotation * 0.5;
-        const radius = 45;
-
-        // Glowing Atmosphere
-        ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
-        ctx.beginPath();
-        ctx.arc(0, 0, radius + 8, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Globe Circle
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(0, 0, radius, 0, Math.PI * 2);
-        ctx.clip();
-
-        ctx.fillStyle = '#0e2b5c';
-        ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
-
-        // Rotating Cartoon Continents
-        for (let i = 0; i < 6; ++i) {
-            const angle = time + (i * Math.PI / 3);
-            const cx = Math.cos(angle) * (radius * 0.65);
-            const cy = Math.sin(angle * 1.3) * (radius * 0.45);
-
-            ctx.fillStyle = '#00ff88';
-            ctx.beginPath();
-            ctx.arc(cx, cy, 18, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Neon Fissures
-            ctx.strokeStyle = '#00f0ff';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(cx - 10, cy);
-            ctx.lineTo(cx, cy + 8);
-            ctx.lineTo(cx + 12, cy - 6);
-            ctx.stroke();
-        }
-        ctx.restore();
-
-        // Orbital Railgun Ring
-        ctx.save();
-        ctx.rotate(this.camYaw);
-        ctx.scale(1, 0.35);
-        ctx.strokeStyle = '#ffe600';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(0, 0, radius * 1.45, 0, Math.PI * 2);
-        ctx.stroke();
-
-        for (let k = 0; k < 4; ++k) {
-            const pAngle = (time * 3 + k * 1.5) % (Math.PI * 2);
-            const px = Math.cos(pAngle) * (radius * 1.45);
-            const py = Math.sin(pAngle) * (radius * 1.45);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(px - 2, py - 2, 4, 4);
-        }
-        ctx.restore();
-    }
-
-    renderSolarDyson(ctx, state) {
-        const time = this.cosmicRotation * 0.6;
-        const sunR = 34;
-
-        ctx.fillStyle = '#ff3300';
-        ctx.beginPath();
-        ctx.arc(0, 0, sunR + 14, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#ff9900';
-        ctx.beginPath();
-        ctx.arc(0, 0, sunR + 6, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#ffe600';
-        ctx.beginPath();
-        ctx.arc(0, 0, sunR, 0, Math.PI * 2);
-        ctx.fill();
-
-        const rings = [
-            { r: 54, tilt: 0.35, speed: 1.0, color: '#ffe600' },
-            { r: 72, tilt: -0.4, speed: -0.7, color: '#00f0ff' }
-        ];
-
-        rings.forEach(cfg => {
-            ctx.save();
-            ctx.rotate(this.camYaw + cfg.tilt);
-            ctx.scale(1, Math.abs(cfg.tilt) + 0.25);
-
-            ctx.strokeStyle = 'rgba(255, 230, 0, 0.5)';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.arc(0, 0, cfg.r, 0, Math.PI * 2);
-            ctx.stroke();
-
-            const nodeCount = 8;
-            for (let n = 0; n < nodeCount; ++n) {
-                const a = time * cfg.speed + (n * (Math.PI * 2 / nodeCount));
-                const nx = Math.cos(a) * cfg.r;
-                const ny = Math.sin(a) * cfg.r;
-                ctx.fillStyle = cfg.color;
-                ctx.fillRect(nx - 3, ny - 3, 6, 6);
-            }
-            ctx.restore();
-        });
-    }
-
-    renderGalacticPenrose(ctx, state) {
-        const time = this.cosmicRotation * 0.9;
-        const bhR = 24;
-
-        ctx.fillStyle = 'rgba(255, 42, 133, 0.4)';
-        ctx.beginPath();
-        ctx.arc(0, 0, bhR * 2.6, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.save();
-        ctx.rotate(this.camYaw - 0.2);
-        ctx.scale(1, 0.38);
-
-        for (let r = bhR * 1.2; r < bhR * 2.8; r += 5) {
-            ctx.strokeStyle = r < bhR * 2.0 ? '#00f0ff' : '#ff2a85';
-            ctx.lineWidth = 2.5;
-            ctx.beginPath();
-            ctx.arc(0, 0, r, time, time + Math.PI * 1.5);
-            ctx.stroke();
-        }
-        ctx.restore();
-
-        ctx.fillStyle = '#0a0414';
-        ctx.beginPath();
-        ctx.arc(0, 0, bhR, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = '#a855f7';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(0, -bhR * 0.6);
-        ctx.lineTo(0, -120);
-        ctx.moveTo(0, bhR * 0.6);
-        ctx.lineTo(0, 120);
-        ctx.stroke();
-    }
-
-    render11DMultiverse(ctx, state) {
-        const time = this.cosmicRotation;
-
-        const bubbles = [
-            { x: -55, y: -30, r: 22, color: 'rgba(0, 240, 255, 0.4)', border: '#00f0ff' },
-            { x: 50, y: -35, r: 26, color: 'rgba(255, 42, 133, 0.4)', border: '#ff2a85' },
-            { x: -40, y: 42, r: 24, color: 'rgba(255, 230, 0, 0.4)', border: '#ffe600' },
-            { x: 52, y: 38, r: 28, color: 'rgba(168, 85, 247, 0.4)', border: '#a855f7' }
-        ];
-
-        bubbles.forEach(b => {
-            const bx = b.x + Math.sin(time + b.r) * 5;
-            const by = b.y + Math.cos(time + b.r) * 5;
-            ctx.fillStyle = b.color;
-            ctx.strokeStyle = b.border;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(bx, by, b.r, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-        });
-
-        ctx.save();
-        ctx.rotate(time * 0.5);
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.5;
-
-        const sOuter = 32;
-        const sInner = 16 + Math.sin(time * 2) * 6;
-
-        ctx.strokeRect(-sOuter, -sOuter, sOuter * 2, sOuter * 2);
-        ctx.strokeRect(-sInner, -sInner, sInner * 2, sInner * 2);
-
-        ctx.beginPath();
-        ctx.moveTo(-sOuter, -sOuter); ctx.lineTo(-sInner, -sInner);
-        ctx.moveTo(sOuter, -sOuter); ctx.lineTo(sInner, -sInner);
-        ctx.moveTo(sOuter, sOuter); ctx.lineTo(sInner, sInner);
-        ctx.moveTo(-sOuter, sOuter); ctx.lineTo(-sInner, sInner);
-        ctx.stroke();
-
-        ctx.restore();
-    }
 
     renderFlowingPaperclipSea(ctx, w, h) {
         const floorY = h - 2;

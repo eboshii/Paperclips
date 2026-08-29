@@ -8,11 +8,13 @@
 namespace OmniEngine {
 
 enum class CosmicVisualTier {
-    FactoryFloor,      // 0 to 1e15 clips: 8x8 Grid, Conveyors, Mounds
-    PlanetaryEarth,    // 1e15 to 1e24 clips: Earth & Equatorial Orbital Ring
-    SolarDysonSwarm,   // 1e24 to 1e35 clips: Sun & Concentric Dyson Mirrors
-    GalacticPenrose,   // 1e35 to 1e78 clips: Black Hole Dynamo & Galactic Lasers
-    MultiverseVoid     // > 1e78 clips: 11D Quantum Foam & Universe Bubbles
+    FactoryInterior,   // Tier 0: 0 to 5,000 clips: Wood & Brick Warehouse
+    TownComplex,       // Tier 1: 5,000 to 500,000 clips: Town Factory, Smokestacks, Hills
+    CityMetropolis,    // Tier 2: 500,000 to 1e9 clips: Skyscraper Skyline, Cooling Towers, Monorails
+    PlanetaryEarth,    // Tier 3: 1e9 to 1e18 clips: Earth Globe & Equatorial Orbital Ring
+    SolarDysonSwarm,   // Tier 4: 1e18 to 1e45 clips: Sun & Concentric Dyson Mirrors
+    GalacticPenrose,   // Tier 5: 1e45 to 1e78 clips: Black Hole Dynamo & Relativistic Jets
+    MultiverseVoid     // Tier 6: > 1e78 clips: 11D Quantum Foam & Universe Bubbles
 };
 
 /// <summary>
@@ -21,9 +23,11 @@ enum class CosmicVisualTier {
 class OmniCosmicRenderer {
 public:
     static CosmicVisualTier DetermineTier(const BigDouble& lifetimeClips) {
-        if (lifetimeClips < BigDouble(1.0, 15)) return CosmicVisualTier::FactoryFloor;
-        if (lifetimeClips < BigDouble(5.97, 24)) return CosmicVisualTier::PlanetaryEarth;
-        if (lifetimeClips < BigDouble(1.0, 35)) return CosmicVisualTier::SolarDysonSwarm;
+        if (lifetimeClips < BigDouble(5.0, 3)) return CosmicVisualTier::FactoryInterior;
+        if (lifetimeClips < BigDouble(5.0, 5)) return CosmicVisualTier::TownComplex;
+        if (lifetimeClips < BigDouble(1.0, 9)) return CosmicVisualTier::CityMetropolis;
+        if (lifetimeClips < BigDouble(1.0, 18)) return CosmicVisualTier::PlanetaryEarth;
+        if (lifetimeClips < BigDouble(1.0, 45)) return CosmicVisualTier::SolarDysonSwarm;
         if (lifetimeClips < BigDouble(1.0, 78)) return CosmicVisualTier::GalacticPenrose;
         return CosmicVisualTier::MultiverseVoid;
     }
