@@ -398,7 +398,7 @@ class CosmicVisualizer {
         }
         this.shakeTimer = 1.2;
         this.shakeIntensity = 12.0;
-        this.transitionBanner = bannerText || `⚡ ENTERING ${this.getTierName(toTier).toUpperCase()}`;
+        this.transitionBanner = bannerText || `ENTERING ${this.getTierName(toTier).toUpperCase()}`;
         this.transitionBannerTimer = 4.0;
         
         // Spawn eruption of falling clips and sparks

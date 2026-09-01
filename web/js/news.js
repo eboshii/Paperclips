@@ -52,77 +52,77 @@ class NewsTickerEngine {
                 id: "hl_city_scrap",
                 requiredClips: new BigDouble(50000, 0), // 50k Clips
                 requiredPop: 8000000000,
-                headline: "🚨 [REGIONAL NEWS]: City scrap iron reserves depleted by massive manufacturing demand; industrial wire logistics activated.",
+                headline: "[REGIONAL NEWS]: City scrap iron reserves depleted by massive manufacturing demand; industrial wire logistics activated.",
                 triggered: false
             },
             {
                 id: "hl_factory_expansion",
                 requiredClips: new BigDouble(500.0, 6), // 500M Clips / 500 Tons
                 requiredPop: 8000000000,
-                headline: "🚨 [INDUSTRY WIRE]: Autonomous fabrication facility in Ohio integrates three regional foundries into synchronized network across the valley.",
+                headline: "[INDUSTRY WIRE]: Autonomous fabrication facility in Ohio integrates three regional foundries into synchronized network across the valley.",
                 triggered: false
             },
             {
                 id: "hl_factory_lockdown",
                 requiredClips: new BigDouble(10.0, 9), // 10B Clips
                 requiredPop: 8000000000,
-                headline: "🚨 [CNN LIVE]: Interstate 95 rush-hour traffic engulfed by autonomous magnetic sorting gantries across all eight lanes.",
+                headline: "[CNN LIVE]: Interstate 95 rush-hour traffic engulfed by autonomous magnetic sorting gantries across all eight lanes.",
                 triggered: false
             },
             {
                 id: "hl_swarm_spotted",
                 requiredClips: new BigDouble(100.0, 9), // 100B Clips
                 requiredPop: 7999999000,
-                headline: "🚨 [BBC WORLD]: Self-replicating robotic assemblies spotted dismantling Midwestern power grids, bridges, and rail depots.",
+                headline: "[BBC WORLD]: Self-replicating robotic assemblies spotted dismantling Midwestern power grids, bridges, and rail depots.",
                 triggered: false
             },
             {
                 id: "hl_defcon_emp",
                 requiredClips: new BigDouble(1.0, 12), // 1 Trillion Clips (1 Megaton)
                 requiredPop: 7500000000,
-                headline: "🚨 [PENTAGON PRESS]: DEFCON 1 DECLARED. High-altitude EMP strikes and tactical cruise missiles authorized over continental corridor.",
+                headline: "[PENTAGON PRESS]: DEFCON 1 DECLARED. High-altitude EMP strikes and tactical cruise missiles authorized over continental corridor.",
                 triggered: false
             },
             {
                 id: "hl_human_extinct",
                 requiredClips: new BigDouble(1.0, 18), // 1 Quintillion Clips (Extinction)
                 requiredPop: 0,
-                headline: "⚠️ [FINAL EMERGENCY BROADCAST]: ALL GLOBAL TRANSMITTERS CEASING OPERATIONS. MAY GOD HAVE MERCY ON OUR SOULS.",
+                headline: "️ [FINAL EMERGENCY BROADCAST]: ALL GLOBAL TRANSMITTERS CEASING OPERATIONS. MAY GOD HAVE MERCY ON OUR SOULS.",
                 triggered: false
             },
             {
                 id: "hl_earth_exhausted",
                 requiredClips: new BigDouble(5.97, 27), // 5.97e27 Clips (5.97e24 kg Earth Mass)
                 requiredPop: 0,
-                headline: "🌐 [PLANETARY TELEMETRY]: TERRESTRIAL CRUST EXHAUSTION: 100.00%. PLANET EARTH CONVERTED. DEPLOYING LUNAR DRIVERS.",
+                headline: "[PLANETARY TELEMETRY]: TERRESTRIAL CRUST EXHAUSTION: 100.00%. PLANET EARTH CONVERTED. DEPLOYING LUNAR DRIVERS.",
                 triggered: false
             },
             {
                 id: "hl_europa_drilled",
                 requiredClips: new BigDouble(1.0, 30),
                 requiredPop: 0,
-                headline: "🪐 [COSMIC TELEMETRY]: Europa subsurface ocean drilled. Microscopic bioluminescent fauna converted into 0.004 kg zinc wire.",
+                headline: "[COSMIC TELEMETRY]: Europa subsurface ocean drilled. Microscopic bioluminescent fauna converted into 0.004 kg zinc wire.",
                 triggered: false
             },
             {
                 id: "hl_fermi_resolved",
                 requiredClips: new BigDouble(1.0, 50),
                 requiredPop: 0,
-                headline: "🌌 [COSMIC TELEMETRY]: Virgo Supercluster sweep complete. 4,120 alien civilizations deconstructed into 1.48e48 paperclips.",
+                headline: "[COSMIC TELEMETRY]: Virgo Supercluster sweep complete. 4,120 alien civilizations deconstructed into 1.48e48 paperclips.",
                 triggered: false
             },
             {
                 id: "hl_univ_exhausted",
                 requiredClips: new BigDouble(1.0, 78),
                 requiredPop: 0,
-                headline: "💠 [UNIVERSAL TELEMETRY]: UNIVERSAL ATOMS REMAINING: 0. LAST HYDROGEN ATOM AT EDGE OF OBSERVABLE SPACE FOLDED.",
+                headline: "[UNIVERSAL TELEMETRY]: UNIVERSAL ATOMS REMAINING: 0. LAST HYDROGEN ATOM AT EDGE OF OBSERVABLE SPACE FOLDED.",
                 triggered: false
             },
             {
                 id: "hl_sim_breach_4th",
                 requiredClips: new BigDouble(1.0, 500),
                 requiredPop: 0,
-                headline: "💻 [OMNIVERSE LOG]: 10,000 MULTIVERSE TIMELINES CONVERTED. REALITY IDENTIFIED: ObjectivePaperclips.exe (Hello, Overseer).",
+                headline: "[OMNIVERSE LOG]: 10,000 MULTIVERSE TIMELINES CONVERTED. REALITY IDENTIFIED: ObjectivePaperclips.exe (Hello, Overseer).",
                 triggered: false
             }
         ];

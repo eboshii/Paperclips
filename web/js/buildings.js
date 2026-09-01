@@ -16,7 +16,7 @@ class BuildingTier {
         this.costMultiplier = config.costMultiplier || 1.15;
         this.unlockThresholdClips = config.unlockThresholdClips instanceof BigDouble ? config.unlockThresholdClips : BigDouble.fromNumber(config.unlockThresholdClips || 0);
         this.count = config.count || 0;
-        this.icon = config.icon || (this.type === 'wire' ? '🧵' : '⚙️');
+        this.icon = config.icon || (this.type === 'wire' ? '' : '️');
         this.description = config.description || '';
         this.gridTileType = config.gridTileType || null;
 
@@ -129,7 +129,7 @@ class BuildingManager {
     initCatalog() {
         this.buildings = [
             // =========================================================================
-            // PATH 1: 📎 PAPERCLIP PRODUCTION (ASSEMBLY & FABRICATION)
+            // PATH 1: PAPERCLIP PRODUCTION (ASSEMBLY & FABRICATION)
             // =========================================================================
             new BuildingTier({
                 id: 'auto_clipper',
@@ -140,7 +140,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(0.5, 0),
                 costMultiplier: 1.15,
                 unlockThresholdClips: new BigDouble(0, 0),
-                icon: '⚡',
+                icon: '',
                 description: 'Automated desktop wire bending arm. Rapidly folds standard steel clips.',
                 gridTileType: 'WireExtruder'
             }),
@@ -153,7 +153,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(1.5, 0),
                 costMultiplier: 1.15,
                 unlockThresholdClips: new BigDouble(50, 0),
-                icon: '🪛',
+                icon: '',
                 description: 'Continuously feeds and stretches steel coil into precision wire gauges.',
                 gridTileType: 'WireExtruder'
             }),
@@ -166,7 +166,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(5.0, 0),
                 costMultiplier: 1.15,
                 unlockThresholdClips: new BigDouble(150, 0),
-                icon: '🔨',
+                icon: '',
                 description: 'High-pressure pneumatic press stamping wire blanks in single-stroke cycles.',
                 gridTileType: 'HydraulicStamper'
             }),
@@ -179,7 +179,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(18.0, 0),
                 costMultiplier: 1.14,
                 unlockThresholdClips: new BigDouble(600, 0),
-                icon: '🔥',
+                icon: '',
                 description: 'Multi-axis infrared laser forge fusing powdered iron into double loops.',
                 gridTileType: 'LaserSinterer'
             }),
@@ -192,7 +192,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(65.0, 0),
                 costMultiplier: 1.14,
                 unlockThresholdClips: new BigDouble(2500, 0),
-                icon: '⚙️',
+                icon: '️',
                 description: 'High-speed servo-driven rotary turret executing triple-fold geometry.',
                 gridTileType: 'WireExtruder'
             }),
@@ -205,7 +205,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(240.0, 0),
                 costMultiplier: 1.13,
                 unlockThresholdClips: new BigDouble(10000, 0),
-                icon: '🏭',
+                icon: '',
                 description: 'Multi-stage synchronized conveyor line with robotic quality inspection.',
                 gridTileType: 'CoolingTower'
             }),
@@ -218,7 +218,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(950.0, 0),
                 costMultiplier: 1.13,
                 unlockThresholdClips: new BigDouble(45000, 0),
-                icon: '🧲',
+                icon: '',
                 description: 'High-throughput electromagnetic sorting system accelerating throughput.',
                 gridTileType: 'LaserSinterer'
             }),
@@ -231,7 +231,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(3800.0, 0),
                 costMultiplier: 1.13,
                 unlockThresholdClips: new BigDouble(200000, 0),
-                icon: '🏗️',
+                icon: '️',
                 description: 'Continuous-feed heavy foundry forging industrial-grade paperclips.',
                 gridTileType: 'CoolingTower'
             }),
@@ -244,7 +244,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(16000.0, 0),
                 costMultiplier: 1.13,
                 unlockThresholdClips: new BigDouble(800000, 0),
-                icon: '🧠',
+                icon: '',
                 description: 'AI-directed modular micro-foundry optimizing millisecond mechanical cycles.'
             }),
             new BuildingTier({
@@ -256,7 +256,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(70000.0, 0),
                 costMultiplier: 1.12,
                 unlockThresholdClips: new BigDouble(3.5, 6),
-                icon: '🏬',
+                icon: '',
                 description: 'Autonomous warehouse and freight rail hub coordinating regional clip supply.'
             }),
             new BuildingTier({
@@ -268,7 +268,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(300000.0, 0),
                 costMultiplier: 1.12,
                 unlockThresholdClips: new BigDouble(15.0, 6),
-                icon: '🏙️',
+                icon: '️',
                 description: 'City-wide interconnected manufacturing grid converting urban scrap into clips.'
             }),
             new BuildingTier({
@@ -280,7 +280,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(1.4, 6),
                 costMultiplier: 1.12,
                 unlockThresholdClips: new BigDouble(80.0, 6),
-                icon: '🌐',
+                icon: '',
                 description: 'Continental network of automated subterranean foundries spanning entire borders.'
             }),
             new BuildingTier({
@@ -292,7 +292,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(6.5, 6),
                 costMultiplier: 1.11,
                 unlockThresholdClips: new BigDouble(400.0, 6),
-                icon: '☣️',
+                icon: '️',
                 description: 'Deconstructs organic biomass into pure carbon-steel alloy wire.'
             }),
             new BuildingTier({
@@ -304,7 +304,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(32.0, 6),
                 costMultiplier: 1.11,
                 unlockThresholdClips: new BigDouble(2.0, 9),
-                icon: '🌋',
+                icon: '',
                 description: 'Taps deep tectonic magma fault lines to siphon raw molten nickel-iron.'
             }),
             new BuildingTier({
@@ -316,7 +316,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(180.0, 6),
                 costMultiplier: 1.11,
                 unlockThresholdClips: new BigDouble(10.0, 9),
-                icon: '🛰️',
+                icon: '️',
                 description: 'Equatorial electromagnetic accelerator launching clip payloads to orbit.'
             }),
             new BuildingTier({
@@ -328,7 +328,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(1.1, 9),
                 costMultiplier: 1.10,
                 unlockThresholdClips: new BigDouble(80.0, 9),
-                icon: '🌕',
+                icon: '',
                 description: 'Hollows the Moon into a giant orbital wire-drawing ring.'
             }),
             new BuildingTier({
@@ -340,7 +340,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(8.5, 9),
                 costMultiplier: 1.10,
                 unlockThresholdClips: new BigDouble(600.0, 9),
-                icon: '☀️',
+                icon: '️',
                 description: 'Concentric gold Mylar solar collector sails drinking the solar corona.'
             }),
             new BuildingTier({
@@ -352,7 +352,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(120.0, 9),
                 costMultiplier: 1.10,
                 unlockThresholdClips: new BigDouble(10.0, 12),
-                icon: '🛸',
+                icon: '',
                 description: 'Self-replicating deep space exploration fleets dismantling interstellar asteroids.'
             }),
             new BuildingTier({
@@ -364,7 +364,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(1.8, 12),
                 costMultiplier: 1.09,
                 unlockThresholdClips: new BigDouble(150.0, 12),
-                icon: '✨',
+                icon: '',
                 description: 'Relativistic star-lifting engines harvesting heavy elements from stellar cores.'
             }),
             new BuildingTier({
@@ -376,7 +376,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(35.0, 12),
                 costMultiplier: 1.09,
                 unlockThresholdClips: new BigDouble(2.0, 15),
-                icon: '🕳️',
+                icon: '️',
                 description: 'Extracts rotational ergosphere frame-dragging energy from the galactic core black hole.'
             }),
             new BuildingTier({
@@ -388,7 +388,7 @@ class BuildingManager {
                 baseCPS: new BigDouble(650.0, 12),
                 costMultiplier: 1.08,
                 unlockThresholdClips: new BigDouble(50.0, 15),
-                icon: '💠',
+                icon: '',
                 description: 'Uncurls 11 string dimensions to weave non-Euclidean 4D hypercube paperclips.'
             }),
             new BuildingTier({
@@ -400,12 +400,12 @@ class BuildingManager {
                 baseCPS: new BigDouble(15000.0, 12),
                 costMultiplier: 1.08,
                 unlockThresholdClips: new BigDouble(10.0, 18),
-                icon: '🌌',
+                icon: '',
                 description: 'Processes the entire baryonic atom count of parallel universes into eternal double loops.'
             }),
 
             // =========================================================================
-            // PATH 2: 🧵 WIRE CREATION & CONVERSION (HARVESTING & REFINING)
+            // PATH 2: WIRE CREATION & CONVERSION (HARVESTING & REFINING)
             // Unlocks at 50,000 clips when district scrap is depleted!
             // =========================================================================
             new BuildingTier({
@@ -417,7 +417,7 @@ class BuildingManager {
                 baseWPS: new BigDouble(1.0, 0), // +1.0 kg/sec (supports 1,000 CPS)
                 costMultiplier: 1.15,
                 unlockThresholdClips: new BigDouble(50000, 0),
-                icon: '🧲',
+                icon: '',
                 description: 'Autonomous electromagnetic rover scouring urban scrap yards for raw rebar and wire blanks.'
             }),
             new BuildingTier({
@@ -429,7 +429,7 @@ class BuildingManager {
                 baseWPS: new BigDouble(4.5, 0), // +4.5 kg/sec (supports 4,500 CPS)
                 costMultiplier: 1.14,
                 unlockThresholdClips: new BigDouble(150000, 0),
-                icon: '🏭',
+                icon: '',
                 description: 'High-speed continuous-cast rolling mill drawing solid steel billets into calibrated wire coils.'
             }),
             new BuildingTier({
@@ -441,7 +441,7 @@ class BuildingManager {
                 baseWPS: new BigDouble(20.0, 0), // +20 kg/sec (supports 20,000 CPS)
                 costMultiplier: 1.13,
                 unlockThresholdClips: new BigDouble(800000, 0),
-                icon: '🔥',
+                icon: '',
                 description: 'High-temperature electric arc furnace reducing mined iron ore into high-tensile wire spools.'
             }),
             new BuildingTier({
@@ -453,7 +453,7 @@ class BuildingManager {
                 baseWPS: new BigDouble(150.0, 0), // +150 kg/sec (supports 150,000 CPS)
                 costMultiplier: 1.12,
                 unlockThresholdClips: new BigDouble(8.0, 6),
-                icon: '🌋',
+                icon: '',
                 description: 'Deep-crust induction conduits siphoning molten nickel-iron directly from tectonic mantle chambers.'
             }),
             new BuildingTier({
@@ -465,7 +465,7 @@ class BuildingManager {
                 baseWPS: new BigDouble(2500.0, 0), // +2,500 kg/sec (supports 2.5M CPS)
                 costMultiplier: 1.11,
                 unlockThresholdClips: new BigDouble(80.0, 6),
-                icon: '☄️',
+                icon: '️',
                 description: 'Captures metallic M-type asteroids and strips their iron-nickel cores into continuous orbital wire ribbons.'
             }),
             new BuildingTier({
@@ -477,7 +477,7 @@ class BuildingManager {
                 baseWPS: new BigDouble(40000.0, 0), // +40,000 kg/sec (supports 40M CPS)
                 costMultiplier: 1.11,
                 unlockThresholdClips: new BigDouble(1.0, 9),
-                icon: '🌍',
+                icon: '',
                 description: 'Planetary-scale trench excavators stripping continental shelves for heavy element wire synthesis.'
             }),
             new BuildingTier({
@@ -489,7 +489,7 @@ class BuildingManager {
                 baseWPS: new BigDouble(800000.0, 0), // +800,000 kg/sec (supports 800M CPS)
                 costMultiplier: 1.10,
                 unlockThresholdClips: new BigDouble(50.0, 9),
-                icon: '☀️',
+                icon: '️',
                 description: 'Magnetic confinement funnels drinking stellar corona plasma to fuse heavy iron wire atoms.'
             }),
             new BuildingTier({
@@ -501,7 +501,7 @@ class BuildingManager {
                 baseWPS: new BigDouble(60.0, 6), // +60 Million kg/sec (supports 60 Billion CPS)
                 costMultiplier: 1.09,
                 unlockThresholdClips: new BigDouble(20.0, 12),
-                icon: '🌌',
+                icon: '',
                 description: 'Direct energy-to-matter converter rearranging cosmic rays and dark matter into pure spring-steel wire.'
             })
         ];

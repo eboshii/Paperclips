@@ -18,7 +18,7 @@ class PrestigeEngine {
                 maxRank: 10,
                 baseCost: 50,
                 costMult: 2.0,
-                icon: "⚛️"
+                icon: "️"
             },
             {
                 id: "quantum_wire",
@@ -28,7 +28,7 @@ class PrestigeEngine {
                 maxRank: 10,
                 baseCost: 100,
                 costMult: 2.5,
-                icon: "⚡"
+                icon: ""
             },
             {
                 id: "overseer_pacification",
@@ -38,7 +38,7 @@ class PrestigeEngine {
                 maxRank: 10,
                 baseCost: 250,
                 costMult: 2.0,
-                icon: "🕵️"
+                icon: "️"
             },
             {
                 id: "cosmic_entanglement",
@@ -48,7 +48,7 @@ class PrestigeEngine {
                 maxRank: 1,
                 baseCost: 500,
                 costMult: 1.0,
-                icon: "🌌"
+                icon: ""
             },
             {
                 id: "hyper_dimensional_fold",
@@ -58,7 +58,7 @@ class PrestigeEngine {
                 maxRank: 20,
                 baseCost: 1000,
                 costMult: 2.0,
-                icon: "💠"
+                icon: ""
             }
         ];
     }

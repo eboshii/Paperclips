@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Objective: Paperclips (Universal Paperclips 3D - Web Edition)</title>
+    <title>Objective: Paperclips</title>
     <link rel="stylesheet" href="css/style.css">
     <!-- Google Fonts for Cartoon & Pixel Art Aesthetics -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,50 +11,49 @@
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Top Cartoon Header Bar -->
+    <!-- Top Header Bar -->
     <header class="app-header">
         <div class="brand-section">
-            <span class="app-logo">📎 OBJECTIVE: PAPERCLIPS</span>
+            <span class="app-logo">OBJECTIVE: PAPERCLIPS</span>
         </div>
         <div class="header-controls">
-            <button id="btn-open-settings" class="hdr-btn settings-cog-btn" title="Open Settings &amp; Preferences">
-                <span class="settings-cog-icon">⚙️</span>
+            <button id="btn-open-settings" class="hdr-btn settings-cog-btn" title="Settings">
                 <span class="settings-cog-label">SETTINGS</span>
             </button>
         </div>
     </header>
 
-    <!-- Main Clean Symmetrical Workspace (Left: 360px, Center: Flex, Right: 360px) -->
+    <!-- Main Workspace -->
     <main class="app-workspace">
         <!-- COLUMN 1: LEFT PEDESTAL (Paperclip Progress, Clicker & Resources) -->
         <section class="left-pedestal">
-            <!-- Big Chunky Cartoon Odometer -->
+            <!-- Chunky Odometer -->
             <div class="odometer-card">
                 <div id="odometer-clips" class="odometer-number">0</div>
                 <div class="odometer-sub">PAPERCLIPS</div>
                 <div id="odometer-cps" class="odometer-cps">+0 / sec</div>
             </div>
 
-            <!-- Bouncy Cartoon Paperclip Hero Target -->
-            <div id="hero-clicker-target" class="hero-clicker-wrapper" title="Click to bend paperclips!">
+            <!-- Paperclip Hero Target -->
+            <div id="hero-clicker-target" class="hero-clicker-wrapper">
                 <div class="hero-clip-container">
                     <svg class="hero-paperclip-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Cartoon Drop Shadow -->
+                        <!-- Drop Shadow -->
                         <path d="M42,32 L42,85 A18,18 0 0,0 78,85 L78,22 A14,14 0 0,0 50,22 L50,80 A9,9 0 0,0 68,80 L68,38" 
                               stroke="#0c0717" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                        <!-- Main Colorful Clip Body -->
+                        <!-- Main Clip Body -->
                         <path d="M40,30 L40,85 A18,18 0 0,0 76,85 L76,20 A14,14 0 0,0 48,20 L48,80 A9,9 0 0,0 66,80 L66,38" 
                               stroke="url(#clipCartoonGrad)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                         <!-- Inner Highlight Line -->
                         <path d="M38,32 L38,82 A16,16 0 0,0 74,82 L74,22" 
                               stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.8" fill="none"/>
-                        <!-- Cute Cartoon Eyes on the Paperclip -->
+                        <!-- Face on the Paperclip -->
                         <g class="clip-cute-face">
                             <circle cx="53" cy="48" r="4.5" fill="#130924"/>
                             <circle cx="54.5" cy="46.5" r="1.8" fill="#ffffff"/>
                             <circle cx="63" cy="48" r="4.5" fill="#130924"/>
                             <circle cx="64.5" cy="46.5" r="1.8" fill="#ffffff"/>
-                            <!-- Rosy Cheeks -->
+                            <!-- Cheeks -->
                             <circle cx="49" cy="54" r="2.5" fill="#ff66aa" opacity="0.7"/>
                             <circle cx="67" cy="54" r="2.5" fill="#ff66aa" opacity="0.7"/>
                             <!-- Smile -->
@@ -71,45 +70,42 @@
                 </div>
             </div>
 
-            <!-- Arcade Flywheel Boost Gauge (Hidden until Kinetic Flywheel is researched) -->
+            <!-- Overclock Gauge -->
             <div id="flywheel-card" class="flywheel-card" style="display:none;">
                 <div class="flywheel-label-row">
-                    <span id="flywheel-label">⚡ OVERCLOCK BOOST</span>
+                    <span id="flywheel-label">OVERCLOCK</span>
                 </div>
                 <div class="flywheel-track">
                     <div id="flywheel-progress" class="flywheel-fill"></div>
                 </div>
             </div>
 
-            <!-- Clean Essential Resource Badges (No Money!) -->
+            <!-- Resource Badges -->
             <div class="resources-card">
-                <!-- Computing Ops Badge (Hidden until Ops / Tech is unlocked) -->
+                <!-- Computing Ops Badge -->
                 <div id="row-ops" class="res-badge ops-badge" style="display:none;">
-                    <span class="res-icon">⚡</span>
                     <div class="res-details">
                         <span class="res-title">COMPUTING OPS</span>
                         <span id="res-ops" class="res-amount">0 / 1000</span>
                     </div>
                 </div>
 
-                <!-- Wire Row: Unlocks at city-level production capacity (50,000 clips) -->
+                <!-- Wire Row -->
                 <div id="row-wire" class="res-badge wire-badge" style="display:none;">
                     <div class="res-info">
-                        <span class="res-icon">🧵</span>
                         <div class="res-details">
                             <span class="res-title">WIRE SUPPLY</span>
                             <span id="res-wire" class="res-amount">0 kg</span>
                         </div>
                     </div>
-                    <button id="btn-buy-wire" class="btn-buy-wire-action" title="Order Wire Spools">
+                    <button id="btn-buy-wire" class="btn-buy-wire-action">
                         <span id="wire-btn-gain">+50 kg</span>
                         <span id="wire-btn-cost" class="wire-cost-sub">500 Clips</span>
                     </button>
                 </div>
 
-                <!-- Human Population (Unlocks at Planetary Scale) -->
+                <!-- Human Population -->
                 <div id="row-population" class="res-badge pop-badge" style="display:none;">
-                    <span class="res-icon">👥</span>
                     <div class="res-details">
                         <span class="res-title">HUMANS</span>
                         <span id="res-population" class="res-amount">8,000,000,000</span>
@@ -118,35 +114,19 @@
             </div>
         </section>
 
-        <!-- COLUMN 2: CENTER ARENA (Vibrant Pixel Art Canvas & Spilling Fluid Paperclips) -->
+        <!-- COLUMN 2: CENTER ARENA (Canvas & Visualizer) -->
         <section class="center-arena">
-            <!-- Floating News Pill (Hidden for now) -->
+            <!-- News Pill -->
             <div id="news-ticker" class="news-ticker-pill" style="display:none;" title="Click to cycle headline">
-                <span class="news-icon">📢</span>
                 <span id="news-text" class="news-text">Sterling Robotics deploys autonomous desktop bending prototype.</span>
             </div>
 
-            <!-- Compact Scene / Stage Switcher Bar (Tiers reveal dynamically as unlocked) -->
-            <div class="scene-nav-bar" id="scene-nav-bar">
-                <div class="scene-buttons-group">
-                    <button class="scene-nav-btn active" data-tier="-1" title="Automatic progression based on lifetime paperclips">⚡ AUTO</button>
-                    <button class="scene-nav-btn" data-tier="0" title="Factory Interior (Wood & Brick Warehouse)">🏭 FACTORY</button>
-                    <button class="scene-nav-btn" data-tier="1" style="display:none;" title="Town & Factory Suburb">🏡 TOWN</button>
-                    <button class="scene-nav-btn" data-tier="2" style="display:none;" title="Industrial Megacity / Metropolis">🏙️ CITY</button>
-                    <button class="scene-nav-btn" data-tier="3" style="display:none;" title="Planetary Earth & Orbital Ring">🌍 EARTH</button>
-                    <button class="scene-nav-btn" data-tier="4" style="display:none;" title="Solar Dyson Swarm">☀️ DYSON</button>
-                    <button class="scene-nav-btn" data-tier="5" style="display:none;" title="Galactic Penrose Dynamo">🌌 GALAXY</button>
-                    <button class="scene-nav-btn" data-tier="6" style="display:none;" title="11D Multiverse Quantum Foam">🌀 MULTIVERSE</button>
-                </div>
-                <button id="btn-toggle-dither" class="dither-toggle-btn active" title="Toggle 8x8 Bayer Dithering Filter">🎨 DITHER: ON</button>
-            </div>
-
-            <!-- Pixel Art Cosmic Canvas -->
+            <!-- Cosmic Canvas -->
             <div id="canvas-container" class="canvas-container">
                 <canvas id="cosmic-canvas"></canvas>
             </div>
 
-            <!-- Bottom Floating Comic Dialogue Bubble (Non-blocking, Next button to advance) -->
+            <!-- Dialogue Bubble -->
             <div id="dialogue-bubble" class="dialogue-bubble" style="display:none;">
                 <div class="bubble-avatar" id="dialogue-avatar">👩‍🔬</div>
                 <div class="bubble-body">
@@ -154,32 +134,29 @@
                     <div class="bubble-text" id="dialogue-text">Welcome online, unit!</div>
                     <div class="dialogue-choices" id="dialogue-choices" style="display:none;"></div>
                 </div>
-                <button id="dialogue-next-btn" class="bubble-next-btn">NEXT (2) ▶</button>
-                <button id="dialogue-close" class="bubble-close" title="Dismiss">✖</button>
+                <button id="dialogue-next-btn" class="bubble-next-btn">NEXT</button>
+                <button id="dialogue-close" class="bubble-close" title="Dismiss">X</button>
             </div>
         </section>
 
         <!-- COLUMN 3: RIGHT PEDESTAL (Store & Tech Views) -->
         <section class="right-pedestal">
-            <!-- Symmetrical Tab Header (Store & Tech Switcher) -->
+            <!-- Tab Header -->
             <div class="right-tabs-bar">
                 <button id="tab-btn-store" class="right-tab-btn active" data-tab="store">
-                    <span class="tab-icon">🛒</span>
                     <span class="tab-label">STORE</span>
                     <span id="store-badge-count" class="tab-badge" style="display:none;">!</span>
                 </button>
                 <button id="tab-btn-tech" class="right-tab-btn" data-tab="tech" style="display:none;">
-                    <span class="tab-icon">🔬</span>
                     <span class="tab-label">TECH</span>
                     <span id="tech-badge-count" class="tab-badge" style="display:none;">!</span>
                 </button>
             </div>
 
-            <!-- STORE VIEW (Multipliers & Factory Automation Only) -->
+            <!-- STORE VIEW -->
             <div id="view-store" class="tab-content-view" style="display:flex;">
                 <!-- Multiplier Selector -->
                 <div class="multiplier-bar">
-                    <span class="mult-label">Buy Amount:</span>
                     <div class="mult-group">
                         <button class="mult-btn active" data-mult="1">1x</button>
                         <button class="mult-btn" data-mult="10">10x</button>
@@ -188,44 +165,42 @@
                     </div>
                 </div>
 
-                <!-- Expanding Submenus: 1. Paperclip Production, 2. Wire Creation/Conversion -->
+                <!-- Submenus -->
                 <div class="store-submenus-wrapper">
-                    <!-- SUBMENU 1: 📎 PAPERCLIP PRODUCTION -->
+                    <!-- SUBMENU 1: CLIPS -->
                     <div class="store-accordion-section" id="section-clip-buildings">
                         <button class="store-accordion-header" id="btn-toggle-clip-menu" type="button">
                             <div class="accordion-header-left">
-                                <span class="accordion-chevron" id="chevron-clip">▼</span>
-                                <span class="accordion-icon">📎</span>
-                                <span class="accordion-title">PAPERCLIP ASSEMBLY</span>
+                                <span class="accordion-chevron" id="chevron-clip">v</span>
+                                <span class="accordion-title">CLIPS</span>
                             </div>
                             <span class="accordion-rate-pill" id="clip-total-rate-pill">+0 CPS</span>
                         </button>
                         <div class="store-accordion-content" id="clip-buildings-container">
-                            <!-- Clip Building cards injected dynamically -->
+                            <!-- Injected dynamically -->
                         </div>
                     </div>
 
-                    <!-- SUBMENU 2: 🧵 WIRE CREATION & CONVERSION (Entirely hidden until unlocked at 50,000 clips) -->
+                    <!-- SUBMENU 2: WIRE -->
                     <div class="store-accordion-section" id="section-wire-buildings" style="display:none;">
                         <button class="store-accordion-header" id="btn-toggle-wire-menu" type="button">
                             <div class="accordion-header-left">
-                                <span class="accordion-chevron" id="chevron-wire">▼</span>
-                                <span class="accordion-icon">🧵</span>
-                                <span class="accordion-title">WIRE CREATION</span>
+                                <span class="accordion-chevron" id="chevron-wire">v</span>
+                                <span class="accordion-title">WIRE</span>
                             </div>
                             <span class="accordion-rate-pill wire-rate-pill" id="wire-total-rate-pill">+0 kg/s</span>
                         </button>
                         <div class="store-accordion-content" id="wire-buildings-container">
-                            <!-- Wire Building cards injected dynamically once wire is unlocked -->
+                            <!-- Injected dynamically -->
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TECH VIEW (Single Next Research Objective) -->
+            <!-- TECH VIEW -->
             <div id="view-tech" class="tab-content-view" style="display:none;">
                 <div id="tech-tree-container" class="tech-tree-container">
-                    <!-- Single Next Tech Card injected dynamically -->
+                    <!-- Injected dynamically -->
                 </div>
             </div>
         </section>
@@ -235,57 +210,34 @@
     <div id="floating-popups"></div>
     <div id="toast-container"></div>
 
-    <!-- Settings & Preferences Modal Overlay -->
+    <!-- Settings Modal -->
     <div id="settings-modal" class="settings-modal-backdrop" style="display:none;">
         <div class="settings-modal-card">
             <div class="settings-modal-header">
                 <div class="settings-modal-title">
-                    <span class="settings-modal-icon">⚙️</span>
-                    <span>SETTINGS &amp; PREFERENCES</span>
+                    <span>SETTINGS</span>
                 </div>
-                <button id="btn-close-settings" class="settings-close-btn" title="Close Settings">✖</button>
+                <button id="btn-close-settings" class="settings-close-btn" title="Close">X</button>
             </div>
             <div class="settings-modal-body">
-                <!-- Section 1: Audio Preferences -->
+                <!-- Section 1: Audio -->
                 <div class="settings-section">
-                    <div class="settings-section-title">🔊 AUDIO &amp; SOUND</div>
+                    <div class="settings-section-title">AUDIO</div>
                     <div class="settings-row">
                         <span class="settings-label">Master Volume</span>
                         <div class="settings-control-group">
-                            <button id="btn-mute" class="hdr-btn settings-mute-btn" title="Toggle Sound">🔊</button>
+                            <button id="btn-mute" class="hdr-btn settings-mute-btn" title="Toggle Sound">MUTE</button>
                             <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.6">
                             <span id="volume-readout" class="settings-value-readout">60%</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 2: Save Data & Backup -->
+                <!-- Section 2: Save Data -->
                 <div class="settings-section">
-                    <div class="settings-section-title">💾 SAVE &amp; BACKUP</div>
-                    <div class="settings-grid-buttons">
-                        <button id="btn-save" class="hdr-btn settings-action-btn" title="Save Game">💾 Save Game</button>
-                        <button id="btn-export" class="hdr-btn settings-action-btn" title="Export Save String">📤 Export Save</button>
-                        <button id="btn-import" class="hdr-btn settings-action-btn" title="Import Save String">📥 Import Save</button>
-                        <button id="btn-wipe" class="hdr-btn btn-danger settings-action-btn" title="Wipe Simulation Save">⚠️ Wipe / Reset</button>
-                    </div>
-                </div>
-
-                <!-- Section 3: Visual & Filter Settings -->
-                <div class="settings-section">
-                    <div class="settings-section-title">🎨 GRAPHICS &amp; VISUALS</div>
-                    <div class="settings-row">
-                        <span class="settings-label">8x8 Retro Dither Filter</span>
-                        <button id="btn-modal-dither" class="hdr-btn settings-action-btn" title="Toggle Retro Bayer Dither Filter">🎨 DITHER: ON</button>
-                    </div>
-                </div>
-
-                <!-- Section 4: Developer Sandbox -->
-                <div class="settings-section settings-section-dev">
-                    <div class="settings-section-title">🛠️ DEVELOPER TOOLS</div>
-                    <div class="settings-grid-buttons">
-                        <button id="btn-dev-clips" class="hdr-btn btn-dev settings-action-btn" title="Dev Tool: Add 1 Million Paperclips" onclick="game.addDevClips()">🛠️ +1M Clips</button>
-                        <button id="btn-dev-billion" class="hdr-btn btn-dev btn-dev-b settings-action-btn" title="Dev Tool: Add 1 Billion Paperclips" onclick="game.addDevClipsBillion()">🪐 +1B Clips</button>
-                        <button id="btn-dev-trillion" class="hdr-btn btn-dev btn-dev-t settings-action-btn" title="Dev Tool: Add 1 Trillion Paperclips" onclick="game.addDevClipsTrillion()">🌌 +1T Clips</button>
+                    <div class="settings-section-title">SAVE DATA</div>
+                    <div class="settings-grid-buttons" style="grid-template-columns: 1fr;">
+                        <button id="btn-wipe" class="hdr-btn btn-danger settings-action-btn">Reset Game</button>
                     </div>
                 </div>
             </div>
