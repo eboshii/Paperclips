@@ -44,7 +44,7 @@ class DialogueDirector {
                 order: 1,
                 condition: (s) => s.lifetimeClips.gte(BigDouble.one()),
                 sender: "DR. VANCE (OVERSEER)",
-                text: "\"First unit bent! Actuators calibrated. Keep clicking the paperclip to build your starting stockpile.\""
+                text: "\"First unit bent! Actuators calibrated. Click the workshop screen to forge clips and build your starting stockpile.\""
             },
             {
                 id: "autoclipper_affordable",
@@ -1029,12 +1029,13 @@ class DialogueDirector {
                 window.game.humanPopulation = Math.max(0, window.game.humanPopulation - choice.popReduction);
             }
             if (window.game.visualizer) {
-                const cx = (window.game.visualizer.pixelCanvas && window.game.visualizer.pixelCanvas.width) ? window.game.visualizer.pixelCanvas.width / 2 : 120;
-                const cy = (window.game.visualizer.pixelCanvas && window.game.visualizer.pixelCanvas.height) ? window.game.visualizer.pixelCanvas.height / 2 : 75;
+                const heroPos = (typeof window.game.visualizer.getHeroPosition === 'function')
+                    ? window.game.visualizer.getHeroPosition()
+                    : { x: (window.game.visualizer.pixelCanvas?.width || 240) / 2, y: (window.game.visualizer.pixelCanvas?.height || 150) / 2 };
                 if (typeof window.game.visualizer.spawnSparks === 'function') {
-                    window.game.visualizer.spawnSparks(cx, cy, 25);
+                    window.game.visualizer.spawnSparks(heroPos.x, heroPos.y, 25);
                 } else if (typeof window.game.visualizer.emitClickSparks === 'function') {
-                    window.game.visualizer.emitClickSparks(cx, cy, 25);
+                    window.game.visualizer.emitClickSparks(heroPos.x, heroPos.y, 25);
                 }
             }
             if (typeof choice.onChoice === 'function') {

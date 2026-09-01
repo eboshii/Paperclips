@@ -151,13 +151,39 @@ class CosmicVisualizer {
         });
     }
 
-    triggerHeroClick() {
+    getHeroPosition(w = null, h = null) {
+        const pw = w || (this.pixelCanvas ? this.pixelCanvas.width : 240) || 240;
+        const ph = h || (this.pixelCanvas ? this.pixelCanvas.height : 150) || 150;
+        let heroY;
+        switch (this.tier) {
+            case 0:
+                heroY = ph * 0.42;
+                break;
+            case 1:
+                heroY = ph * 0.28;
+                break;
+            case 2:
+                heroY = ph * 0.32;
+                break;
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            default:
+                heroY = ph * 0.45;
+                break;
+        }
+        return { x: pw / 2, y: heroY };
+    }
+
+    triggerHeroClick(targetX = null, targetY = null) {
         this.heroRecoil = 0.7;
         this.heroRotation += 0.35;
-        if (this.pixelCanvas.width > 0) {
-            this.emitClickSparks(this.pixelCanvas.width / 2, this.pixelCanvas.height / 2, 12);
-        }
-        this.spawnPaperclips(1, this.pixelCanvas.width / 2, 0);
+        const heroPos = this.getHeroPosition();
+        const emitX = (targetX !== null && targetX !== undefined) ? targetX : heroPos.x;
+        const emitY = (targetY !== null && targetY !== undefined) ? targetY : heroPos.y;
+        this.emitClickSparks(emitX, emitY, 16);
+        this.spawnPaperclips(1, emitX, 0);
     }
 
     spawnPaperclips(count = 1, preferredX = null, cps = 0) {
@@ -1246,7 +1272,8 @@ class CosmicVisualizer {
         this.renderSmokePlume(ctx, st2X, facY - 28, time + 1.5, 0.75);
 
         // Big Cartoon Paperclip Hologram
-        this.drawCartoonPaperclip(ctx, w / 2, h * 0.28, 0.85 * this.heroRecoil, this.heroRotation + time * 0.35);
+        const heroPos = this.getHeroPosition(w, h);
+        this.drawCartoonPaperclip(ctx, heroPos.x, heroPos.y, 0.85 * this.heroRecoil, this.heroRotation + time * 0.35);
     }
 
     renderSmokePlume(ctx, x, y, time, scale = 1.0) {
@@ -1396,7 +1423,8 @@ class CosmicVisualizer {
         ctx.stroke();
 
         // Hologram Hero Paperclip
-        this.drawCartoonPaperclip(ctx, w / 2, h * 0.32, 0.85 * this.heroRecoil, this.heroRotation + time * 0.35);
+        const heroPos = this.getHeroPosition(w, h);
+        this.drawCartoonPaperclip(ctx, heroPos.x, heroPos.y, 0.85 * this.heroRecoil, this.heroRotation + time * 0.35);
     }
 
     // =========================================================================
@@ -1733,9 +1761,12 @@ class CosmicVisualizer {
     // =========================================================================
     renderFactoryFloor(ctx, state) {
         const time = this.cosmicRotation;
+        const pw = ctx.canvas.width;
+        const ph = ctx.canvas.height;
+        const heroPos = this.getHeroPosition(pw, ph);
 
         // Center Hero Hologram Paperclip (High-Contrast Shadow Backing)
-        this.drawCartoonPaperclip(ctx, ctx.canvas.width / 2, ctx.canvas.height / 2 - 12, 0.9 * this.heroRecoil, this.heroRotation + time * 0.4);
+        this.drawCartoonPaperclip(ctx, heroPos.x, heroPos.y, 0.9 * this.heroRecoil, this.heroRotation + time * 0.4);
     }
 
     // =========================================================================

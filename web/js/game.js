@@ -310,7 +310,18 @@ class GameEngine {
         // Audio & Visual Effects
         this.audio.playClickChime();
         if (this.visualizer) {
-            this.visualizer.triggerHeroClick();
+            let targetX = null;
+            let targetY = null;
+            if (e && e.clientX !== undefined && this.visualizer.canvas && this.visualizer.pixelCanvas) {
+                const rect = this.visualizer.canvas.getBoundingClientRect();
+                if (rect.width > 0 && rect.height > 0 && e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                    const relX = (e.clientX - rect.left) / rect.width;
+                    const relY = (e.clientY - rect.top) / rect.height;
+                    targetX = relX * this.visualizer.pixelCanvas.width;
+                    targetY = relY * this.visualizer.pixelCanvas.height;
+                }
+            }
+            this.visualizer.triggerHeroClick(targetX, targetY);
         }
 
         // Spawn floating text popup
