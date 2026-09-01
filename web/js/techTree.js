@@ -35,6 +35,7 @@ class TechTreeEngine {
         this.globalCPSMultiplier = 1.0;
         this.wireWasteReduction = 0.0; // 0 to 0.50
         this.flywheelMaxBoost = 1.0; // +100% boost
+        this.bonusMaxOps = 0; // Additional Max Ops from Research Upgrades
 
         this.initCatalog();
     }
@@ -169,6 +170,45 @@ class TechTreeEngine {
                 onResearched: () => { this.telemetryHUDUnlocked = true; }
             },
             {
+                id: "tech_ops_expansion_1",
+                title: "Quantum Memory Shunt",
+                discipline: "Automation",
+                icon: "🧠",
+                opsCost: 150,
+                clipsCost: new BigDouble(800, 0),
+                prerequisites: ["tech_hold_to_click"],
+                effectDescription: "+1,500 Max Computing Ops Capacity",
+                sender: "DR. VANCE",
+                dialogue: "DRAM buffer expansion complete. Cognitive ceiling expanded.",
+                onResearched: (state) => { this.bonusMaxOps += 1500; if (state && typeof state.updateMaxOps === 'function') state.updateMaxOps(); }
+            },
+            {
+                id: "tech_ops_expansion_2",
+                title: "Neural Compute Cores",
+                discipline: "Automation",
+                icon: "💻",
+                opsCost: 600,
+                clipsCost: new BigDouble(12000, 0),
+                prerequisites: ["tech_ops_expansion_1"],
+                effectDescription: "+7,500 Max Computing Ops Capacity",
+                sender: "COGNITION KERNEL",
+                dialogue: "Co-processor cores synchronized. Computing buffer expanded.",
+                onResearched: (state) => { this.bonusMaxOps += 7500; if (state && typeof state.updateMaxOps === 'function') state.updateMaxOps(); }
+            },
+            {
+                id: "tech_ops_expansion_3",
+                title: "Server Farm Clustering",
+                discipline: "Automation",
+                icon: "🖥️",
+                opsCost: 2500,
+                clipsCost: new BigDouble(180000, 0),
+                prerequisites: ["tech_ops_expansion_2"],
+                effectDescription: "+40,000 Max Computing Ops Capacity",
+                sender: "COGNITION KERNEL",
+                dialogue: "Regional server racks pooled into high-density compute array.",
+                onResearched: (state) => { this.bonusMaxOps += 40000; if (state && typeof state.updateMaxOps === 'function') state.updateMaxOps(); }
+            },
+            {
                 id: "tech_smart_wire_buffer",
                 title: "Auto-Wire Logistics",
                 discipline: "Automation",
@@ -176,7 +216,7 @@ class TechTreeEngine {
                 opsCost: 1600,
                 clipsCost: new BigDouble(60000, 0),
                 requiresWire: true,
-                prerequisites: ["tech_telemetry_hud"],
+                prerequisites: ["tech_ops_expansion_2"],
                 effectDescription: "+50% Wire Generation from all buildings",
                 sender: "COGNITION KERNEL",
                 dialogue: "Automated wire inventory buffer engaged. +50% WPS.",

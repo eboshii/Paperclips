@@ -430,6 +430,42 @@ class GameEngine {
         return baseWPS.mul(prestigeMult * techMult);
     }
 
+    updateMaxOps() {
+        let baseMax = 1000.0;
+
+        if (this.techTree) {
+            baseMax += this.techTree.bonusMaxOps || 0;
+        }
+
+        if (this.buildings) {
+            const clipperCount = this.buildings.getBuilding('auto_clipper')?.count || 0;
+            const stamperCount = this.buildings.getBuilding('hydraulic_stamper')?.count || 0;
+            const sintererCount = this.buildings.getBuilding('laser_sinterer')?.count || 0;
+            const benderCount = this.buildings.getBuilding('rotary_bender')?.count || 0;
+            const assemblyCount = this.buildings.getBuilding('assembly_line')?.count || 0;
+            const sorterCount = this.buildings.getBuilding('magnetic_sorter')?.count || 0;
+            const millCount = this.buildings.getBuilding('megamill')?.count || 0;
+            const foundryCount = this.buildings.getBuilding('algorithmic_foundry')?.count || 0;
+            const depotCount = this.buildings.getBuilding('automated_depot')?.count || 0;
+            const gridCount = this.buildings.getBuilding('district_grid')?.count || 0;
+            const nationalCount = this.buildings.getBuilding('national_foundry')?.count || 0;
+
+            baseMax += clipperCount * 2;
+            baseMax += stamperCount * 25;
+            baseMax += sintererCount * 100;
+            baseMax += benderCount * 250;
+            baseMax += assemblyCount * 1000;
+            baseMax += sorterCount * 2500;
+            baseMax += millCount * 10000;
+            baseMax += foundryCount * 50000;
+            baseMax += depotCount * 150000;
+            baseMax += gridCount * 500000;
+            baseMax += nationalCount * 2500000;
+        }
+
+        this.maxOps = baseMax;
+    }
+
     processElapsedSimulation(totalSeconds, isCatchUp = false) {
         if (totalSeconds <= 0 || !isFinite(totalSeconds)) return;
 
@@ -471,19 +507,10 @@ class GameEngine {
 
         // 2. Flywheel Momentum Decay
         if (this.flywheelCharge > 0) {
-            this.flywheelCharge = Math.max(0, this.flywheelCharge - this.flywheelDecayRate * dt);
+            this.flywheelCharge = Math.max(0, this.flywheelCharge - (this.flywheelDecayRate * dt));
         }
 
-        // 3. Passive Wire Creation & Conversion Simulation
-        if (this.isWireUnlocked) {
-            const currentWPS = this.calculateTotalWPS();
-            if (currentWPS.gt(BigDouble.zero())) {
-                const wireProduced = currentWPS.mul(dt);
-                this.wire = this.wire.add(wireProduced);
-            }
-        }
-
-        // 4. Automated Economic Simulation (Whole Integer Paperclips)
+        // 3. Automated Clip Production Engine
         const currentCPS = this.calculateTotalCPS();
         if (currentCPS.gt(BigDouble.zero())) {
             const clipsProduced = currentCPS.mul(dt);
@@ -545,40 +572,36 @@ class GameEngine {
             }
         }
 
-        // 5. Auto-Supply Logistics (if unlocked and wire active)
-        if (this.isWireUnlocked && this.techTree.smartWireLogisticsUnlocked && this.techTree.smartWireActive) {
-            if (this.wire.lt(new BigDouble(50, 0)) && this.clips.gte(new BigDouble(500, 0))) {
-                const wireNeededToRefill = new BigDouble(250, 0).sub(this.wire);
-                const batchesNeeded = Math.max(1, Math.ceil(wireNeededToRefill.toDouble() / 50.0));
-                const maxAffordable = Math.floor(this.clips.toDouble() / 500.0);
-                const batches = Math.min(batchesNeeded, maxAffordable);
-                if (batches > 0) {
-                    const cost = new BigDouble(500.0 * batches, 0);
-                    const wireGain = new BigDouble(50.0 * batches, 0);
-                    if (this.clips.gte(cost)) {
-                        this.clips = this.clips.sub(cost);
-                        this.wire = this.wire.add(wireGain);
-                    }
-                }
+        // 4. Wire Generation Engine (From Wire Creation Buildings)
+        if (this.isWireUnlocked) {
+            const currentWPS = this.calculateTotalWPS();
+            if (currentWPS.gt(BigDouble.zero())) {
+                const wireProduced = currentWPS.mul(dt);
+                this.wire = this.wire.add(wireProduced);
             }
         }
 
-        // 6. Passive Computing Ops Generation (only active when Ops / Tech is unlocked)
+        // 5. Passive Computing Ops Generation (only active when Ops / Tech is unlocked)
         const stamperCount = this.buildings.getBuilding('hydraulic_stamper')?.count || 0;
-        const isOpsUnlocked = this.lifetimeClips.gte(new BigDouble(80, 0)) || stamperCount > 0 || this.ops > 0;
-        if (isOpsUnlocked) {
-            let opsRate = (0.8 + (stamperCount * 0.4)) * this.prestige.getOpsBoostMultiplier();
+        const sintererCount = this.buildings.getBuilding('laser_sinterer')?.count || 0;
+        const benderCount = this.buildings.getBuilding('rotary_bender')?.count || 0;
+        const assemblyCount = this.buildings.getBuilding('assembly_line')?.count || 0;
+        const millCount = this.buildings.getBuilding('megamill')?.count || 0;
+        const foundryCount = this.buildings.getBuilding('algorithmic_foundry')?.count || 0;
 
-            // Building milestone Ops bonuses
-            if (this.techTree.clipperOpsUnlocked) {
-                const clipperCount = this.buildings.getBuilding('auto_clipper')?.count || 0;
-                opsRate += Math.floor(clipperCount / 10) * 0.02;
-            }
-            if (this.techTree.stamperOpsUnlocked) {
-                opsRate += stamperCount * 0.05;
-            }
+        const isOpsUnlocked = this.lifetimeClips.gte(new BigDouble(80, 0)) || this.ops > 0;
+        if (isOpsUnlocked) {
+            this.updateMaxOps();
+
+            let opsRate = 1.0;
+            opsRate += stamperCount * 0.5;
+            opsRate += sintererCount * 1.5;
+            opsRate += benderCount * 5.0;
+            opsRate += assemblyCount * 20.0;
+            opsRate += millCount * 100.0;
+            opsRate += foundryCount * 500.0;
+
             if (this.techTree.sintererOpsUnlocked) {
-                const sintererCount = this.buildings.getBuilding('laser_sinterer')?.count || 0;
                 opsRate += sintererCount * 0.15;
             }
             if (this.techTree.smelterOpsUnlocked) {
