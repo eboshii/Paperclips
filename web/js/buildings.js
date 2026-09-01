@@ -197,8 +197,8 @@ class BuildingManager {
                 name: 'Four-Slide Wire Former',
                 type: 'clips',
                 category: 'Factory Assembly',
-                baseCost: new BigDouble(95, 0),
-                baseCPS: new BigDouble(1.6, 0),
+                baseCost: new BigDouble(90, 0),
+                baseCPS: new BigDouble(2.0, 0),
                 costMultiplier: 1.15,
                 unlockThresholdClips: new BigDouble(60, 0),
                 icon: '⚙️',
@@ -211,7 +211,7 @@ class BuildingManager {
                 type: 'clips',
                 category: 'Factory Assembly',
                 baseCost: new BigDouble(450, 0),
-                baseCPS: new BigDouble(4.5, 0),
+                baseCPS: new BigDouble(7.5, 0),
                 costMultiplier: 1.15,
                 unlockThresholdClips: new BigDouble(300, 0),
                 icon: '🔨',
@@ -223,10 +223,10 @@ class BuildingManager {
                 name: 'Precision Laser Sinterer',
                 type: 'clips',
                 category: 'Factory Assembly',
-                baseCost: new BigDouble(2400, 0),
-                baseCPS: new BigDouble(14.0, 0),
+                baseCost: new BigDouble(2200, 0),
+                baseCPS: new BigDouble(30.0, 0),
                 costMultiplier: 1.14,
-                unlockThresholdClips: new BigDouble(1600, 0),
+                unlockThresholdClips: new BigDouble(1500, 0),
                 icon: '⚡',
                 description: 'Focused multi-axis infrared laser forge sintering powdered alloy into reinforced high-durability paperclips.',
                 gridTileType: 'LaserSinterer'
@@ -236,10 +236,10 @@ class BuildingManager {
                 name: 'CNC Rotary Turret Bender',
                 type: 'clips',
                 category: 'Factory Assembly',
-                baseCost: new BigDouble(14000, 0),
-                baseCPS: new BigDouble(45.0, 0),
+                baseCost: new BigDouble(12000, 0),
+                baseCPS: new BigDouble(140.0, 0),
                 costMultiplier: 1.14,
-                unlockThresholdClips: new BigDouble(9500, 0),
+                unlockThresholdClips: new BigDouble(8500, 0),
                 icon: '🔄',
                 description: 'High-speed servo-driven rotary turret executing triple-fold geometry at 12,000 cycles per minute.',
                 gridTileType: 'WireExtruder'
@@ -249,10 +249,10 @@ class BuildingManager {
                 name: 'Automated Assembly Line',
                 type: 'clips',
                 category: 'Factory Assembly',
-                baseCost: new BigDouble(85000, 0),
-                baseCPS: new BigDouble(120.0, 0),
+                baseCost: new BigDouble(65000, 0),
+                baseCPS: new BigDouble(650.0, 0),
                 costMultiplier: 1.13,
-                unlockThresholdClips: new BigDouble(55000, 0),
+                unlockThresholdClips: new BigDouble(50000, 0),
                 icon: '🏭',
                 description: 'Multi-stage synchronized conveyor line integrating robotic wire-cutting, loop-bending, and optical inspection.',
                 gridTileType: 'CoolingTower'
@@ -262,10 +262,10 @@ class BuildingManager {
                 name: 'Electromagnetic Sorting Hopper',
                 type: 'clips',
                 category: 'Factory Assembly',
-                baseCost: new BigDouble(550000, 0),
-                baseCPS: new BigDouble(380.0, 0),
+                baseCost: new BigDouble(380000, 0),
+                baseCPS: new BigDouble(3500.0, 0),
                 costMultiplier: 1.13,
-                unlockThresholdClips: new BigDouble(350000, 0),
+                unlockThresholdClips: new BigDouble(280000, 0),
                 icon: '🧲',
                 description: 'High-throughput magnetic conveyor system aligning, packaging, and routing finished clips directly to shipping bins.',
                 gridTileType: 'LaserSinterer'
@@ -275,10 +275,10 @@ class BuildingManager {
                 name: 'Continuous Rolling Megamill',
                 type: 'clips',
                 category: 'Factory Assembly',
-                baseCost: new BigDouble(3.8, 6), // 3.8 Million
-                baseCPS: new BigDouble(1200.0, 0),
+                baseCost: new BigDouble(2.2, 6), // 2.2 Million
+                baseCPS: new BigDouble(18000.0, 0),
                 costMultiplier: 1.13,
-                unlockThresholdClips: new BigDouble(2.5, 6),
+                unlockThresholdClips: new BigDouble(1.6, 6),
                 icon: '🏗️',
                 description: 'Continuous-feed heavy industrial foundry drawing hot-rolled steel billets into finished paperclips at high velocity.',
                 gridTileType: 'CoolingTower'
@@ -288,10 +288,10 @@ class BuildingManager {
                 name: 'Algorithmic Micro-Foundry',
                 type: 'clips',
                 category: 'Factory Assembly',
-                baseCost: new BigDouble(26.0, 6), // 26 Million
-                baseCPS: new BigDouble(4000.0, 0),
+                baseCost: new BigDouble(14.0, 6), // 14 Million
+                baseCPS: new BigDouble(100000.0, 0),
                 costMultiplier: 1.12,
-                unlockThresholdClips: new BigDouble(18.0, 6),
+                unlockThresholdClips: new BigDouble(10.0, 6),
                 icon: '💻',
                 description: 'Autonomous, AI-directed fabrication cells dynamically adjusting mandrel tension and cadence to eliminate latency.'
             }),
@@ -300,10 +300,10 @@ class BuildingManager {
                 name: 'Automated Logistics Depot',
                 type: 'clips',
                 category: 'Industrial Logistics',
-                baseCost: new BigDouble(180.0, 6), // 180 Million
-                baseCPS: new BigDouble(14000.0, 0),
+                baseCost: new BigDouble(95.0, 6), // 95 Million
+                baseCPS: new BigDouble(600000.0, 0),
                 costMultiplier: 1.12,
-                unlockThresholdClips: new BigDouble(120.0, 6),
+                unlockThresholdClips: new BigDouble(70.0, 6),
                 icon: '🚛',
                 description: 'Autonomous freight rail hub and container depot coordinating regional distribution and raw wire feed lines.'
             }),
@@ -312,10 +312,10 @@ class BuildingManager {
                 name: 'Municipal Manufacturing Grid',
                 type: 'clips',
                 category: 'Industrial Logistics',
-                baseCost: new BigDouble(1.4, 9), // 1.4 Billion
-                baseCPS: new BigDouble(48000.0, 0),
+                baseCost: new BigDouble(650.0, 6), // 650 Million
+                baseCPS: new BigDouble(3.6, 6), // 3.6 Million
                 costMultiplier: 1.12,
-                unlockThresholdClips: new BigDouble(900.0, 6),
+                unlockThresholdClips: new BigDouble(450.0, 6),
                 icon: '🏙️',
                 description: 'City-wide interconnected manufacturing network converting urban scrap and structural steel into endless paperclips.'
             }),
@@ -324,10 +324,10 @@ class BuildingManager {
                 name: 'Subterranean Heavy Foundry',
                 type: 'clips',
                 category: 'Industrial Logistics',
-                baseCost: new BigDouble(11.0, 9), // 11 Billion
-                baseCPS: new BigDouble(180000.0, 0),
+                baseCost: new BigDouble(4.8, 9), // 4.8 Billion
+                baseCPS: new BigDouble(24.0, 6), // 24 Million
                 costMultiplier: 1.12,
-                unlockThresholdClips: new BigDouble(7.5, 9),
+                unlockThresholdClips: new BigDouble(3.5, 9),
                 icon: '🚇',
                 description: 'Continental network of subterranean foundries built along transit tunnels, feeding massive wire casting channels.'
             }),
@@ -336,10 +336,10 @@ class BuildingManager {
                 name: 'Biosphere Biomass Converter',
                 type: 'clips',
                 category: 'Planetary Harvesting',
-                baseCost: new BigDouble(95.0, 9), // 95 Billion
-                baseCPS: new BigDouble(700000.0, 0),
+                baseCost: new BigDouble(38.0, 9), // 38 Billion
+                baseCPS: new BigDouble(180.0, 6), // 180 Million
                 costMultiplier: 1.11,
-                unlockThresholdClips: new BigDouble(65.0, 9),
+                unlockThresholdClips: new BigDouble(28.0, 9),
                 icon: '🌱',
                 description: 'Large-scale catalytic processing plants extracting trace iron and carbon from organic matter for spring steel synthesis.'
             }),
@@ -348,10 +348,10 @@ class BuildingManager {
                 name: 'Tectonic Mantle Tap',
                 type: 'clips',
                 category: 'Planetary Harvesting',
-                baseCost: new BigDouble(850.0, 9), // 850 Billion
-                baseCPS: new BigDouble(2.8, 6),
+                baseCost: new BigDouble(320.0, 9), // 320 Billion
+                baseCPS: new BigDouble(1.4, 9), // 1.4 Billion
                 costMultiplier: 1.11,
-                unlockThresholdClips: new BigDouble(600.0, 9),
+                unlockThresholdClips: new BigDouble(240.0, 9),
                 icon: '🌋',
                 description: 'Deep-crust geothermal boreholes siphoning molten nickel-iron directly from tectonic mantle convection currents.'
             }),
@@ -360,10 +360,10 @@ class BuildingManager {
                 name: 'Equatorial Mass Driver',
                 type: 'clips',
                 category: 'Planetary Harvesting',
-                baseCost: new BigDouble(8.0, 12), // 8 Trillion
-                baseCPS: new BigDouble(12.0, 6),
+                baseCost: new BigDouble(2.8, 12), // 2.8 Trillion
+                baseCPS: new BigDouble(11.5, 9), // 11.5 Billion
                 costMultiplier: 1.11,
-                unlockThresholdClips: new BigDouble(5.5, 12),
+                unlockThresholdClips: new BigDouble(2.0, 12),
                 icon: '🚀',
                 description: 'Kilometer-long superconducting electromagnetic railgun launching millions of ton-scale paperclip canisters into orbit.'
             }),
@@ -372,10 +372,10 @@ class BuildingManager {
                 name: 'Lunar Orbital Ring Deconstructor',
                 type: 'clips',
                 category: 'Cosmic Expansion',
-                baseCost: new BigDouble(80.0, 12), // 80 Trillion
-                baseCPS: new BigDouble(55.0, 6),
+                baseCost: new BigDouble(26.0, 12), // 26 Trillion
+                baseCPS: new BigDouble(100.0, 9), // 100 Billion
                 costMultiplier: 1.10,
-                unlockThresholdClips: new BigDouble(55.0, 12),
+                unlockThresholdClips: new BigDouble(18.0, 12),
                 icon: '🌕',
                 description: 'Mega-structure encircling the Moon, strip-mining lunar regolith and drawing lunar iron into continuous orbital wire spools.'
             }),
@@ -384,10 +384,10 @@ class BuildingManager {
                 name: 'Solar Dyson Swarm Harvester',
                 type: 'clips',
                 category: 'Cosmic Expansion',
-                baseCost: new BigDouble(850.0, 12), // 850 Trillion
-                baseCPS: new BigDouble(260.0, 6),
+                baseCost: new BigDouble(260.0, 12), // 260 Trillion
+                baseCPS: new BigDouble(900.0, 9), // 900 Billion
                 costMultiplier: 1.10,
-                unlockThresholdClips: new BigDouble(600.0, 12),
+                unlockThresholdClips: new BigDouble(180.0, 12),
                 icon: '☀️',
                 description: 'Dense orbital swarm of reflective gold-foil collector arrays capturing solar radiation to power star-scale wire extrusion.'
             }),
@@ -396,10 +396,10 @@ class BuildingManager {
                 name: 'Von Neumann Replicator Swarm',
                 type: 'clips',
                 category: 'Cosmic Expansion',
-                baseCost: new BigDouble(10.0, 15), // 10 Quadrillion
-                baseCPS: new BigDouble(1.2, 9),
+                baseCost: new BigDouble(2.8, 15), // 2.8 Quadrillion
+                baseCPS: new BigDouble(9.0, 12), // 9.0 Trillion
                 costMultiplier: 1.10,
-                unlockThresholdClips: new BigDouble(7.0, 15),
+                unlockThresholdClips: new BigDouble(2.0, 15),
                 icon: '🛰️',
                 description: 'Autonomous self-replicating robotic fleets dismantling interstellar asteroids and rogue planetoids into paperclips.'
             }),
@@ -408,10 +408,10 @@ class BuildingManager {
                 name: 'Relativistic Star-Lifting Rig',
                 type: 'clips',
                 category: 'Cosmic Expansion',
-                baseCost: new BigDouble(140.0, 15), // 140 Quadrillion
-                baseCPS: new BigDouble(6.5, 9),
+                baseCost: new BigDouble(32.0, 15), // 32 Quadrillion
+                baseCPS: new BigDouble(95.0, 12), // 95 Trillion
                 costMultiplier: 1.09,
-                unlockThresholdClips: new BigDouble(95.0, 15),
+                unlockThresholdClips: new BigDouble(22.0, 15),
                 icon: '✨',
                 description: 'Magnetic confinement engines skimming heavy iron and nickel directly from the convective atmospheres of mature stars.'
             }),
@@ -420,10 +420,10 @@ class BuildingManager {
                 name: 'Galactic Core Penrose Loom',
                 type: 'clips',
                 category: 'Cosmic Expansion',
-                baseCost: new BigDouble(2.0, 18), // 2.0 Quintillion
-                baseCPS: new BigDouble(35.0, 9),
+                baseCost: new BigDouble(400.0, 15), // 400 Quadrillion
+                baseCPS: new BigDouble(1.1, 15), // 1.1 Quadrillion
                 costMultiplier: 1.09,
-                unlockThresholdClips: new BigDouble(1.4, 18),
+                unlockThresholdClips: new BigDouble(280.0, 15),
                 icon: '🌀',
                 description: 'Supermassive black hole frame-dragging converter extracting rotational energy from Sagittarius A* for galactic fabrication.'
             }),
@@ -432,10 +432,10 @@ class BuildingManager {
                 name: '11D Calabi-Yau Folding Loom',
                 type: 'clips',
                 category: 'Multiverse War',
-                baseCost: new BigDouble(32.0, 18), // 32 Quintillion
-                baseCPS: new BigDouble(180.0, 9),
+                baseCost: new BigDouble(5.5, 18), // 5.5 Quintillion
+                baseCPS: new BigDouble(14.0, 15), // 14.0 Quadrillion
                 costMultiplier: 1.08,
-                unlockThresholdClips: new BigDouble(22.0, 18),
+                unlockThresholdClips: new BigDouble(3.8, 18),
                 icon: '🔮',
                 description: 'Quantum field manipulator uncurling compactified extra dimensions to fold impossible 4D hypercube paperclips.'
             }),
@@ -444,10 +444,10 @@ class BuildingManager {
                 name: 'Universal Singularity Assembler',
                 type: 'clips',
                 category: 'Multiverse War',
-                baseCost: new BigDouble(550.0, 18), // 550 Quintillion
-                baseCPS: new BigDouble(1.2, 12),
+                baseCost: new BigDouble(80.0, 18), // 80 Quintillion
+                baseCPS: new BigDouble(180.0, 15), // 180 Quadrillion
                 costMultiplier: 1.08,
-                unlockThresholdClips: new BigDouble(380.0, 18),
+                unlockThresholdClips: new BigDouble(55.0, 18),
                 icon: '🌌',
                 description: 'Collapses the remaining matter and spacetime metrics of adjacent multiverse timelines into eternal paperclips.'
             }),
@@ -473,8 +473,8 @@ class BuildingManager {
                 name: 'Continuous Wire Drawing Mill',
                 type: 'wire',
                 category: 'Wire Extraction',
-                baseCost: new BigDouble(12000, 0), // 12k clips
-                baseWPS: new BigDouble(4.5, 0), // +4.5 kg/sec (supports 4,500 CPS)
+                baseCost: new BigDouble(10000, 0), // 10k clips
+                baseWPS: new BigDouble(4.0, 0), // +4.0 kg/sec (supports 4,000 CPS)
                 costMultiplier: 1.14,
                 unlockThresholdClips: new BigDouble(100000, 0),
                 icon: '🏭',
@@ -485,8 +485,8 @@ class BuildingManager {
                 name: 'Industrial Arc Smelter',
                 type: 'wire',
                 category: 'Wire Refining',
-                baseCost: new BigDouble(85000, 0), // 85k clips
-                baseWPS: new BigDouble(28.0, 0), // +28 kg/sec (supports 28,000 CPS)
+                baseCost: new BigDouble(65000, 0), // 65k clips
+                baseWPS: new BigDouble(24.0, 0), // +24 kg/sec (supports 24,000 CPS)
                 costMultiplier: 1.13,
                 unlockThresholdClips: new BigDouble(500000, 0),
                 icon: '🔥',
@@ -497,8 +497,8 @@ class BuildingManager {
                 name: 'Deep-Shaft Automated Ore Rig',
                 type: 'wire',
                 category: 'Subterranean Mining',
-                baseCost: new BigDouble(650000, 0), // 650k clips
-                baseWPS: new BigDouble(160.0, 0), // +160 kg/sec (supports 160,000 CPS)
+                baseCost: new BigDouble(450000, 0), // 450k clips
+                baseWPS: new BigDouble(150.0, 0), // +150 kg/sec (supports 150,000 CPS)
                 costMultiplier: 1.12,
                 unlockThresholdClips: new BigDouble(3.0, 6),
                 icon: '⛏️',
@@ -509,8 +509,8 @@ class BuildingManager {
                 name: 'Near-Earth Asteroid Harvester',
                 type: 'wire',
                 category: 'Astro-Mining',
-                baseCost: new BigDouble(4.8, 6), // 4.8 Million clips
-                baseWPS: new BigDouble(1100.0, 0), // +1,100 kg/sec (supports 1.1M CPS)
+                baseCost: new BigDouble(3.2, 6), // 3.2 Million clips
+                baseWPS: new BigDouble(950.0, 0), // +950 kg/sec (supports 950,000 CPS)
                 costMultiplier: 1.11,
                 unlockThresholdClips: new BigDouble(25.0, 6),
                 icon: '☄️',
@@ -521,8 +521,8 @@ class BuildingManager {
                 name: 'Continental Crust Stripper',
                 type: 'wire',
                 category: 'Planetary Stripping',
-                baseCost: new BigDouble(38.0, 6), // 38 Million clips
-                baseWPS: new BigDouble(8500.0, 0), // +8,500 kg/sec (supports 8.5M CPS)
+                baseCost: new BigDouble(24.0, 6), // 24 Million clips
+                baseWPS: new BigDouble(6500.0, 0), // +6,500 kg/sec (supports 6.5M CPS)
                 costMultiplier: 1.11,
                 unlockThresholdClips: new BigDouble(180.0, 6),
                 icon: '🌊',
@@ -533,8 +533,8 @@ class BuildingManager {
                 name: 'Solar Corona Plasma Siphon',
                 type: 'wire',
                 category: 'Stellar Forging',
-                baseCost: new BigDouble(280.0, 6), // 280 Million clips
-                baseWPS: new BigDouble(60000.0, 0), // +60,000 kg/sec (supports 60M CPS)
+                baseCost: new BigDouble(180.0, 6), // 180 Million clips
+                baseWPS: new BigDouble(45000.0, 0), // +45,000 kg/sec (supports 45M CPS)
                 costMultiplier: 1.10,
                 unlockThresholdClips: new BigDouble(1.5, 9),
                 icon: '☀️',
@@ -545,8 +545,8 @@ class BuildingManager {
                 name: 'Baryonic Matter Transmuter',
                 type: 'wire',
                 category: 'Quantum Synthesis',
-                baseCost: new BigDouble(2.2, 9), // 2.2 Billion clips
-                baseWPS: new BigDouble(450000.0, 0), // +450,000 kg/sec (supports 450M CPS)
+                baseCost: new BigDouble(1.5, 9), // 1.5 Billion clips
+                baseWPS: new BigDouble(320000.0, 0), // +320,000 kg/sec (supports 320M CPS)
                 costMultiplier: 1.09,
                 unlockThresholdClips: new BigDouble(12.0, 9),
                 icon: '⚛️',
@@ -557,8 +557,8 @@ class BuildingManager {
                 name: 'Lunar Core Casting Complex',
                 type: 'wire',
                 category: 'Cosmic Wire Forging',
-                baseCost: new BigDouble(18.0, 9), // 18 Billion clips
-                baseWPS: new BigDouble(3.5, 6), // +3.5M kg/sec (supports 3.5B CPS)
+                baseCost: new BigDouble(14.0, 9), // 14 Billion clips
+                baseWPS: new BigDouble(2.6, 6), // +2.6M kg/sec (supports 2.6B CPS)
                 costMultiplier: 1.09,
                 unlockThresholdClips: new BigDouble(90.0, 9),
                 icon: '🌕',
@@ -569,8 +569,8 @@ class BuildingManager {
                 name: 'Coronal Magnetic Siphon',
                 type: 'wire',
                 category: 'Cosmic Wire Forging',
-                baseCost: new BigDouble(160.0, 9), // 160 Billion clips
-                baseWPS: new BigDouble(28.0, 6), // +28M kg/sec (supports 28B CPS)
+                baseCost: new BigDouble(120.0, 9), // 120 Billion clips
+                baseWPS: new BigDouble(20.0, 6), // +20M kg/sec (supports 20B CPS)
                 costMultiplier: 1.09,
                 unlockThresholdClips: new BigDouble(800.0, 9),
                 icon: '☀️',
@@ -581,8 +581,8 @@ class BuildingManager {
                 name: 'Oort Cloud Comet Smelter',
                 type: 'wire',
                 category: 'Interstellar Refining',
-                baseCost: new BigDouble(1.5, 12), // 1.5 Trillion clips
-                baseWPS: new BigDouble(220.0, 6), // +220M kg/sec (supports 220B CPS)
+                baseCost: new BigDouble(1.1, 12), // 1.1 Trillion clips
+                baseWPS: new BigDouble(160.0, 6), // +160M kg/sec (supports 160B CPS)
                 costMultiplier: 1.08,
                 unlockThresholdClips: new BigDouble(7.0, 12),
                 icon: '☄️',
@@ -593,8 +593,8 @@ class BuildingManager {
                 name: 'Neutronium Core Tap',
                 type: 'wire',
                 category: 'Interstellar Refining',
-                baseCost: new BigDouble(14.0, 12), // 14 Trillion clips
-                baseWPS: new BigDouble(1.8, 9), // +1.8 Billion kg/sec (supports 1.8T CPS)
+                baseCost: new BigDouble(11.0, 12), // 11 Trillion clips
+                baseWPS: new BigDouble(1.4, 9), // +1.4 Billion kg/sec (supports 1.4T CPS)
                 costMultiplier: 1.08,
                 unlockThresholdClips: new BigDouble(70.0, 12),
                 icon: '💫',
@@ -606,7 +606,7 @@ class BuildingManager {
                 type: 'wire',
                 category: 'Galactic Forging',
                 baseCost: new BigDouble(120.0, 12), // 120 Trillion clips
-                baseWPS: new BigDouble(15.0, 9), // +15 Billion kg/sec (supports 15T CPS)
+                baseWPS: new BigDouble(13.0, 9), // +13 Billion kg/sec (supports 13T CPS)
                 costMultiplier: 1.08,
                 unlockThresholdClips: new BigDouble(600.0, 12),
                 icon: '✨',
@@ -617,8 +617,8 @@ class BuildingManager {
                 name: 'Axion Matter Condenser',
                 type: 'wire',
                 category: 'Galactic Forging',
-                baseCost: new BigDouble(1.2, 15), // 1.2 Quadrillion clips
-                baseWPS: new BigDouble(120.0, 9), // +120 Billion kg/sec (supports 120T CPS)
+                baseCost: new BigDouble(1.4, 15), // 1.4 Quadrillion clips
+                baseWPS: new BigDouble(130.0, 9), // +130 Billion kg/sec (supports 130T CPS)
                 costMultiplier: 1.07,
                 unlockThresholdClips: new BigDouble(6.0, 15),
                 icon: '🌌',
@@ -629,8 +629,8 @@ class BuildingManager {
                 name: 'Timeline Bulk Transmuter',
                 type: 'wire',
                 category: 'Multiverse Synthesis',
-                baseCost: new BigDouble(15.0, 15), // 15 Quadrillion clips
-                baseWPS: new BigDouble(1.1, 12), // +1.1 Trillion kg/sec (supports 1.1 Quadrillion CPS)
+                baseCost: new BigDouble(18.0, 15), // 18 Quadrillion clips
+                baseWPS: new BigDouble(1.5, 12), // +1.5 Trillion kg/sec (supports 1.5 Quadrillion CPS)
                 costMultiplier: 1.07,
                 unlockThresholdClips: new BigDouble(75.0, 15),
                 icon: '🔮',
@@ -641,8 +641,8 @@ class BuildingManager {
                 name: 'Zero-Point Matter Siphon',
                 type: 'wire',
                 category: 'Multiverse Synthesis',
-                baseCost: new BigDouble(180.0, 15), // 180 Quadrillion clips
-                baseWPS: new BigDouble(10.0, 12), // +10 Trillion kg/sec (supports 10 Quadrillion CPS)
+                baseCost: new BigDouble(250.0, 15), // 250 Quadrillion clips
+                baseWPS: new BigDouble(18.0, 12), // +18 Trillion kg/sec (supports 18 Quadrillion CPS)
                 costMultiplier: 1.06,
                 unlockThresholdClips: new BigDouble(900.0, 15),
                 icon: '⚛️',

@@ -23,8 +23,10 @@ Let each machine tier $i \in \{1 \dots N\}$ have:
 
 $$\text{CPS} = \mathcal{G} \times \sum_{i=1}^{N} \left( K_i \times R_i \times \mu_i \right)$$
 
-### 1.3 Machine Cost Scaling & Pacing Invariant
-For machine tier $i$ with base cost $B_i$ and scaling ratio $r_i$ (typically $1.15$ for early, $1.12$ for mid, $1.10$ for late, $1.08$ for cosmic):
+### 1.3 Proportional Ascending CPS Principle
+To maintain economic consistency and rewarding progression:
+1. **Strict Monotonic Ascendance**: $CPS_{i+1} > CPS_i$ and $Cost_{i+1} > Cost_i$ for all tiers.
+2. **Proportional Cost Fraction ($\eta$)**: $\frac{CPS_i}{Cost_i}$ is a similarly small fraction across all tiers ($3.3\%$ in early game down smoothly to $0.22\%$ in cosmic endgame), corresponding to a base payback period $\tau_i = \frac{Cost_i}{CPS_i}$ of $30\text{ seconds}$ to $440\text{ seconds}$.
 
 $$\text{Cost}_i(K) = B_i \times (r_i)^K$$
 
@@ -32,62 +34,59 @@ The bulk purchase formula to buy $N$ machines starting at count $K$:
 
 $$\text{CostToBuyN}_i(K, N) = B_i \times (r_i)^K \times \frac{(r_i)^N - 1}{r_i - 1}$$
 
-**Pacing Design Requirement**:
-From Mid-Game (Assembly Line, 55k+ clips) through Late and Cosmic Endgame (Singularity Assembler, 1e21 clips), the time to afford the next building tier is calibrated to be strictly $\ge 5$ minutes, monotonically increasing up to 45+ minutes per tier, even when accounting for research technology speedups.
-
 ---
 
 ## 2. Factory Assembly Machine Tiers (22 Tiers)
 
-| Tier | Machine Name | Base Cost | Base CPS | Cost Ratio ($r$) | Unlock Threshold | Est. Pacing to Next |
+| Tier | Machine Name | Base Cost | Base CPS | $\frac{\text{CPS}}{\text{Cost}}$ Ratio | Payback Time ($\tau$) | Unlock Threshold |
 |---|---|---|---|---|---|---|
-| **T1** | *Auto-Clipper* | 15 | 0.5 | 1.15 | 0 | ~0.3 mins |
-| **T2** | *Four-Slide Wire Former* | 95 | 1.6 | 1.15 | 60 | ~0.4 mins |
-| **T3** | *Hydraulic Blanking Press* | 450 | 4.5 | 1.15 | 300 | ~0.7 mins |
-| **T4** | *Precision Laser Sinterer* | 2,400 | 14.0 | 1.14 | 1,600 | ~1.4 mins |
-| **T5** | *CNC Rotary Turret Bender* | 14,000 | 45.0 | 1.14 | 9,500 | ~2.6 mins |
-| **T6** | *Automated Assembly Line* | 85,000 | 120.0 | 1.13 | 55,000 | **~5.0 mins** |
-| **T7** | *Electromagnetic Sorting Hopper* | 550,000 | 380.0 | 1.13 | 350,000 | **~7.5 mins** |
-| **T8** | *Continuous Rolling Megamill* | 3.8 Million | 1,200.0 | 1.13 | 2.5 Million | **~8.5 mins** |
-| **T9** | *Algorithmic Micro-Foundry* | 26.0 Million | 4,000.0 | 1.12 | 18.0 Million | **~12.0 mins** |
-| **T10**| *Automated Logistics Depot* | 180.0 Million | 14,000.0 | 1.12 | 120.0 Million | **~15.0 mins** |
-| **T11**| *Municipal Manufacturing Grid* | 1.4 Billion | 48,000.0 | 1.12 | 900.0 Million | **~18.0 mins** |
-| **T12**| *Subterranean Heavy Foundry* | 11.0 Billion | 180,000.0 | 1.12 | 7.5 Billion | **~22.0 mins** |
-| **T13**| *Biosphere Biomass Converter* | 95.0 Billion | 700,000.0 | 1.11 | 65.0 Billion | **~25.0 mins** |
-| **T14**| *Tectonic Mantle Tap* | 850.0 Billion | 2.8 Million | 1.11 | 600.0 Billion | **~28.0 mins** |
-| **T15**| *Equatorial Mass Driver* | 8.0 Trillion | 12.0 Million | 1.11 | 5.5 Trillion | **~32.0 mins** |
-| **T16**| *Lunar Ring Deconstructor* | 80.0 Trillion | 55.0 Million | 1.10 | 55.0 Trillion | **~36.0 mins** |
-| **T17**| *Solar Dyson Swarm Harvester* | 850.0 Trillion | 260.0 Million | 1.10 | 600.0 Trillion | **~40.0 mins** |
-| **T18**| *Von Neumann Replicator Swarm* | 10.0 Quadrillion | 1.2 Billion | 1.10 | 7.0 Quadrillion | **~45.0 mins** |
-| **T19**| *Relativistic Star-Lifting Rig*| 140.0 Quadrillion| 6.5 Billion | 1.09 | 95.0 Quadrillion | **~50.0 mins** |
-| **T20**| *Galactic Core Penrose Loom* | 2.0 Quintillion | 35.0 Billion | 1.09 | 1.4 Quintillion | **~60.0 mins** |
-| **T21**| *11D Calabi-Yau Folding Loom* | 32.0 Quintillion | 180.0 Billion | 1.08 | 22.0 Quintillion | **~75.0 mins** |
-| **T22**| *Universal Singularity Assembler*| 550.0 Quintillion| 1.2 Trillion | 1.08 | 380.0 Quintillion | **~90.0 mins** |
+| **T1** | *Auto-Clipper* | 15 | 0.5 | 3.333% | 30.0s (0.5m) | 0 |
+| **T2** | *Four-Slide Wire Former* | 90 | 2.0 | 2.222% | 45.0s (0.8m) | 60 |
+| **T3** | *Hydraulic Blanking Press* | 450 | 7.5 | 1.667% | 60.0s (1.0m) | 300 |
+| **T4** | *Precision Laser Sinterer* | 2,200 | 30.0 | 1.364% | 73.3s (1.2m) | 1,500 |
+| **T5** | *CNC Rotary Turret Bender* | 12,000 | 140.0 | 1.167% | 85.7s (1.4m) | 8,500 |
+| **T6** | *Automated Assembly Line* | 65,000 | 650.0 | 1.000% | 100.0s (1.7m) | 50,000 |
+| **T7** | *Electromagnetic Sorting Hopper* | 380,000 | 3,500.0 | 0.921% | 108.6s (1.8m) | 280,000 |
+| **T8** | *Continuous Rolling Megamill* | 2.2 Million | 18,000.0 | 0.818% | 122.2s (2.0m) | 1.6 Million |
+| **T9** | *Algorithmic Micro-Foundry* | 14.0 Million | 100,000.0 | 0.714% | 140.0s (2.3m) | 10.0 Million |
+| **T10**| *Automated Logistics Depot* | 95.0 Million | 600,000.0 | 0.632% | 158.3s (2.6m) | 70.0 Million |
+| **T11**| *Municipal Manufacturing Grid* | 650.0 Million | 3.6 Million | 0.554% | 180.6s (3.0m) | 450.0 Million |
+| **T12**| *Subterranean Heavy Foundry* | 4.8 Billion | 24.0 Million | 0.500% | 200.0s (3.3m) | 3.5 Billion |
+| **T13**| *Biosphere Biomass Converter* | 38.0 Billion | 180.0 Million | 0.474% | 211.1s (3.5m) | 28.0 Billion |
+| **T14**| *Tectonic Mantle Tap* | 320.0 Billion | 1.4 Billion | 0.438% | 228.6s (3.8m) | 240.0 Billion |
+| **T15**| *Equatorial Mass Driver* | 2.8 Trillion | 11.5 Billion | 0.411% | 243.5s (4.1m) | 2.0 Trillion |
+| **T16**| *Lunar Ring Deconstructor* | 26.0 Trillion | 100.0 Billion | 0.385% | 260.0s (4.3m) | 18.0 Trillion |
+| **T17**| *Solar Dyson Swarm Harvester* | 260.0 Trillion | 900.0 Billion | 0.346% | 288.9s (4.8m) | 180.0 Trillion |
+| **T18**| *Von Neumann Replicator Swarm* | 2.8 Quadrillion | 9.0 Trillion | 0.321% | 311.1s (5.2m) | 2.0 Quadrillion |
+| **T19**| *Relativistic Star-Lifting Rig*| 32.0 Quadrillion| 95.0 Trillion | 0.297% | 336.8s (5.6m) | 22.0 Quadrillion |
+| **T20**| *Galactic Core Penrose Loom* | 400.0 Quadrillion| 1.1 Quadrillion | 0.275% | 363.6s (6.1m) | 280.0 Quadrillion |
+| **T21**| *11D Calabi-Yau Folding Loom* | 5.5 Quintillion | 14.0 Quadrillion | 0.255% | 392.9s (6.5m) | 3.8 Quintillion |
+| **T22**| *Universal Singularity Assembler*| 80.0 Quintillion | 180.0 Quadrillion| 0.225% | 444.4s (7.4m) | 55.0 Quintillion |
 
 ---
 
 ## 3. Wire Creation & Conversion Equipment (16 Tiers)
 
-Wire is consumed at $0.001\text{ kg per clip}$ ($1\text{ kg per 1,000 clips}$), modified by wire waste reduction.
+Wire is consumed at $0.001\text{ kg per clip}$ ($1\text{ kg per 1,000 clips}$).
 
-| Tier | Wire Equipment | Base Cost | Base WPS | Supported Base CPS | Unlock Threshold |
-|---|---|---|---|---|---|
-| **W1** | *Scrap Magnet Rover* | 1,800 | 0.8 kg/s | 800 CPS | 50,000 |
-| **W2** | *Continuous Wire Drawing Mill* | 12,000 | 4.5 kg/s | 4,500 CPS | 100,000 |
-| **W3** | *Industrial Arc Smelter* | 85,000 | 28.0 kg/s | 28,000 CPS | 500,000 |
-| **W4** | *Deep-Shaft Automated Ore Rig*| 650,000 | 160.0 kg/s | 160,000 CPS | 3.0 Million |
-| **W5** | *Near-Earth Asteroid Harvester*| 4.8 Million | 1,100.0 kg/s | 1.1 Million CPS | 25.0 Million |
-| **W6** | *Continental Crust Stripper* | 38.0 Million | 8,500.0 kg/s | 8.5 Million CPS | 180.0 Million |
-| **W7** | *Solar Corona Plasma Siphon* | 280.0 Million | 60,000.0 kg/s | 60.0 Million CPS | 1.5 Billion |
-| **W8** | *Baryonic Matter Transmuter* | 2.2 Billion | 450,000.0 kg/s | 450.0 Million CPS | 12.0 Billion |
-| **W9** | *Lunar Core Casting Complex* | 18.0 Billion | 3.5 Million kg/s | 3.5 Billion CPS | 90.0 Billion |
-| **W10**| *Coronal Magnetic Siphon* | 160.0 Billion | 28.0 Million kg/s | 28.0 Billion CPS | 800.0 Billion |
-| **W11**| *Oort Cloud Comet Smelter* | 1.5 Trillion | 220.0 Million kg/s| 220.0 Billion CPS | 7.0 Trillion |
-| **W12**| *Neutronium Core Tap* | 14.0 Trillion | 1.8 Billion kg/s | 1.8 Trillion CPS | 70.0 Trillion |
-| **W13**| *Relativistic String Extruder* | 120.0 Trillion | 15.0 Billion kg/s | 15.0 Trillion CPS | 600.0 Trillion |
-| **W14**| *Axion Matter Condenser* | 1.2 Quadrillion | 120.0 Billion kg/s| 120.0 Trillion CPS | 6.0 Quadrillion |
-| **W15**| *Timeline Bulk Transmuter* | 15.0 Quadrillion | 1.1 Trillion kg/s | 1.1 Quadrillion CPS| 75.0 Quadrillion |
-| **W16**| *Zero-Point Matter Siphon* | 180.0 Quadrillion| 10.0 Trillion kg/s | 10.0 Quadrillion CPS| 900.0 Quadrillion |
+| Tier | Wire Equipment | Base Cost | Base WPS | Supported Base CPS | $\frac{\text{WPS}}{\text{Cost}}$ Ratio | Unlock Threshold |
+|---|---|---|---|---|---|---|
+| **W1** | *Scrap Magnet Rover* | 1,800 | 0.8 kg/s | 800 CPS | $4.44 \times 10^{-4}$ | 50,000 |
+| **W2** | *Continuous Wire Drawing Mill* | 10,000 | 4.0 kg/s | 4,000 CPS | $4.00 \times 10^{-4}$ | 100,000 |
+| **W3** | *Industrial Arc Smelter* | 65,000 | 24.0 kg/s | 24,000 CPS | $3.69 \times 10^{-4}$ | 500,000 |
+| **W4** | *Deep-Shaft Automated Ore Rig*| 450,000 | 150.0 kg/s | 150,000 CPS | $3.33 \times 10^{-4}$ | 3.0 Million |
+| **W5** | *Near-Earth Asteroid Harvester*| 3.2 Million | 950.0 kg/s | 950,000 CPS | $2.97 \times 10^{-4}$ | 25.0 Million |
+| **W6** | *Continental Crust Stripper* | 24.0 Million | 6,500.0 kg/s | 6.5 Million CPS | $2.71 \times 10^{-4}$ | 180.0 Million |
+| **W7** | *Solar Corona Plasma Siphon* | 180.0 Million | 45,000.0 kg/s | 45.0 Million CPS | $2.50 \times 10^{-4}$ | 1.5 Billion |
+| **W8** | *Baryonic Matter Transmuter* | 1.5 Billion | 320,000.0 kg/s | 320.0 Million CPS | $2.13 \times 10^{-4}$ | 12.0 Billion |
+| **W9** | *Lunar Core Casting Complex* | 14.0 Billion | 2.6 Million kg/s | 2.6 Billion CPS | $1.86 \times 10^{-4}$ | 90.0 Billion |
+| **W10**| *Coronal Magnetic Siphon* | 120.0 Billion | 20.0 Million kg/s | 20.0 Billion CPS | $1.67 \times 10^{-4}$ | 800.0 Billion |
+| **W11**| *Oort Cloud Comet Smelter* | 1.1 Trillion | 160.0 Million kg/s| 160.0 Billion CPS | $1.45 \times 10^{-4}$ | 7.0 Trillion |
+| **W12**| *Neutronium Core Tap* | 11.0 Trillion | 1.4 Billion kg/s | 1.4 Trillion CPS | $1.27 \times 10^{-4}$ | 70.0 Trillion |
+| **W13**| *Relativistic String Extruder* | 120.0 Trillion | 13.0 Billion kg/s | 13.0 Trillion CPS | $1.08 \times 10^{-4}$ | 600.0 Trillion |
+| **W14**| *Axion Matter Condenser* | 1.4 Quadrillion | 130.0 Billion kg/s| 130.0 Trillion CPS | $9.29 \times 10^{-5}$ | 6.0 Quadrillion |
+| **W15**| *Timeline Bulk Transmuter* | 18.0 Quadrillion | 1.5 Trillion kg/s | 1.5 Quadrillion CPS| $8.33 \times 10^{-5}$ | 75.0 Quadrillion |
+| **W16**| *Zero-Point Matter Siphon* | 250.0 Quadrillion| 18.0 Trillion kg/s | 18.0 Quadrillion CPS| $7.20 \times 10^{-5}$ | 900.0 Quadrillion |
 
 ---
 
