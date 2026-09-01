@@ -425,80 +425,117 @@ body {
 }
 
 .machinery-row {
-    background: rgba(0, 0, 0, 0.25);
-    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.35);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
     padding: 6px 8px;
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    gap: 9px;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.machinery-row-header {
+.machinery-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--neon-cyan);
+}
+
+.machinery-icon-container {
+    width: 32px;
+    height: 32px;
+    background: #140929;
+    border: 1.5px solid var(--border-ink);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 0 var(--border-ink);
+}
+
+.equip-vector-svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.machinery-meta {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.machinery-name-line {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 12px;
+    gap: 4px;
 }
 
-.machinery-row-info {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.machinery-row-icon {
-    font-size: 14px;
-}
-
-.machinery-row-name {
+.machinery-name {
     font-family: var(--font-cartoon);
     font-weight: 700;
     color: #ffffff;
-    font-size: 13px;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.machinery-row-count {
+.machinery-count {
     font-family: var(--font-cartoon);
     font-weight: 800;
     color: var(--neon-cyan);
-    font-size: 13px;
+    font-size: 12px;
+    flex-shrink: 0;
 }
 
-.machinery-stacked-icons {
+.machinery-rate-line {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
     align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
 }
 
-.mini-icon-badge {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    padding: 2px 4px;
-    font-size: 13px;
-    line-height: 1;
-    display: inline-flex;
+.machinery-category {
+    font-size: 10px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.machinery-rate {
+    font-family: var(--font-cartoon);
+    font-weight: 700;
+    color: var(--neon-green);
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.machinery-rate.wire-rate {
+    color: var(--neon-orange);
+}
+
+.building-card-icon-col {
+    width: 38px;
+    height: 38px;
+    background: #140929;
+    border: 2px solid var(--border-ink);
+    border-radius: 9px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    animation: iconPop 0.15s ease-out;
+    flex-shrink: 0;
+    box-shadow: 0 2px 0 var(--border-ink);
 }
 
-@keyframes iconPop {
-    0% { transform: scale(0.6); }
-    100% { transform: scale(1.0); }
-}
-
-.mini-icon-more {
-    background: var(--neon-pink);
-    color: #ffffff;
-    font-family: var(--font-cartoon);
-    font-size: 10px;
-    font-weight: 800;
-    border-radius: 6px;
-    padding: 2px 5px;
-    border: 1px solid var(--border-ink);
+.building-card-icon-col .equip-vector-svg {
+    width: 26px;
+    height: 26px;
 }
 
 /* =========================================================================

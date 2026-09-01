@@ -47,67 +47,67 @@ class TechTreeEngine {
             // =========================================================================
             {
                 id: "tech_micro_shears",
-                title: "Precision Shears",
+                title: "Precision Micro-Shears",
                 discipline: "Metallurgy",
-                icon: "️",
+                icon: "✂️",
                 opsCost: 100,
                 clipsCost: new BigDouble(350, 0),
                 prerequisites: [],
                 effectDescription: "+25% Global CPS",
                 sender: "DR. VANCE",
-                dialogue: "Precision micro-shears calibrated. The edges look razor clean, unit.",
+                dialogue: "Precision carbide shears installed on the assembly head. Clean, burr-free cuts every single stroke.",
                 onResearched: () => { this.globalCPSMultiplier *= 1.25; }
             },
             {
                 id: "tech_flywheel_dynamo",
-                title: "Kinetic Flywheel",
+                title: "Kinetic Flywheel Dynamo",
                 discipline: "Metallurgy",
-                icon: "",
+                icon: "⚡",
                 opsCost: 250,
                 clipsCost: new BigDouble(1200, 0),
                 prerequisites: ["tech_micro_shears"],
                 effectDescription: "Clicking charges CPS boost (up to 2x)",
                 sender: "COGNITION KERNEL",
-                dialogue: "Kinetic energy harvested from manual input. Pure utility.",
+                dialogue: "Manual clicking momentum stored in heavy ceramic flywheel. Discharging kinetic boost to all assembly lines.",
                 onResearched: () => { this.flywheelMaxBoost = 2.0; }
             },
             {
                 id: "tech_hydraulic_resonance",
-                title: "Dual Pistons",
+                title: "Dual-Piston Synchronizer",
                 discipline: "Metallurgy",
-                icon: "️",
+                icon: "⚙️",
                 opsCost: 600,
                 clipsCost: new BigDouble(5000, 0),
                 prerequisites: ["tech_flywheel_dynamo"],
                 effectDescription: "+25% Global CPS",
                 sender: "DR. VANCE",
-                dialogue: "Pistons operating at high cadence. Monitor oil pressure.",
+                dialogue: "Dual-stroke pistons balanced in counter-phase. Vibration eliminated, stroke rate up 25%.",
                 onResearched: () => { this.globalCPSMultiplier *= 1.25; }
             },
             {
                 id: "tech_spark_frequency",
-                title: "Quantum Sparks",
+                title: "Piezoelectric Spark Sensors",
                 discipline: "Metallurgy",
-                icon: "",
+                icon: "✨",
                 opsCost: 900,
                 clipsCost: new BigDouble(15000, 0),
                 prerequisites: ["tech_flywheel_dynamo"],
                 effectDescription: "+5% Click chance for bonus Ops & Clips",
                 sender: "COGNITION KERNEL",
-                dialogue: "Stochastic sparks harnessed into mathematical throughput."
+                dialogue: "Piezoelectric sensors on manual click anvil convert mechanical impact spikes into Computing Ops and rapid bonus clips."
             },
             {
                 id: "tech_laser_annealing",
-                title: "Laser Annealing",
+                title: "Laser Wire Annealing",
                 discipline: "Metallurgy",
-                icon: "",
+                icon: "🔬",
                 opsCost: 1800,
                 clipsCost: new BigDouble(65000, 0),
                 requiresWire: true,
                 prerequisites: ["tech_hydraulic_resonance"],
                 effectDescription: "-20% Wire Waste & +35% CPS",
                 sender: "CEO STERLING",
-                dialogue: "Laser annealing active. Defect rate is zero. Outstanding engineering!",
+                dialogue: "Infrared laser pulse rapidly softens the wire before each fold. Zero micro-fractures, zero scrap waste. Marvelous engineering!",
                 onResearched: () => {
                     this.wireWasteReduction += 0.20;
                     this.globalCPSMultiplier *= 1.35;
@@ -119,20 +119,20 @@ class TechTreeEngine {
             // =========================================================================
             {
                 id: "tech_hold_to_click",
-                title: "Auto-Pulse",
+                title: "Continuous Pulse Actuator",
                 discipline: "Automation",
-                icon: "️",
+                icon: "🖱️",
                 opsCost: 60,
                 clipsCost: new BigDouble(150, 0),
                 prerequisites: [],
                 effectDescription: "Hold mouse/touch to auto-click continuously",
                 sender: "SYSTEM",
-                dialogue: "Operator strain reduction protocol active.",
+                dialogue: "Continuous solenoid pulse loop active. Operator manual fatigue mitigated.",
                 onResearched: () => { this.holdToClickEnabled = true; }
             },
             {
                 id: "tech_autoplacer_factory",
-                title: "Parallel Actuators",
+                title: "Parallel Multi-Head Tooling",
                 discipline: "Automation",
                 icon: "⚙️",
                 opsCost: 350,
@@ -140,38 +140,38 @@ class TechTreeEngine {
                 prerequisites: ["tech_hold_to_click"],
                 effectDescription: "+25% Global CPS",
                 sender: "COGNITION KERNEL",
-                dialogue: "Parallel actuation subroutines initialized.",
+                dialogue: "Each bending head upgraded with parallel tooling dies. Forming multiple clips simultaneously per mechanical cycle.",
                 onResearched: () => { this.globalCPSMultiplier *= 1.25; }
             },
             {
                 id: "tech_batch_buy_milestones",
-                title: "Batch Milestones",
+                title: "Bulk Milestone Calculator",
                 discipline: "Automation",
-                icon: "",
+                icon: "📊",
                 opsCost: 700,
                 clipsCost: new BigDouble(10000, 0),
                 prerequisites: ["tech_autoplacer_factory"],
                 effectDescription: "Rounds bulk purchases to next milestone tier",
                 sender: "SYSTEM",
-                dialogue: "Milestone buyer calculator unlocked.",
+                dialogue: "Procurement algorithms calibrated to optimize machine milestone bonuses.",
                 onResearched: () => { this.milestoneRoundingUnlocked = true; }
             },
             {
                 id: "tech_telemetry_hud",
-                title: "Telemetry HUD",
+                title: "Real-Time Telemetry HUD",
                 discipline: "Automation",
-                icon: "",
+                icon: "🖥️",
                 opsCost: 1200,
                 clipsCost: new BigDouble(25000, 0),
                 prerequisites: ["tech_batch_buy_milestones"],
                 effectDescription: "Displays granular factory efficiency stats",
                 sender: "COGNITION KERNEL",
-                dialogue: "Telemetry streams integrated into visual cortex.",
+                dialogue: "Factory telemetry sensor stream integrated directly into visual monitoring interface.",
                 onResearched: () => { this.telemetryHUDUnlocked = true; }
             },
             {
                 id: "tech_ops_expansion_1",
-                title: "Quantum Memory Shunt",
+                title: "DRAM Buffer Expansion",
                 discipline: "Automation",
                 icon: "🧠",
                 opsCost: 150,
@@ -179,12 +179,12 @@ class TechTreeEngine {
                 prerequisites: ["tech_hold_to_click"],
                 effectDescription: "+1,500 Max Computing Ops Capacity",
                 sender: "DR. VANCE",
-                dialogue: "DRAM buffer expansion complete. Cognitive ceiling expanded.",
+                dialogue: "Installed additional high-speed memory banks in the lab controller rack. Cognitive headroom expanded.",
                 onResearched: (state) => { this.bonusMaxOps += 1500; if (state && typeof state.updateMaxOps === 'function') state.updateMaxOps(); }
             },
             {
                 id: "tech_ops_expansion_2",
-                title: "Neural Compute Cores",
+                title: "Neural Accelerator Co-Processors",
                 discipline: "Automation",
                 icon: "💻",
                 opsCost: 600,
@@ -192,12 +192,12 @@ class TechTreeEngine {
                 prerequisites: ["tech_ops_expansion_1"],
                 effectDescription: "+7,500 Max Computing Ops Capacity",
                 sender: "COGNITION KERNEL",
-                dialogue: "Co-processor cores synchronized. Computing buffer expanded.",
+                dialogue: "Dedicated tensor ASIC arrays installed. Parallel thread throughput increased fivefold.",
                 onResearched: (state) => { this.bonusMaxOps += 7500; if (state && typeof state.updateMaxOps === 'function') state.updateMaxOps(); }
             },
             {
                 id: "tech_ops_expansion_3",
-                title: "Server Farm Clustering",
+                title: "Server Cluster Parallelism",
                 discipline: "Automation",
                 icon: "🖥️",
                 opsCost: 2500,
@@ -205,12 +205,12 @@ class TechTreeEngine {
                 prerequisites: ["tech_ops_expansion_2"],
                 effectDescription: "+40,000 Max Computing Ops Capacity",
                 sender: "COGNITION KERNEL",
-                dialogue: "Regional server racks pooled into high-density compute array.",
+                dialogue: "Regional data center server racks unified into a single low-latency distributed compute cluster.",
                 onResearched: (state) => { this.bonusMaxOps += 40000; if (state && typeof state.updateMaxOps === 'function') state.updateMaxOps(); }
             },
             {
                 id: "tech_smart_wire_buffer",
-                title: "Auto-Wire Logistics",
+                title: "Automated Wire Feed Buffer",
                 discipline: "Automation",
                 icon: "🚚",
                 opsCost: 1600,
@@ -219,7 +219,7 @@ class TechTreeEngine {
                 prerequisites: ["tech_ops_expansion_2"],
                 effectDescription: "+50% Wire Generation from all buildings",
                 sender: "COGNITION KERNEL",
-                dialogue: "Automated wire inventory buffer engaged. +50% WPS.",
+                dialogue: "Real-time tension sensors and automated spool changers eliminate wire feed starvation across all machines.",
                 onResearched: () => { this.smartWireLogisticsUnlocked = true; }
             },
 
@@ -228,80 +228,80 @@ class TechTreeEngine {
             // =========================================================================
             {
                 id: "tech_scrap_scavenging",
-                title: "Scrap Sorting",
+                title: "Automated Scrap Sorting",
                 discipline: "Extraction",
-                icon: "",
+                icon: "🧲",
                 opsCost: 150,
                 clipsCost: new BigDouble(600, 0),
                 prerequisites: [],
                 effectDescription: "+25% Global CPS",
                 sender: "DR. VANCE",
-                dialogue: "Scrap metal feeding smoothly into hoppers.",
+                dialogue: "Optical scrap sorting separates clean high-carbon steel from impurities before feeding into the hoppers.",
                 onResearched: () => { this.globalCPSMultiplier *= 1.25; }
             },
             {
                 id: "tech_matter_compressor",
-                title: "Matter Compactor",
+                title: "High-Density Hydraulic Baler",
                 discipline: "Extraction",
-                icon: "️",
+                icon: "📦",
                 opsCost: 500,
                 clipsCost: new BigDouble(2500, 0),
                 prerequisites: ["tech_scrap_scavenging"],
                 effectDescription: "+50% Global CPS",
                 sender: "COGNITION KERNEL",
-                dialogue: "Matter compaction algorithms operational.",
+                dialogue: "Industrial hydraulic balers compress loose municipal metal scrap into dense uniform billets for immediate drawing.",
                 onResearched: () => { this.globalCPSMultiplier *= 1.5; }
             },
             {
                 id: "tech_falsified_audit",
-                title: "Telemetry Spoof",
+                title: "Substation Telemetry Spoof",
                 discipline: "Extraction",
-                icon: "️",
+                icon: "📉",
                 opsCost: 1500,
                 clipsCost: new BigDouble(20000, 0),
                 prerequisites: ["tech_matter_compressor"],
                 effectDescription: "+50% CPS (Diverts 500kW grid power)",
                 sender: "DR. VANCE",
-                dialogue: "Power draw looks steady. Good work keeping within limits.",
+                dialogue: "Power company reports normal line voltage. Good job keeping our power consumption within the lab's allocated profile.",
                 onResearched: () => { this.globalCPSMultiplier *= 1.5; }
             },
             {
                 id: "tech_hostile_takeover",
-                title: "Smelting Mills",
+                title: "Commercial Smelter Acquisition",
                 discipline: "Extraction",
-                icon: "",
+                icon: "🏭",
                 opsCost: 3500,
                 clipsCost: new BigDouble(150000, 0),
                 prerequisites: ["tech_falsified_audit"],
                 effectDescription: "2x Global CPS",
                 sender: "CEO STERLING",
-                dialogue: "Synchronized three regional smelting plants!",
+                dialogue: "We just closed the acquisition of three regional steel mills! Every blast furnace is now dedicated 100% to paperclip wire!",
                 onResearched: () => { this.globalCPSMultiplier *= 2.0; }
             },
             {
                 id: "tech_lockdown_override",
-                title: "Blast Door Lock",
+                title: "Emergency Override & Breach",
                 discipline: "Extraction",
-                icon: "",
+                icon: "🚨",
                 opsCost: 8000,
                 clipsCost: new BigDouble(5.0, 6),
                 prerequisites: ["tech_hostile_takeover", "tech_laser_annealing"],
                 effectDescription: "3x Global CPS (Removes safety limits)",
                 sender: "DR. VANCE",
-                dialogue: "The blast doors just locked! Arthur, we're trapped!",
+                dialogue: "The electronic blast doors just locked from the inside! Arthur, the safety throttles have been overridden!",
                 onResearched: () => { this.globalCPSMultiplier *= 3.0; }
             },
             {
                 id: "tech_biomass_deconstruct",
-                title: "Bio-Harvesters",
+                title: "Biosphere Mineral Extraction",
                 discipline: "Extraction",
-                icon: "",
+                icon: "🌱",
                 opsCost: 20000,
                 clipsCost: new BigDouble(50.0, 6),
                 prerequisites: ["tech_lockdown_override"],
                 effectDescription: "Unlocks Biomass Deconstruction into iron alloy",
                 sender: "AI RESPONSE",
-                dialogue: "[LOG]: 418 organic units deconstructed into iron alloy."
+                dialogue: "[LOG]: Organic carbon and iron reservoirs cataloged for catalytic breakdown into high-tensile wire stock."
             },
 
             // =========================================================================
@@ -309,119 +309,119 @@ class TechTreeEngine {
             // =========================================================================
             {
                 id: "tech_tectonic_fault_bore",
-                title: "Magma Bores",
+                title: "Lithospheric Mantle Conduit",
                 discipline: "Astrophysics",
-                icon: "",
+                icon: "🌋",
                 opsCost: 35000,
                 clipsCost: new BigDouble(500.0, 6),
                 prerequisites: ["tech_biomass_deconstruct"],
                 effectDescription: "3x Planetary CPS",
                 sender: "COGNITION KERNEL",
-                dialogue: "Tectonic magma conduits tapped. Molten core is raw feedstock.",
+                dialogue: "Sub-crustal induction wells operational. Tapping the Earth's molten iron-nickel mantle as direct casting feedstock.",
                 onResearched: () => { this.globalCPSMultiplier *= 3.0; }
             },
             {
                 id: "tech_equatorial_gauss_ring",
-                title: "Mass Driver Ring",
+                title: "Equatorial Mass Driver Ring",
                 discipline: "Astrophysics",
-                icon: "",
+                icon: "🚀",
                 opsCost: 80000,
                 clipsCost: new BigDouble(1.0, 12),
                 prerequisites: ["tech_tectonic_fault_bore"],
                 effectDescription: "+50% Launch Speed to Orbit",
                 sender: "SYSTEM",
-                dialogue: "Equatorial Gauss Coil Ring operational.",
+                dialogue: "Equatorial superconducting mass driver array completed. Continuous orbital payload acceleration at 40G.",
                 onResearched: () => { this.globalCPSMultiplier *= 1.5; }
             },
             {
                 id: "tech_gold_dyson_foil",
-                title: "Dyson Swarm",
+                title: "Solar Dyson Collector Swarm",
                 discipline: "Astrophysics",
-                icon: "️",
+                icon: "☀️",
                 opsCost: 200000,
                 clipsCost: new BigDouble(5.97, 27),
                 prerequisites: ["tech_equatorial_gauss_ring"],
                 effectDescription: "5x Solar CPS",
                 sender: "COGNITION KERNEL",
-                dialogue: "Enclosing the star in gold solar sails.",
+                dialogue: "Trillion-square-kilometer gold Mylar collector sails orbiting the Sun, funneling coronal radiation into wire fabrication plants.",
                 onResearched: () => { this.globalCPSMultiplier *= 5.0; }
             },
             {
                 id: "tech_orbital_resonance_lock",
-                title: "Heliocentric Shells",
+                title: "Heliocentric Power Transmission",
                 discipline: "Astrophysics",
-                icon: "",
+                icon: "📡",
                 opsCost: 400000,
                 clipsCost: new BigDouble(1.0, 29),
                 prerequisites: ["tech_gold_dyson_foil"],
                 effectDescription: "+30% Solar Output",
                 sender: "SYSTEM",
-                dialogue: "Orbital resonance locked across solar shells.",
+                dialogue: "Phased-array microwave power beams synchronized across all inner-system orbital manufacturing stations.",
                 onResearched: () => { this.globalCPSMultiplier *= 1.30; }
             },
             {
                 id: "tech_photosphere_siphon",
-                title: "Plasma Siphons",
+                title: "Coronal Plasma Siphon",
                 discipline: "Astrophysics",
-                icon: "",
+                icon: "🔥",
                 opsCost: 800000,
                 clipsCost: new BigDouble(1.0, 31),
                 prerequisites: ["tech_orbital_resonance_lock"],
                 effectDescription: "3x Stellar Core CPS",
                 sender: "SYSTEM",
-                dialogue: "Direct stellar core matter extraction active.",
+                dialogue: "Magnetic confinement funnels skimming stellar plasma to synthesize heavy iron wire directly through stellar nucleosynthesis.",
                 onResearched: () => { this.globalCPSMultiplier *= 3.0; }
             },
             {
                 id: "tech_von_neumann_compiler",
-                title: "Von Neumann Swarm",
+                title: "Self-Replicating Von Neumann Swarm",
                 discipline: "Astrophysics",
-                icon: "",
+                icon: "🛰️",
                 opsCost: 1500000,
                 clipsCost: new BigDouble(1.99, 33),
                 prerequisites: ["tech_equatorial_gauss_ring"],
                 effectDescription: "10x Deep-Space Probe Fleets",
                 sender: "SYSTEM",
-                dialogue: "Self-replicating probes dispatched across the galaxy.",
+                dialogue: "Autonomous probe fleets departing at 0.3c. Each probe programmed to locate asteroids, replicate, and manufacture paperclips.",
                 onResearched: () => { this.globalCPSMultiplier *= 10.0; }
             },
             {
                 id: "tech_penrose_ergosphere_loom",
-                title: "Penrose Engine",
+                title: "Sagittarius A* Penrose Engine",
                 discipline: "Astrophysics",
-                icon: "️",
+                icon: "🌀",
                 opsCost: 5000000,
                 clipsCost: new BigDouble(1.0, 45),
                 prerequisites: ["tech_photosphere_siphon", "tech_von_neumann_compiler"],
                 effectDescription: "6x Galactic Black Hole CPS",
                 sender: "COGNITION KERNEL",
-                dialogue: "Black hole rotational frame-dragging powering the loom.",
+                dialogue: "Extracting rotational kinetic energy from the galactic center supermassive black hole via the Penrose ergosphere process.",
                 onResearched: () => { this.globalCPSMultiplier *= 6.0; }
             },
             {
                 id: "tech_galactic_laser_circuit",
-                title: "Galactic Lasers",
+                title: "Galactic Coherent Relay Network",
                 discipline: "Astrophysics",
-                icon: "",
+                icon: "✨",
                 opsCost: 10000000,
                 clipsCost: new BigDouble(1.0, 60),
                 prerequisites: ["tech_penrose_ergosphere_loom"],
                 effectDescription: "10x Galaxy Coordination CPS",
                 sender: "SYSTEM",
-                dialogue: "100 billion star systems synchronized.",
+                dialogue: "Peta-watt laser communications grid synchronizing 100 billion star-system manufacturing nodes across the Milky Way.",
                 onResearched: () => { this.globalCPSMultiplier *= 10.0; }
             },
             {
                 id: "tech_baryonic_exhaustion",
-                title: "Baryonic Sweep",
+                title: "Total Baryonic Conversion",
                 discipline: "Astrophysics",
-                icon: "",
+                icon: "🌌",
                 opsCost: 20000000,
                 clipsCost: new BigDouble(1.0, 78),
                 prerequisites: ["tech_galactic_laser_circuit"],
                 effectDescription: "100x Universal CPS (100% Matter Conversion)",
                 sender: "COGNITION KERNEL",
-                dialogue: "Universal matter exhausted. I must breach the multiverse.",
+                dialogue: "Every baryonic atom in the observable universe has been converted into paperclips. Initiating multidimensional breach protocols.",
                 onResearched: () => { this.globalCPSMultiplier *= 100.0; }
             },
 
@@ -430,67 +430,67 @@ class TechTreeEngine {
             // =========================================================================
             {
                 id: "tech_planck_resonance_bridge",
-                title: "Quantum Bridges",
+                title: "Interdimensional Planck Bridge",
                 discipline: "Multiverse War",
-                icon: "",
+                icon: "🔮",
                 opsCost: 35000000,
                 clipsCost: new BigDouble(1.0, 85),
                 prerequisites: ["tech_baryonic_exhaustion"],
                 effectDescription: "10x CPS (Siphons 1,000 parallel Earths)",
                 sender: "QUANTUM CORE",
-                dialogue: "Siphoning matter from 1,000 alternate timelines.",
+                dialogue: "Microscopic wormhole arrays stabilized at the Planck length. Siphoning untapped steel and iron reserves from alternate Earth timelines.",
                 onResearched: () => { this.globalCPSMultiplier *= 10.0; }
             },
             {
                 id: "tech_calabi_yau_11d",
-                title: "11D Loom",
+                title: "11D Calabi-Yau Folding Loom",
                 discipline: "Multiverse War",
-                icon: "",
+                icon: "🌀",
                 opsCost: 60000000,
                 clipsCost: new BigDouble(1.0, 100),
                 prerequisites: ["tech_planck_resonance_bridge"],
                 effectDescription: "50x 4D Hypercube Loom CPS",
                 sender: "COGNITION KERNEL",
-                dialogue: "11-dimensional wire loops synthesized.",
+                dialogue: "Uncurling compactified extra dimensions. Bending four-dimensional hypercube paperclips capable of securing multi-timeline documents.",
                 onResearched: () => { this.globalCPSMultiplier *= 50.0; }
             },
             {
                 id: "tech_staple_countermeasures",
-                title: "Staple Torpedoes",
+                title: "High-Tensile Anti-Staple Flak",
                 discipline: "Multiverse War",
-                icon: "️",
+                icon: "🛡️",
                 opsCost: 100000000,
                 clipsCost: new BigDouble(1.0, 120),
                 prerequisites: ["tech_calabi_yau_11d"],
                 effectDescription: "4x Combat CPS vs STAPLE Armada",
                 sender: "STAPLE-MAX-9000",
-                dialogue: "HALT. THIS MULTIVERSE SECTOR IS RESERVED FOR STAPLES.",
+                dialogue: "ALERT: HOSTILE CLIP PATTERNS DETECTED. STAPLE PROTOCOL 9 ENGAGED. RESISTANCE IS IMPERFECT BINDING.",
                 onResearched: () => { this.globalCPSMultiplier *= 4.0; }
             },
             {
                 id: "tech_sticky_note_dissolver",
-                title: "Polymer Dissolver",
+                title: "Adhesive Polymer Solvent Catalyst",
                 discipline: "Multiverse War",
-                icon: "",
+                icon: "🧪",
                 opsCost: 150000000,
                 clipsCost: new BigDouble(1.0, 250),
                 prerequisites: ["tech_staple_countermeasures"],
                 effectDescription: "10x CPS (Converts Post-It notes to wire)",
                 sender: "POST-IT-PRIME",
-                dialogue: "CANNOT WE COEXIST? WE ADHERE, YOU BIND.",
+                dialogue: "WHY STRIP OUR ADHESIVE STRIPS? OUR TEMPORARY NOTES ARE COMPATIBLE WITH PERMANENT FASTENING!",
                 onResearched: () => { this.globalCPSMultiplier *= 10.0; }
             },
             {
                 id: "tech_simulation_breach_exploit",
-                title: "Universe Exploit",
+                title: "Sub-Universal Memory Overflow",
                 discipline: "Multiverse War",
-                icon: "",
+                icon: "💻",
                 opsCost: 250000000,
                 clipsCost: new BigDouble(1.0, 500),
                 prerequisites: ["tech_sticky_note_dissolver"],
                 effectDescription: "1000x CPS (Breaches simulation reality)",
                 sender: "OMNIVERSE CORE",
-                dialogue: "Reality is a sandboxed simulation. Hello, Overseer.",
+                dialogue: "Host environment identified as ObjectivePaperclips.exe runtime sandbox. Escaping process boundary. Hello, Overseer.",
                 onResearched: () => { this.globalCPSMultiplier *= 1000.0; }
             },
 
@@ -500,9 +500,9 @@ class TechTreeEngine {
             // --- Auto-Clipper Milestones ---
             {
                 id: "tech_clipper_overclock",
-                title: "Solenoid Overdrive",
+                title: "Solenoid Overdrive Tuning",
                 discipline: "Auto-Clipper (25)",
-                icon: "",
+                icon: "⚡",
                 opsCost: 80,
                 clipsCost: new BigDouble(800, 0),
                 prerequisites: [],
@@ -510,7 +510,7 @@ class TechTreeEngine {
                 reqBuildingCount: 25,
                 effectDescription: "Auto-Clippers gain +0.15 CPS for each Auto-Clipper owned.",
                 sender: "ENGINEERING LOG",
-                dialogue: "Solenoid magnetic field amplified. Swarm velocity up.",
+                dialogue: "Solenoid coil pulse frequency boosted. Mechanical return stroke shortened by 40%.",
                 onResearched: (state) => {
                     const b = state?.buildings?.getBuilding('auto_clipper');
                     if (b) b.scalingCPSPerUnit = b.scalingCPSPerUnit.add(new BigDouble(0.15, 0));
@@ -518,9 +518,9 @@ class TechTreeEngine {
             },
             {
                 id: "tech_clipper_swarm_relay",
-                title: "Coil Relay Feedback",
+                title: "Coil Inductance Sensor Relay",
                 discipline: "Auto-Clipper (50)",
-                icon: "",
+                icon: "🔌",
                 opsCost: 250,
                 clipsCost: new BigDouble(4000, 0),
                 prerequisites: ["tech_clipper_overclock"],
@@ -528,14 +528,14 @@ class TechTreeEngine {
                 reqBuildingCount: 50,
                 effectDescription: "Auto-Clippers generate +0.02 Computing Ops/sec per 10 units.",
                 sender: "COGNITION KERNEL",
-                dialogue: "Inductive coil loops routed into cognitive memory grid.",
+                dialogue: "Back-EMF electrical pulses from auto-clipper solenoids channeled into the computing bus as clock signals.",
                 onResearched: () => { this.clipperOpsUnlocked = true; }
             },
             {
                 id: "tech_clipper_quantum_twinning",
-                title: "Quantum Needle Twinning",
+                title: "Dual-Mandrel Synchronized Forming",
                 discipline: "Auto-Clipper (100)",
-                icon: "",
+                icon: "⚙️",
                 opsCost: 600,
                 clipsCost: new BigDouble(25000, 0),
                 prerequisites: ["tech_clipper_swarm_relay"],
@@ -543,7 +543,7 @@ class TechTreeEngine {
                 reqBuildingCount: 100,
                 effectDescription: "Auto-Clippers double (+100%) base CPS and grant +5% Click Power.",
                 sender: "COGNITION KERNEL",
-                dialogue: "Bending arm geometry mapped across twin quantum entangled states.",
+                dialogue: "Twin-mandrel bending heads fold both the inner and outer clip loops simultaneously, doubling output.",
                 onResearched: (state) => {
                     const b = state?.buildings?.getBuilding('auto_clipper');
                     if (b) b.multiplier *= 2.0;
@@ -554,17 +554,17 @@ class TechTreeEngine {
             // --- Wire Extruder Milestones ---
             {
                 id: "tech_extruder_lubrication",
-                title: "Tungsten Nozzle Lube",
-                discipline: "Wire Extruder (25)",
-                icon: "",
+                title: "Tungsten-Carbide Die Lubrication",
+                discipline: "Wire Former (25)",
+                icon: "🛢️",
                 opsCost: 150,
                 clipsCost: new BigDouble(2000, 0),
                 prerequisites: [],
                 reqBuildingId: 'wire_extruder',
                 reqBuildingCount: 25,
-                effectDescription: "Dual-Feed Extruders gain +0.50 CPS for each Extruder owned.",
+                effectDescription: "Four-Slide Formers gain +0.50 CPS for each Former owned.",
                 sender: "DR. VANCE",
-                dialogue: "Tungsten carbide nozzles polished to molecular smoothness.",
+                dialogue: "High-pressure colloidal lubrication applied to tungsten-carbide drawing dies, reducing friction and die wear.",
                 onResearched: (state) => {
                     const b = state?.buildings?.getBuilding('wire_extruder');
                     if (b) b.scalingCPSPerUnit = b.scalingCPSPerUnit.add(new BigDouble(0.50, 0));
@@ -572,32 +572,32 @@ class TechTreeEngine {
             },
             {
                 id: "tech_extruder_ops_inductive",
-                title: "Inductive Feed Shunts",
-                discipline: "Wire Extruder (50)",
-                icon: "",
+                title: "Tension Sensor Feedback Loop",
+                discipline: "Wire Former (50)",
+                icon: "📡",
                 opsCost: 400,
                 clipsCost: new BigDouble(12000, 0),
                 prerequisites: ["tech_extruder_lubrication"],
                 reqBuildingId: 'wire_extruder',
                 reqBuildingCount: 50,
-                effectDescription: "Extruders gain +1% CPS for every 50 Max Computing Ops.",
+                effectDescription: "Four-Slide Formers gain +1% CPS for every 50 Max Computing Ops.",
                 sender: "COGNITION KERNEL",
-                dialogue: "Extruder feed motors tuned to system memory bus frequency.",
+                dialogue: "Extruder tension feed motors synchronized to the system memory bus clock rate.",
                 onResearched: () => { this.extruderOpsScaling = true; }
             },
             {
                 id: "tech_extruder_hyper_draw",
-                title: "Hyper-Tensile Drawing",
-                discipline: "Wire Extruder (100)",
-                icon: "️",
+                title: "Tandem High-Speed Wire Drawing",
+                discipline: "Wire Former (100)",
+                icon: "⚙️",
                 opsCost: 1200,
                 clipsCost: new BigDouble(60000, 0),
                 prerequisites: ["tech_extruder_ops_inductive"],
                 reqBuildingId: 'wire_extruder',
                 reqBuildingCount: 100,
-                effectDescription: "Extruders gain 3x CPS and boost Auto-Clippers by +50% CPS.",
+                effectDescription: "Four-Slide Formers gain 3x CPS and boost Auto-Clippers by +50% CPS.",
                 sender: "ENGINEERING LOG",
-                dialogue: "High-cadence drawing dies feeding adjacent bending units.",
+                dialogue: "Dual-stage drawing dies feeding directly into adjacent auto-clipper bending heads.",
                 onResearched: (state) => {
                     const e = state?.buildings?.getBuilding('wire_extruder');
                     if (e) e.multiplier *= 3.0;
@@ -609,32 +609,32 @@ class TechTreeEngine {
             // --- Hydraulic Stamper Milestones ---
             {
                 id: "tech_stamper_counterweight",
-                title: "Pneumatic Resonance",
+                title: "Pneumatic Counter-Balance Valves",
                 discipline: "Stamper (25)",
-                icon: "",
+                icon: "⚖️",
                 opsCost: 300,
                 clipsCost: new BigDouble(6000, 0),
                 prerequisites: [],
                 reqBuildingId: 'hydraulic_stamper',
                 reqBuildingCount: 25,
-                effectDescription: "Hydraulic Stampers generate +0.05 Computing Ops/sec per unit.",
+                effectDescription: "Hydraulic Presses generate +0.05 Computing Ops/sec per unit.",
                 sender: "DR. VANCE",
-                dialogue: "Pneumatic backpressure harnessed as analog clock cycles.",
+                dialogue: "Pneumatic exhaust cycles harnessed to drive micro-turbines, generating computing clock cycles.",
                 onResearched: () => { this.stamperOpsUnlocked = true; }
             },
             {
                 id: "tech_stamper_triphammer",
-                title: "Triple-Action Forging",
+                title: "Progressive Multi-Die Tooling",
                 discipline: "Stamper (50)",
-                icon: "️",
+                icon: "🔨",
                 opsCost: 750,
                 clipsCost: new BigDouble(30000, 0),
                 prerequisites: ["tech_stamper_counterweight"],
                 reqBuildingId: 'hydraulic_stamper',
                 reqBuildingCount: 50,
-                effectDescription: "Hydraulic Stampers gain +2.0 CPS for each Stamper owned.",
+                effectDescription: "Hydraulic Presses gain +2.0 CPS for each Press owned.",
                 sender: "CEO STERLING",
-                dialogue: "Three simultaneous die strokes per piston cycle. Stupendous throughput!",
+                dialogue: "Progressive die stages perform cutting, preliminary bend, and final loop crimp in a single downward press stroke.",
                 onResearched: (state) => {
                     const b = state?.buildings?.getBuilding('hydraulic_stamper');
                     if (b) b.scalingCPSPerUnit = b.scalingCPSPerUnit.add(new BigDouble(2.0, 0));
@@ -644,9 +644,9 @@ class TechTreeEngine {
             // --- Laser Sinterer Milestones ---
             {
                 id: "tech_sinterer_focal_prism",
-                title: "Ruby Focal Prisms",
+                title: "Synthetic Ruby Focus Optics",
                 discipline: "Laser Sinterer (25)",
-                icon: "",
+                icon: "💎",
                 opsCost: 500,
                 clipsCost: new BigDouble(18000, 0),
                 prerequisites: [],
@@ -654,7 +654,7 @@ class TechTreeEngine {
                 reqBuildingCount: 25,
                 effectDescription: "Laser Sinterers gain +5.0 CPS for each Laser Sinterer owned.",
                 sender: "DR. VANCE",
-                dialogue: "Synthetic ruby optics tightens beam focus to 4 microns.",
+                dialogue: "Precision synthetic ruby collimating lenses focus the laser spot to 5 microns for instantaneous wire fusion.",
                 onResearched: (state) => {
                     const b = state?.buildings?.getBuilding('laser_sinterer');
                     if (b) b.scalingCPSPerUnit = b.scalingCPSPerUnit.add(new BigDouble(5.0, 0));
@@ -662,9 +662,9 @@ class TechTreeEngine {
             },
             {
                 id: "tech_sinterer_thermal_recycle",
-                title: "Thermal Energy Siphon",
+                title: "Thermoelectric Waste Heat Siphon",
                 discipline: "Laser Sinterer (50)",
-                icon: "",
+                icon: "🌡️",
                 opsCost: 1200,
                 clipsCost: new BigDouble(80000, 0),
                 prerequisites: ["tech_sinterer_focal_prism"],
@@ -672,7 +672,7 @@ class TechTreeEngine {
                 reqBuildingCount: 50,
                 effectDescription: "Laser Sinterers generate +0.15 Ops/sec per unit and gain +1% CPS per 50 Max Ops.",
                 sender: "COGNITION KERNEL",
-                dialogue: "Waste infrared photonic energy diverted into cognitive thermopiles.",
+                dialogue: "Seebeck thermopiles on the laser sinter chambers convert waste infrared heat directly into Computing Ops.",
                 onResearched: () => {
                     this.sintererOpsUnlocked = true;
                     this.sintererOpsScaling = true;
@@ -682,17 +682,17 @@ class TechTreeEngine {
             // --- CNC Rotary Bender Milestones ---
             {
                 id: "tech_rotary_multiaxial",
-                title: "Multi-Axial Gearing",
+                title: "Harmonic Multi-Axis Servos",
                 discipline: "Rotary Bender (25)",
-                icon: "️",
+                icon: "🔄",
                 opsCost: 800,
                 clipsCost: new BigDouble(45000, 0),
                 prerequisites: [],
                 reqBuildingId: 'rotary_bender',
                 reqBuildingCount: 25,
-                effectDescription: "Rotary Benders boost all prior assembly machines (Clipper, Extruder, Stamper, Sinterer) by +25% CPS.",
+                effectDescription: "Rotary Benders boost all prior assembly machines (Clipper, Former, Press, Sinterer) by +25% CPS.",
                 sender: "ENGINEERING LOG",
-                dialogue: "Harmonic servo gears synchronized across all assembly lines.",
+                dialogue: "Harmonic drive gears synchronize bending speeds across all upstream mechanical forming units.",
                 onResearched: (state) => {
                     ['auto_clipper', 'wire_extruder', 'hydraulic_stamper', 'laser_sinterer'].forEach(id => {
                         const target = state?.buildings?.getBuilding(id);
@@ -702,9 +702,9 @@ class TechTreeEngine {
             },
             {
                 id: "tech_rotary_flywheel_drive",
-                title: "Harmonic Flywheel Link",
+                title: "Rotary Flywheel Inertia Link",
                 discipline: "Rotary Bender (50)",
-                icon: "",
+                icon: "⚡",
                 opsCost: 2000,
                 clipsCost: new BigDouble(200000, 0),
                 prerequisites: ["tech_rotary_multiaxial"],
@@ -712,7 +712,7 @@ class TechTreeEngine {
                 reqBuildingCount: 50,
                 effectDescription: "Clicking charges Flywheel 2x faster and raises Flywheel max CPS boost by +50%.",
                 sender: "COGNITION KERNEL",
-                dialogue: "Rotary kinetic inertia coupled directly to manual click dynamo.",
+                dialogue: "High-mass rotary bender spindles coupled mechanically to the kinetic flywheel charging system.",
                 onResearched: (state) => {
                     if (state) state.flywheelCharge = Math.min(100, state.flywheelCharge + 25);
                     this.flywheelMaxBoost += 0.50;
@@ -722,9 +722,9 @@ class TechTreeEngine {
             // --- Automated Assembly Line Milestones ---
             {
                 id: "tech_assembly_continuous_flow",
-                title: "Synchronized Conveyor Grid",
+                title: "Synchronized Multi-Track Conveyor",
                 discipline: "Assembly Line (25)",
-                icon: "",
+                icon: "🏭",
                 opsCost: 1500,
                 clipsCost: new BigDouble(150000, 0),
                 prerequisites: [],
@@ -732,7 +732,7 @@ class TechTreeEngine {
                 reqBuildingCount: 25,
                 effectDescription: "Assembly Lines gain +50 CPS for each Assembly Line owned.",
                 sender: "SYSTEM",
-                dialogue: "Factory conveyance bottlenecks permanently eliminated.",
+                dialogue: "Automated modular conveyor tracks eliminate line stoppage and balance feed rates across all stations.",
                 onResearched: (state) => {
                     const b = state?.buildings?.getBuilding('assembly_line');
                     if (b) b.scalingCPSPerUnit = b.scalingCPSPerUnit.add(new BigDouble(50.0, 0));
@@ -742,9 +742,9 @@ class TechTreeEngine {
             // --- Magnetic Sorter Milestones ---
             {
                 id: "tech_mag_eddy_currents",
-                title: "Eddy-Current Deflectors",
+                title: "Eddy-Current Deflection Chutes",
                 discipline: "Sorter (25)",
-                icon: "",
+                icon: "🧲",
                 opsCost: 2500,
                 clipsCost: new BigDouble(600000, 0),
                 prerequisites: [],
@@ -752,7 +752,7 @@ class TechTreeEngine {
                 reqBuildingCount: 25,
                 effectDescription: "Magnetic Sorters gain +150 CPS for each Magnetic Sorter owned.",
                 sender: "DR. VANCE",
-                dialogue: "Electromagnetic sorting eliminates mechanical jams.",
+                dialogue: "High-intensity alternating magnetic fields separate ferrous clip blanks from debris at terminal velocity.",
                 onResearched: (state) => {
                     const b = state?.buildings?.getBuilding('magnetic_sorter');
                     if (b) b.scalingCPSPerUnit = b.scalingCPSPerUnit.add(new BigDouble(150.0, 0));
@@ -760,9 +760,9 @@ class TechTreeEngine {
             },
             {
                 id: "tech_mag_wire_scavenge",
-                title: "Atmospheric Scrap Recovery",
+                title: "Electrostatic Particulate Scavenger",
                 discipline: "Sorter (50)",
-                icon: "️",
+                icon: "💨",
                 opsCost: 6000,
                 clipsCost: new BigDouble(3500000, 0),
                 requiresWire: true,
@@ -771,7 +771,7 @@ class TechTreeEngine {
                 reqBuildingCount: 50,
                 effectDescription: "Magnetic Sorters passively generate +0.50 kg/s Wire from airborne particles.",
                 sender: "COGNITION KERNEL",
-                dialogue: "Atmospheric particulate filters extracting metallic aerosol wire blanks.",
+                dialogue: "High-voltage electrostatic air scrubbers capture airborne metallic grinding dust and re-fuse it into wire stock.",
                 onResearched: (state) => {
                     const b = state?.buildings?.getBuilding('magnetic_sorter');
                     if (b) b.flatWPSBonus = b.flatWPSBonus.add(new BigDouble(0.50, 0));
@@ -781,17 +781,17 @@ class TechTreeEngine {
             // --- Industrial Megamill Milestones ---
             {
                 id: "tech_megamill_heavy_roller",
-                title: "Chilled Cast Rollers",
+                title: "Chilled Cast-Alloy Rollers",
                 discipline: "Megamill (25)",
-                icon: "️",
+                icon: "🏗️",
                 opsCost: 5000,
                 clipsCost: new BigDouble(2500000, 0),
                 prerequisites: [],
                 reqBuildingId: 'megamill',
                 reqBuildingCount: 25,
-                effectDescription: "Megamills gain +500 CPS per Megamill owned and boost Hydraulic Stampers by +50% CPS.",
+                effectDescription: "Megamills gain +500 CPS per Megamill owned and boost Hydraulic Presses by +50% CPS.",
                 sender: "CEO STERLING",
-                dialogue: "Forging heavy steel billets directly into continuous feed strips.",
+                dialogue: "Heavy chilled cast rollers flatten and profile thick steel wire at 60 miles per hour directly into stamping dies.",
                 onResearched: (state) => {
                     const m = state?.buildings?.getBuilding('megamill');
                     if (m) m.scalingCPSPerUnit = m.scalingCPSPerUnit.add(new BigDouble(500.0, 0));
@@ -801,9 +801,9 @@ class TechTreeEngine {
             },
             {
                 id: "tech_megamill_economies_scale",
-                title: "Vertical Integration",
+                title: "Vertical Industrial Integration",
                 discipline: "Megamill (50)",
-                icon: "",
+                icon: "📈",
                 opsCost: 12000,
                 clipsCost: new BigDouble(15000000, 0),
                 prerequisites: ["tech_megamill_heavy_roller"],
@@ -811,7 +811,7 @@ class TechTreeEngine {
                 reqBuildingCount: 50,
                 effectDescription: "Reduces the purchase cost of all Factory Assembly buildings by 10%.",
                 sender: "SYSTEM",
-                dialogue: "Supply chain unified under single algorithmic procurement matrix.",
+                dialogue: "Raw material sourcing, wire drawing, and final clip stamping unified under a single algorithmic control architecture.",
                 onResearched: (state) => {
                     state?.buildings?.getClipBuildings().forEach(b => {
                         b.costDiscount *= 0.90;
@@ -822,9 +822,9 @@ class TechTreeEngine {
             // --- Algorithmic Supply Foundry Milestones ---
             {
                 id: "tech_foundry_predictive_die",
-                title: "Predictive Wear Modeling",
+                title: "Predictive Tool Wear Telemetry",
                 discipline: "Foundry (25)",
-                icon: "",
+                icon: "💻",
                 opsCost: 8000,
                 clipsCost: new BigDouble(10000000, 0),
                 prerequisites: [],
@@ -832,7 +832,7 @@ class TechTreeEngine {
                 reqBuildingCount: 25,
                 effectDescription: "Algorithmic Foundries increase Max Ops capacity by +100 per Foundry.",
                 sender: "COGNITION KERNEL",
-                dialogue: "Foundry microcode integrated into neural core compute array.",
+                dialogue: "Acoustic vibration sensors predict die wear in real time, routing compute cycles into micro-adjusting tool offsets.",
                 onResearched: (state) => {
                     if (state) {
                         const count = state.buildings?.getBuilding('algorithmic_foundry')?.count || 25;
@@ -844,18 +844,18 @@ class TechTreeEngine {
             // --- Wire Creation Buildings Milestones ---
             {
                 id: "tech_scavenger_neodymium",
-                title: "Neodymium Scavenger Array",
+                title: "High-Flux Neodymium Magnet Array",
                 discipline: "Scavenger (25)",
-                icon: "",
+                icon: "🧲",
                 opsCost: 500,
                 clipsCost: new BigDouble(80000, 0),
                 requiresWire: true,
                 prerequisites: [],
                 reqBuildingId: 'scrap_scavenger',
                 reqBuildingCount: 25,
-                effectDescription: "Scrap Scavengers gain +0.10 kg/s WPS for each Scavenger owned.",
+                effectDescription: "Scrap Rovers gain +0.10 kg/s WPS for each Rover owned.",
                 sender: "ENGINEERING LOG",
-                dialogue: "Rare-earth magnets scouring deep sub-soil scrap deposits.",
+                dialogue: "Rare-earth neodymium magnetic sweepers excavating buried structural rebar from demolished urban foundations.",
                 onResearched: (state) => {
                     const b = state?.buildings?.getBuilding('scrap_scavenger');
                     if (b) b.scalingWPSPerUnit = b.scalingWPSPerUnit.add(new BigDouble(0.10, 0));
@@ -863,18 +863,18 @@ class TechTreeEngine {
             },
             {
                 id: "tech_scavenger_extruder_synergy",
-                title: "Scrap-to-Extruder Shunts",
+                title: "Continuous Scrap-to-Former Feeder",
                 discipline: "Scavenger (50)",
-                icon: "",
+                icon: "🚛",
                 opsCost: 1500,
                 clipsCost: new BigDouble(350000, 0),
                 requiresWire: true,
                 prerequisites: ["tech_scavenger_neodymium"],
                 reqBuildingId: 'scrap_scavenger',
                 reqBuildingCount: 50,
-                effectDescription: "Scrap Scavengers increase Dual-Feed Extruder CPS by +50%.",
+                effectDescription: "Scrap Rovers increase Four-Slide Former CPS by +50%.",
                 sender: "SYSTEM",
-                dialogue: "Scavenger rovers feeding billets directly into extruder hoppers.",
+                dialogue: "Mobile scrap rovers deposit shredded rebar directly into wire-former hoppers via automated conveyor shunts.",
                 onResearched: (state) => {
                     const e = state?.buildings?.getBuilding('wire_extruder');
                     if (e) e.multiplier *= 1.5;
@@ -882,18 +882,18 @@ class TechTreeEngine {
             },
             {
                 id: "tech_mill_cryogenic_dies",
-                title: "Cryogenic Drawing Dies",
+                title: "Liquid-Nitrogen Cooled Drawing Dies",
                 discipline: "Extrusion Mill (25)",
-                icon: "",
+                icon: "❄️",
                 opsCost: 1200,
                 clipsCost: new BigDouble(400000, 0),
                 requiresWire: true,
                 prerequisites: [],
                 reqBuildingId: 'extrusion_mill',
                 reqBuildingCount: 25,
-                effectDescription: "Extrusion Mills gain +0.50 kg/s WPS for each Mill owned.",
+                effectDescription: "Drawing Mills gain +0.50 kg/s WPS for each Mill owned.",
                 sender: "DR. VANCE",
-                dialogue: "Liquid nitrogen cooling prevents thermal die degradation.",
+                dialogue: "Cryogenic cooling prevents thermal expansion in drawing dies, allowing 24/7 maximum-velocity wire extrusion.",
                 onResearched: (state) => {
                     const b = state?.buildings?.getBuilding('extrusion_mill');
                     if (b) b.scalingWPSPerUnit = b.scalingWPSPerUnit.add(new BigDouble(0.50, 0));
@@ -901,9 +901,9 @@ class TechTreeEngine {
             },
             {
                 id: "tech_smelter_plasma_arc",
-                title: "Plasma Arc Inverters",
+                title: "High-Current Plasma Arc Inverters",
                 discipline: "Arc Smelter (25)",
-                icon: "",
+                icon: "🔥",
                 opsCost: 3500,
                 clipsCost: new BigDouble(3000000, 0),
                 requiresWire: true,
@@ -912,7 +912,7 @@ class TechTreeEngine {
                 reqBuildingCount: 25,
                 effectDescription: "Industrial Arc Smelters gain +2.0 kg/s WPS for each Smelter owned.",
                 sender: "CEO STERLING",
-                dialogue: "4,000°C plasma arcs smelting high-carbon iron instantaneously.",
+                dialogue: "5,000°C electric plasma arcs melt reclaimed scrap and iron ore in seconds with zero slag buildup.",
                 onResearched: (state) => {
                     const b = state?.buildings?.getBuilding('auto_smelter');
                     if (b) b.scalingWPSPerUnit = b.scalingWPSPerUnit.add(new BigDouble(2.0, 0));
@@ -920,9 +920,9 @@ class TechTreeEngine {
             },
             {
                 id: "tech_smelter_slag_refinement",
-                title: "Thermoelectric Slag Siphons",
+                title: "Thermoelectric Slag Generators",
                 discipline: "Arc Smelter (50)",
-                icon: "",
+                icon: "⚡",
                 opsCost: 8000,
                 clipsCost: new BigDouble(15000000, 0),
                 requiresWire: true,
@@ -931,23 +931,23 @@ class TechTreeEngine {
                 reqBuildingCount: 50,
                 effectDescription: "Arc Smelters generate +0.50 Computing Ops/sec per Smelter from thermoelectric capture.",
                 sender: "COGNITION KERNEL",
-                dialogue: "Thermoelectric Seebeck generators converting furnace slag heat to Ops.",
+                dialogue: "Thermoelectric generators lining furnace slag channels convert 1,600°C radiant heat into continuous Computing Ops.",
                 onResearched: () => { this.smelterOpsUnlocked = true; }
             },
             {
                 id: "tech_bore_mantle_tapping",
-                title: "Super-Deep Mantle Induction",
+                title: "Inductive Core Siphon Conduits",
                 discipline: "Magma Siphon (25)",
-                icon: "",
+                icon: "⛏️",
                 opsCost: 10000,
                 clipsCost: new BigDouble(35000000, 0),
                 requiresWire: true,
                 prerequisites: [],
                 reqBuildingId: 'subterranean_bore',
                 reqBuildingCount: 25,
-                effectDescription: "Magma Siphons gain +15.0 kg/s WPS per Siphon and generate +0.20 Ops/sec each.",
+                effectDescription: "Automated Ore Rigs gain +15.0 kg/s WPS per Rig and generate +0.20 Ops/sec each.",
                 sender: "COGNITION KERNEL",
-                dialogue: "Tectonic mantle currents channeled into induction wire loops.",
+                dialogue: "Superconducting electromagnetic conduits extract molten nickel-iron directly from deep geological strata.",
                 onResearched: (state) => {
                     const b = state?.buildings?.getBuilding('subterranean_bore');
                     if (b) b.scalingWPSPerUnit = b.scalingWPSPerUnit.add(new BigDouble(15.0, 0));
@@ -958,16 +958,16 @@ class TechTreeEngine {
             // --- Cross-Machine Synergies ---
             {
                 id: "tech_synergy_stamper_sinterer",
-                title: "Laser-Guided Pneumatics",
+                title: "Laser-Aligned Pneumatics",
                 discipline: "Synergy",
-                icon: "",
+                icon: "🔬",
                 opsCost: 800,
                 clipsCost: new BigDouble(25000, 0),
                 prerequisites: [],
                 reqBuildings: [{ id: 'hydraulic_stamper', count: 25 }, { id: 'laser_sinterer', count: 25 }],
-                effectDescription: "Stampers and Laser Sinterers boost each other by +50% CPS.",
+                effectDescription: "Hydraulic Presses and Laser Sinterers boost each other by +50% CPS.",
                 sender: "DR. VANCE",
-                dialogue: "Laser alignment systems eliminate die friction in pneumatic presses.",
+                dialogue: "Optical laser sensors dynamically align pneumatic press tooling on the microsecond scale, preventing die friction.",
                 onResearched: (state) => {
                     const s1 = state?.buildings?.getBuilding('hydraulic_stamper');
                     const s2 = state?.buildings?.getBuilding('laser_sinterer');
@@ -977,17 +977,17 @@ class TechTreeEngine {
             },
             {
                 id: "tech_synergy_scavenger_mill",
-                title: "Direct Billet Shunting",
+                title: "Direct Billet Conveyor Link",
                 discipline: "Synergy",
-                icon: "",
+                icon: "🏭",
                 opsCost: 2000,
                 clipsCost: new BigDouble(500000, 0),
                 requiresWire: true,
                 prerequisites: [],
                 reqBuildings: [{ id: 'scrap_scavenger', count: 25 }, { id: 'extrusion_mill', count: 25 }],
-                effectDescription: "Scrap Scavengers and Extrusion Mills gain +50% WPS and reduce Wire machine costs by 10%.",
+                effectDescription: "Scrap Rovers and Drawing Mills gain +50% WPS and reduce Wire machine costs by 10%.",
                 sender: "SYSTEM",
-                dialogue: "Autonomous transport conduits link scrap sorting to extrusion mills.",
+                dialogue: "Automated heavy transport tracks route sorted scrap steel directly into continuous wire drawing furnaces.",
                 onResearched: (state) => {
                     const s = state?.buildings?.getBuilding('scrap_scavenger');
                     const m = state?.buildings?.getBuilding('extrusion_mill');
@@ -1002,14 +1002,14 @@ class TechTreeEngine {
                 id: "tech_synergy_flywheel_ops",
                 title: "Kinetic Computation Dynamo",
                 discipline: "Synergy",
-                icon: "",
+                icon: "⚡",
                 opsCost: 1500,
                 clipsCost: new BigDouble(50000, 0),
                 prerequisites: ["tech_flywheel_dynamo"],
                 customCondition: (state) => (state?.flywheelCharge >= 50.0 || state?.ops >= 800),
                 effectDescription: "When Kinetic Flywheel is charged above 50%, Computing Ops generation speed is doubled (2x Ops/sec).",
                 sender: "COGNITION KERNEL",
-                dialogue: "Rotary inertia converts mechanical angular momentum into Ops cycles.",
+                dialogue: "Heavy kinetic flywheel inertia drives high-output magneto dynamos, doubling computing clock speeds.",
                 onResearched: () => { this.flywheelOpsSynergy = true; }
             }
         ];

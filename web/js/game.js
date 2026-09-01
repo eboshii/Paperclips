@@ -805,29 +805,30 @@ class GameEngine {
         }
 
         stackContainer.innerHTML = ownedBuildings.map(b => {
-            const maxVisibleIcons = 12;
-            const visibleCount = Math.min(b.count, maxVisibleIcons);
-            const remainingCount = b.count - visibleCount;
-
-            let miniBadgesHtml = '';
-            for (let i = 0; i < visibleCount; i++) {
-                miniBadgesHtml += `<span class="mini-icon-badge" title="${b.name}">${b.icon}</span>`;
-            }
-            if (remainingCount > 0) {
-                miniBadgesHtml += `<span class="mini-icon-more" title="${remainingCount} more ${b.name}">+${remainingCount}</span>`;
+            const iconSvg = b.getVectorIcon ? b.getVectorIcon() : (b.vectorIcon || b.icon);
+            let rateText = '';
+            if (b.type === 'clips') {
+                const totalCPS = b.getSingleUnitCPS(this).mul(b.count);
+                rateText = `+${totalCPS.toShortScale(1)} CPS`;
+            } else {
+                const totalWPS = b.getSingleUnitWPS(this).mul(b.count);
+                rateText = `+${totalWPS.toShortScale(1)} kg/s`;
             }
 
             return `
                 <div class="machinery-row" data-id="${b.id}">
-                    <div class="machinery-row-header">
-                        <div class="machinery-row-info">
-                            <span class="machinery-row-icon">${b.icon}</span>
-                            <span class="machinery-row-name">${b.name}</span>
-                        </div>
-                        <span class="machinery-row-count">x${b.count}</span>
+                    <div class="machinery-icon-container">
+                        ${iconSvg}
                     </div>
-                    <div class="machinery-stacked-icons">
-                        ${miniBadgesHtml}
+                    <div class="machinery-meta">
+                        <div class="machinery-name-line">
+                            <span class="machinery-name">${b.name}</span>
+                            <span class="machinery-count">x${b.count}</span>
+                        </div>
+                        <div class="machinery-rate-line">
+                            <span class="machinery-category">${b.category}</span>
+                            <span class="machinery-rate ${b.type === 'wire' ? 'wire-rate' : ''}">${rateText}</span>
+                        </div>
                     </div>
                 </div>
             `;
@@ -881,9 +882,13 @@ class GameEngine {
                 const costFormatted = `${purchase.totalCost.toWholeScale()} Clips`;
                 const singleCPS = b.getSingleUnitCPS(this);
                 const rateFormatted = `+${singleCPS.toShortScale(1)} CPS`;
+                const iconSvg = b.getVectorIcon ? b.getVectorIcon() : (b.vectorIcon || b.icon);
 
                 return `
                     <div class="building-card ${canAfford ? 'affordable' : 'locked'}" data-id="${b.id}" onclick="game.buyBuilding('${b.id}')">
+                        <div class="building-card-icon-col">
+                            ${iconSvg}
+                        </div>
                         <div class="building-info">
                             <div class="building-title-row">
                                 <span class="building-name">${b.name}</span>
@@ -912,9 +917,13 @@ class GameEngine {
                 const costFormatted = `${purchase.totalCost.toWholeScale()} Clips`;
                 const singleWPS = b.getSingleUnitWPS(this);
                 const rateFormatted = `+${singleWPS.toShortScale(1)} kg/s`;
+                const iconSvg = b.getVectorIcon ? b.getVectorIcon() : (b.vectorIcon || b.icon);
 
                 return `
                     <div class="building-card wire-card ${canAfford ? 'affordable' : 'locked'}" data-id="${b.id}" onclick="game.buyBuilding('${b.id}')">
+                        <div class="building-card-icon-col">
+                            ${iconSvg}
+                        </div>
                         <div class="building-info">
                             <div class="building-title-row">
                                 <span class="building-name">${b.name}</span>
