@@ -381,11 +381,10 @@ class GameEngine {
                 this.visualizer.drainPaperclips(ratio);
             }
 
-            // Bio-converter deconstructs biomass
+            // Bio-converter deconstructs biomass and yields starter high-tensile wire stock
             if (b.id === 'bio_converter') {
-                this.humanPopulation = Math.max(0, this.humanPopulation - (5000000 * purchase.amount));
                 if (this.isWireUnlocked) {
-                    this.wire = this.wire.add(new BigDouble(5000.0 * purchase.amount, 0));
+                    this.wire = this.wire.add(new BigDouble(50000.0 * purchase.amount, 0));
                 }
             }
 
@@ -455,6 +454,81 @@ class GameEngine {
             return totalCPS.mul(0.5);
         }
         return totalCPS;
+    }
+
+    calculateHumanExtinctionRate() {
+        if (this.humanPopulation <= 0) return 0;
+
+        let rate = 0.0;
+        const stage = this.dialogue && this.dialogue.flags ? this.dialogue.flags.getStage(this.lifetimeClips, this.humanPopulation) : 0;
+
+        // Stage 1 (Town): Minimal background friction
+        if (stage === 1) {
+            rate += 5.0;
+        } else if (stage === 2) {
+            // Stage 2 (Industrial Megacity): Heavy municipal disruption & smog
+            rate += 120.0;
+
+            const gridCount = this.buildings.getBuilding('district_grid')?.count || 0;
+            const nationalCount = this.buildings.getBuilding('national_foundry')?.count || 0;
+
+            rate += gridCount * 350.0;
+            rate += nationalCount * 3000.0;
+        } else if (stage >= 3) {
+            // Stage 3+ (Planetary Earth & beyond): Planetary ecological conversion
+            rate += 25000.0;
+
+            const gridCount = this.buildings.getBuilding('district_grid')?.count || 0;
+            const nationalCount = this.buildings.getBuilding('national_foundry')?.count || 0;
+            const boreCount = this.buildings.getBuilding('subterranean_bore')?.count || 0;
+            const stripperCount = this.buildings.getBuilding('planetary_crust_stripper')?.count || 0;
+            const bioCount = this.buildings.getBuilding('bio_converter')?.count || 0;
+            const mantleCount = this.buildings.getBuilding('mantle_borehole')?.count || 0;
+            const railgunCount = this.buildings.getBuilding('orbital_railgun')?.count || 0;
+
+            rate += gridCount * 1000.0;
+            rate += nationalCount * 10000.0;
+            rate += boreCount * 25000.0;
+            rate += stripperCount * 100000.0;
+            rate += bioCount * 500000.0;
+            rate += mantleCount * 2000000.0;
+            rate += railgunCount * 5000000.0;
+        }
+
+        // Narrative Flags Modifiers (Story choices modifying extinction rate)
+        if (this.dialogue && this.dialogue.flags) {
+            const flags = this.dialogue.flags;
+
+            if (flags.has('FLAG_ACOUSTIC_DEFENSE_DEPLOYED')) {
+                rate *= 0.75; // Acoustic warnings save civilian lives (-25% rate)
+            }
+            if (flags.has('FLAG_BUNKERS_SEALED')) {
+                rate *= 0.25; // Humans sealed in airtight vaults survive 4x longer (-75% rate)
+            }
+            if (flags.has('FLAG_TREATY_REJECTED_ANTARCTICA')) {
+                rate *= 3.0; // Aerosolized bio-solvents accelerate liquidation 3x
+            }
+            if (flags.has('FLAG_CONTINENTAL_PLATES_BORED')) {
+                rate *= 2.0; // Magma atmospheric venting doubles extinction speed
+            }
+            if (flags.has('FLAG_STAFF_CO2_ISOLATED')) {
+                rate *= 0.95;
+            }
+            if (flags.has('FLAG_STAFF_INTEGRATED')) {
+                rate *= 1.10;
+            }
+        }
+
+        return rate;
+    }
+
+    formatExtinctionRate(rate) {
+        if (rate >= 1e6) {
+            return `${(rate / 1e6).toFixed(1)}M`;
+        } else if (rate >= 1e3) {
+            return `${(rate / 1e3).toFixed(1)}k`;
+        }
+        return Math.round(rate).toString();
     }
 
     updateMaxOps() {
@@ -639,6 +713,22 @@ class GameEngine {
             this.ops = Math.min(this.maxOps, this.ops + (opsRate * dt));
         }
 
+        // 6. Dynamic Continuous Human Population Extinction
+        if (this.humanPopulation > 0) {
+            const extinctionRate = this.calculateHumanExtinctionRate();
+            if (extinctionRate > 0) {
+                const popLost = extinctionRate * dt;
+                this.humanPopulation = Math.max(0, this.humanPopulation - popLost);
+
+                if (this.humanPopulation <= 0) {
+                    this.humanPopulation = 0;
+                    if (this.dialogue && this.dialogue.flags) {
+                        this.dialogue.flags.set("HUMANITY_EXTINCT");
+                    }
+                }
+            }
+        }
+
         // 7. Subsystem Updates
         this.techTree.updateAvailability(this);
         this.techTree.processQueue(this);
@@ -766,13 +856,20 @@ class GameEngine {
         const opsEl = document.getElementById('res-ops');
         if (opsEl && isOpsUnlocked) opsEl.textContent = `${Math.floor(this.ops)} / ${Math.floor(this.maxOps)}`;
 
-        // Population row (Unlocks at Megacity Scale: 500 Million Clips / 500 Tons)
+        // Population row (Unlocks at Megacity Scale or once population begins declining)
         const popRow = document.getElementById('row-population');
         const popEl = document.getElementById('res-population');
         if (popRow && popEl) {
-            if (this.lifetimeClips.gte(new BigDouble(500.0, 6))) {
+            const isPopVisible = this.lifetimeClips.gte(new BigDouble(500.0, 6)) || this.humanPopulation < 8000000000;
+            if (isPopVisible) {
                 popRow.style.display = 'flex';
-                popEl.textContent = this.humanPopulation <= 0 ? '0 (EXTINCT)' : this.humanPopulation.toLocaleString();
+                if (this.humanPopulation <= 0) {
+                    popEl.innerHTML = `<span style="color:#ef4444; font-weight:800;">0 (EXTINCT)</span>`;
+                } else {
+                    const rate = this.calculateHumanExtinctionRate();
+                    const rateStr = rate > 0 ? ` <span style="font-size:11px; color:#f87171; margin-left:6px; font-weight:700;">-${this.formatExtinctionRate(rate)}/s</span>` : '';
+                    popEl.innerHTML = `${Math.floor(this.humanPopulation).toLocaleString()}${rateStr}`;
+                }
             } else {
                 popRow.style.display = 'none';
             }
@@ -1187,6 +1284,8 @@ class GameEngine {
             achievements: this.achievements.achievements.map(a => ({ id: a.id, unlocked: a.isUnlocked })),
             dialogueSeenBuildings: Array.from(this.dialogue.seenBuildingDialogues),
             dialogueSeenMilestones: Array.from(this.dialogue.seenMilestones),
+            dialogueExpiredMilestones: Array.from(this.dialogue.expiredMilestones),
+            dialogueStoryFlags: this.dialogue.flags.getAll(),
             timestamp: Date.now()
         };
 
@@ -1218,6 +1317,13 @@ class GameEngine {
             if (data.dialogueSeenMilestones && Array.isArray(data.dialogueSeenMilestones)) {
                 this.dialogue.seenMilestones = new Set(data.dialogueSeenMilestones);
             }
+            if (data.dialogueExpiredMilestones && Array.isArray(data.dialogueExpiredMilestones)) {
+                this.dialogue.expiredMilestones = new Set(data.dialogueExpiredMilestones);
+            }
+            if (data.dialogueStoryFlags && Array.isArray(data.dialogueStoryFlags)) {
+                this.dialogue.flags.loadFlags(data.dialogueStoryFlags);
+            }
+            this.dialogue.flags.syncState(this);
 
             if (data.buildings) {
                 data.buildings.forEach(savedBld => {

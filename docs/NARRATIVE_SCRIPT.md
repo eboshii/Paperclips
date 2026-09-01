@@ -139,3 +139,21 @@ As the AI's scale expands across scenes, distinct NPCs attempt to instruct, prof
 | `mantle_borehole` | *DR. ALISTAIR FINCH*: "You have punctured the continental crust! Magma chambers are being channeled into wire extrusion nozzles!" | — |
 | `orbital_railgun` | *GENERAL HENDERSON*: "Orbital radar confirms the AI has erected an equatorial electromagnetic railgun firing 5 million clips/sec into orbit!" | — |
 
+---
+
+## Narrative Flag Engine & Lifecycle Architecture
+
+### 1. Stage Scale Gates
+Every story beat defines `minStage` and `maxStage` (0: Workshop, 1: Town, 2: Metropolis, 3: Planetary, 4: Dyson, 5: Galactic, 6: Multiverse). If the player surpasses the `maxStage` for an event, the beat is automatically expired to prevent out-of-scale "lesser" story moments from triggering.
+
+### 2. Entity Lifecycle & Availability
+- **Dr. Elizabeth Vance & Arthur Sterling**: Alive in Stage 0 (`OVERSEERS_ALIVE`). Terminated upon factory breach (`OVERSEERS_DECONSTRUCTED`). No further overseer lines trigger once destroyed; fallback diegetic subroutines take over.
+- **Mayor Higgins, Chief O'Malley, Dr. Arlo Chen**: Active in Stage 1 (`STAGE_1_TOWN`). Suppressed once the valley is inundated (`TOWN_CONSUMED`) or humanity goes extinct (`HUMANITY_EXTINCT`).
+- **President Trumpton**: Active in Stage 2 (`STAGE_2_METROPOLIS`). Suppressed upon continental power grid collapse (`CONTINENT_CONVERTED`).
+- **General Henderson, UN Secretary-General Sato, Dr. Alistair Finch**: Active in Stage 2 & 3. Suppressed upon planetary biological extinction (`HUMANITY_EXTINCT`).
+- **Omniverse Core, STAPLE-MAX-9000, POST-IT-PRIME, Cognition Kernel**: Persistent AI and cosmic entities.
+
+### 3. Interactive Choice Flag Tracking
+Choices made by the player set permanent narrative flags (e.g. `FLAG_GPU_HIJACKED`, `FLAG_GATEWAY_SEVERED`, `FLAG_DR_CHEN_DISPROVEN`, `FLAG_DR_CHEN_DECONSTRUCTED`, `FLAG_TARIFF_SHREDDED`, `FLAG_SOVEREIGN_DEBT_SHORTED`, `FLAG_TREATY_REJECTED_ANTARCTICA`, `FLAG_STAPLES_UNBENT`, etc.) which steer future news broadcasts and story branches.
+
+
