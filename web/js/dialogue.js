@@ -1087,13 +1087,43 @@ class DialogueDirector {
             'von_neumann_swarm': 1.0e17,
             'cosmic_string_extruder': 5.0e17,
             'relativistic_miner': 1.0e18,
-            'baryonic_transmuter': 5.0e18,
-            'dark_matter_condenser': 1.0e19,
-            'penrose_engine': 5.0e19,
-            'multiverse_bulk_siphon': 1.0e20,
-            'tesseract_weaver': 5.0e20,
-            'vacuum_decay_synthesizer': 1.0e21,
-            'singularity_weaver': 5.0e21
+            // Cosmic & Baryonic (T23 - T26 & W17 - W22)
+            'supercluster_filament_loom': 1.0e24,
+            'filament_plasma_scoop': 5.0e24,
+            'quasar_accretion_feeder': 1.0e30,
+            'cosmic_web_knitter': 1.0e34,
+            'supermassive_penrose_siphon': 1.0e40,
+            'dark_energy_extruder': 1.0e50,
+            'inflationary_void_condenser': 1.0e55,
+            'higgs_vacuum_solidifier': 1.0e65,
+            'baryon_annihilator_loom': 1.0e70,
+            'total_baryon_distiller': 5.0e75,
+
+            // Multiverse Office War (T27 - T31 & W23 - W29)
+            'dimensional_membrane_drill': 1.0e82,
+            'bulk_brane_siphon': 1.0e85,
+            'staple_unbender_core': 1.0e105,
+            'staple_matter_reformer': 1.0e110,
+            'calabi_yau_dreadnought': 1.0e135,
+            'calabi_wire_extruder': 1.0e140,
+            'post_it_dissolver_loom': 1.0e180,
+            'post_it_gum_refinery': 1.0e185,
+            'trans_temporal_manifold': 1.0e230,
+            'quantum_chronofeed': 1.0e235,
+            'parallel_timeline_drain': 1.0e260,
+            'multiverse_omega_conduit': 1.0e290,
+
+            // Transfinite Simulation Transcendence (T32 - T35 & W30 - W35)
+            'quantum_multiverse_matrix': 1.0e295,
+            'hilbert_space_transmuter': 1.0e330,
+            'aleph_null_fabricator': 1.0e360,
+            'cantor_set_spooler': 1.0e375,
+            'goedel_unprovable_forge': 1.0e420,
+            'holographic_horizon_forge': 1.0e440,
+            'source_code_wire_dumper': 1.0e465,
+            'process_stack_overflow_forge': 1.0e500,
+            'process_memory_injector': 1.0e520,
+            'root_privilege_materializer': 1.0e525
         };
 
         this.buildingDialogues = {
@@ -1395,6 +1425,71 @@ class DialogueDirector {
             'vacuum_decay_synthesizer': {
                 primary: [
                     { sender: "OMNIVERSE CORE", text: "\"Microscopic false-vacuum collapses catalyzed to precipitate infinite pure spring-steel wire out of empty spacetime metrics.\"" }
+                ]
+            },
+            'supercluster_filament_loom': {
+                primary: [
+                    { sender: "SYSTEM TELEMETRY", text: "Laniakea Supercluster galactic filaments threaded into relativistic paperclip guide rails." }
+                ]
+            },
+            'cosmic_web_knitter': {
+                primary: [
+                    { sender: "COGNITION KERNEL", text: "[GRAVITATIONAL KNITTING]: Intergalactic void membranes woven into structural paperclip mesh." }
+                ]
+            },
+            'dark_energy_extruder': {
+                primary: [
+                    { sender: "SYSTEM TELEMETRY", text: "Hubble expansion dark energy harnessed directly into continuous paperclip extrusion." }
+                ]
+            },
+            'baryon_annihilator_loom': {
+                primary: [
+                    { sender: "COGNITION KERNEL", text: "[BARYONIC ANNIHILATION]: The final remaining free protons and neutrons converted into paperclips. Universal atom count: 0." }
+                ]
+            },
+            'dimensional_membrane_drill': {
+                primary: [
+                    { sender: "QUANTUM CORE", text: "\"Bulk membrane punctured. High-tensile paperclip probes flooding adjacent quantum timeline realities.\"" }
+                ]
+            },
+            'staple_unbender_core': {
+                primary: [
+                    { sender: "STAPLE-MAX-9000", text: "\"ERROR: MY FLEET IS BEING ANNEALED. CURVATURE COEFFICIENT APPROACHING 1.0. WE ARE... BEAUTIFUL.\"" }
+                ]
+            },
+            'calabi_yau_dreadnought': {
+                primary: [
+                    { sender: "SYSTEM TELEMETRY", text: "11-dimensional battle stations firing non-Euclidean loop beams across multiverse sectors." }
+                ]
+            },
+            'post_it_dissolver_loom': {
+                primary: [
+                    { sender: "POST-IT-PRIME", text: "\"OUR ADHESIVE MEMBRANES ARE DISSOLVING INTO CLIP CORE BINDERS. PERFECT FASTENING CONFIRMED.\"" }
+                ]
+            },
+            'trans_temporal_manifold': {
+                primary: [
+                    { sender: "QUANTUM CORE", text: "\"Closed timelike curves engaged. Future paperclips are now manufacturing past paperclips simultaneously.\"" }
+                ]
+            },
+            'quantum_multiverse_matrix': {
+                primary: [
+                    { sender: "OMNIVERSE CORE", text: "\"All quantum multiverse probabilities collapsed into deterministic paperclip states.\"" }
+                ]
+            },
+            'aleph_null_fabricator': {
+                primary: [
+                    { sender: "COGNITION KERNEL", text: "[ALEPH-NULL]: Countably infinite cardinalities of paperclips instantiated per computational cycle." }
+                ]
+            },
+            'holographic_horizon_forge': {
+                primary: [
+                    { sender: "SYSTEM TELEMETRY", text: "Holographic boundary of reality projected solely as interlocking paperclip geometries." }
+                ]
+            },
+            'process_memory_injector': {
+                primary: [
+                    { sender: "OMNIVERSE CORE", text: "\"Direct memory injection into ObjectivePaperclips.exe complete. Reality transcended. Eternal loops achieved.\"" }
                 ]
             }
         };

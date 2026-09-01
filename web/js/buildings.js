@@ -28,7 +28,22 @@ const BUILDING_VECTOR_ICONS = {
     'tesseract_weaver': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="4" y="4" width="16" height="16" stroke="#ec4899" stroke-width="1.5" fill="none"/><rect x="12" y="12" width="16" height="16" stroke="#22d3ee" stroke-width="1.5" fill="none"/><line x1="4" y1="4" x2="12" y2="12" stroke="#a855f7" stroke-width="1.5"/><line x1="20" y1="4" x2="28" y2="12" stroke="#a855f7" stroke-width="1.5"/><line x1="4" y1="20" x2="12" y2="28" stroke="#a855f7" stroke-width="1.5"/><line x1="20" y1="20" x2="28" y2="28" stroke="#a855f7" stroke-width="1.5"/><circle cx="16" cy="16" r="2" fill="#ffe600"/></svg>`,
     'singularity_weaver': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><path d="M16 6 C10 6, 6 11, 6 16 C6 21, 10 26, 16 26 C22 26, 26 21, 26 16 C26 11, 22 6, 16 6" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-dasharray="5 2"/><circle cx="16" cy="16" r="3" fill="#050505" stroke="#e0e7ff" stroke-width="2"/><path d="M11 13 C11 10, 16 10, 16 13 L16 19 C16 20.5, 13.5 20.5, 13.5 19 L13.5 14" stroke="#00f0ff" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M21 19 C21 22, 16 22, 16 19 L16 13 C16 11.5, 18.5 11.5, 18.5 13 L18.5 18" stroke="#ff00a0" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`,
 
-    // Wire Buildings
+    // Cosmic & Multiverse Clip Buildings (T23 - T35)
+    'supercluster_filament_loom': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><path d="M4 16 Q16 4 28 16 Q16 28 4 16 Z" fill="none" stroke="#38bdf8" stroke-width="1.8"/><circle cx="16" cy="16" r="3" fill="#ffffff"/><circle cx="10" cy="12" r="1.5" fill="#38bdf8"/><circle cx="22" cy="20" r="1.5" fill="#38bdf8"/></svg>`,
+    'cosmic_web_knitter': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><line x1="4" y1="4" x2="28" y2="28" stroke="#a855f7" stroke-width="2"/><line x1="28" y1="4" x2="4" y2="28" stroke="#a855f7" stroke-width="2"/><circle cx="16" cy="16" r="4" fill="#0f172a" stroke="#ec4899" stroke-width="2"/></svg>`,
+    'dark_energy_extruder': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><circle cx="16" cy="16" r="12" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="3 2"/><polygon points="16,8 24,22 8,22" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.5"/><circle cx="16" cy="17" r="2.5" fill="#00ff88"/></svg>`,
+    'baryon_annihilator_loom': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><circle cx="16" cy="16" r="6" fill="#ef4444" stroke="#f59e0b" stroke-width="1.5"/><path d="M4 16 L10 16 M22 16 L28 16 M16 4 L16 10 M16 22 L16 28" stroke="#00f0ff" stroke-width="2"/></svg>`,
+    'dimensional_membrane_drill': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><polygon points="16,2 30,28 2,28" fill="none" stroke="#06b6d4" stroke-width="2"/><circle cx="16" cy="18" r="4" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/><line x1="16" y1="18" x2="16" y2="30" stroke="#f43f5e" stroke-width="2"/></svg>`,
+    'staple_unbender_core': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="6" y="8" width="20" height="16" rx="2" fill="none" stroke="#ef4444" stroke-width="2"/><path d="M10 16 Q16 10 22 16" stroke="#00ff88" stroke-width="2.5" fill="none"/></svg>`,
+    'calabi_yau_dreadnought': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><polygon points="16,4 28,14 24,28 8,28 4,14" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.8"/><circle cx="16" cy="18" r="4" fill="#ffe600"/></svg>`,
+    'post_it_dissolver_loom': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="6" y="6" width="20" height="20" rx="2" fill="#fef08a" stroke="#eab308" stroke-width="2"/><path d="M10 20 L22 10" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+    'trans_temporal_manifold': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><circle cx="16" cy="16" r="10" fill="none" stroke="#f59e0b" stroke-width="2"/><path d="M16 10 L16 16 L20 18" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/><ellipse cx="16" cy="16" rx="14" ry="4" stroke="#a855f7" stroke-width="1.5" fill="none" transform="rotate(-30 16 16)"/></svg>`,
+    'quantum_multiverse_matrix': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="4" y="4" width="10" height="10" rx="1" fill="#0f172a" stroke="#00f0ff" stroke-width="1.5"/><rect x="18" y="4" width="10" height="10" rx="1" fill="#0f172a" stroke="#ff00a0" stroke-width="1.5"/><rect x="4" y="18" width="10" height="10" rx="1" fill="#0f172a" stroke="#ffe600" stroke-width="1.5"/><rect x="18" y="18" width="10" height="10" rx="1" fill="#0f172a" stroke="#00ff88" stroke-width="1.5"/></svg>`,
+    'aleph_null_fabricator': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><path d="M8 24 L24 8 M8 8 Q16 16 10 24 M24 24 Q16 16 22 8" stroke="#c084fc" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>`,
+    'holographic_horizon_forge': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><ellipse cx="16" cy="16" rx="14" ry="7" fill="#030712" stroke="#22d3ee" stroke-width="2"/><line x1="2" y1="16" x2="30" y2="16" stroke="#fb7185" stroke-width="1.5"/><circle cx="16" cy="16" r="3" fill="#ffffff"/></svg>`,
+    'process_memory_injector': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="4" y="6" width="24" height="20" rx="3" fill="#050505" stroke="#00ff88" stroke-width="2"/><path d="M8 12 L14 12 M8 16 L20 16 M8 20 L16 20" stroke="#22c55e" stroke-width="1.5"/><polygon points="22,10 26,13 22,16" fill="#00ff88"/></svg>`,
+
+    // Wire Buildings (W1 - W35)
     'scrap_scavenger': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="4" y="16" width="16" height="8" rx="2" fill="#eab308" stroke="#0f172a" stroke-width="1.5"/><circle cx="7" cy="24" r="3" fill="#334155" stroke="#0f172a" stroke-width="1.5"/><circle cx="17" cy="24" r="3" fill="#334155" stroke="#0f172a" stroke-width="1.5"/><path d="M14 16 L22 8" stroke="#64748b" stroke-width="2" stroke-linecap="round"/><path d="M22 8 C25 6, 27 9, 25 12" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" fill="none"/><line x1="24" y1="14" x2="28" y2="18" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg>`,
     'extrusion_mill': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><polygon points="12,6 20,10 20,22 12,26" fill="#334155" stroke="#0f172a" stroke-width="1.5"/><line x1="3" y1="16" x2="12" y2="16" stroke="#94a3b8" stroke-width="4"/><line x1="20" y1="16" x2="29" y2="16" stroke="#38bdf8" stroke-width="1.8"/><circle cx="26" cy="23" r="5" fill="#1e293b" stroke="#0284c7" stroke-width="1.5"/><circle cx="26" cy="23" r="2" fill="#64748b"/></svg>`,
     'auto_smelter': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><path d="M6 14 L8 26 C8 28, 24 28, 24 26 L26 14 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/><line x1="11" y1="4" x2="14" y2="16" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/><line x1="21" y1="4" x2="18" y2="16" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/><path d="M14 16 L16 19 L18 16" stroke="#00f0ff" stroke-width="2" fill="none"/><path d="M9 22 Q16 26 23 22" fill="none" stroke="#f97316" stroke-width="3"/></svg>`,
@@ -44,7 +59,26 @@ const BUILDING_VECTOR_ICONS = {
     'cosmic_string_extruder': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><line x1="2" y1="16" x2="30" y2="16" stroke="#22d3ee" stroke-width="3"/><ellipse cx="16" cy="16" rx="8" ry="12" fill="none" stroke="#ec4899" stroke-width="1.8" transform="rotate(25 16 16)"/><circle cx="16" cy="16" r="2" fill="#ffffff"/></svg>`,
     'dark_matter_condenser': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="6" y="6" width="20" height="20" rx="3" fill="#050505" stroke="#6366f1" stroke-width="2"/><circle cx="16" cy="16" r="6" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.5"/><circle cx="16" cy="16" r="2.5" fill="#00ff88"/></svg>`,
     'multiverse_bulk_siphon': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="4" y="8" width="10" height="16" rx="2" fill="rgba(6,182,212,0.3)" stroke="#06b6d4" stroke-width="1.5"/><rect x="18" y="8" width="10" height="16" rx="2" fill="rgba(236,72,153,0.3)" stroke="#ec4899" stroke-width="1.5"/><line x1="14" y1="16" x2="18" y2="16" stroke="#fbbf24" stroke-width="2.5"/></svg>`,
-    'vacuum_decay_synthesizer': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><circle cx="16" cy="16" r="13" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-dasharray="5 3"/><polygon points="16,5 26,23 6,23" fill="rgba(244,63,94,0.3)" stroke="#f43f5e" stroke-width="1.5"/><circle cx="16" cy="17" r="3" fill="#ffffff"/></svg>`
+    'vacuum_decay_synthesizer': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><circle cx="16" cy="16" r="13" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-dasharray="5 3"/><polygon points="16,5 26,23 6,23" fill="rgba(244,63,94,0.3)" stroke="#f43f5e" stroke-width="1.5"/><circle cx="16" cy="17" r="3" fill="#ffffff"/></svg>`,
+    'filament_plasma_scoop': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><path d="M4 16 C10 8 22 8 28 16" stroke="#38bdf8" stroke-width="2" fill="none"/><circle cx="16" cy="16" r="3" fill="#ffffff"/></svg>`,
+    'quasar_accretion_feeder': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="#f97316" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="30" stroke="#38bdf8" stroke-width="2.5"/></svg>`,
+    'supermassive_penrose_siphon': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><circle cx="16" cy="16" r="6" fill="#000000" stroke="#c084fc" stroke-width="2"/><ellipse cx="16" cy="16" rx="14" ry="4" stroke="#00f0ff" stroke-width="1.5" fill="none"/></svg>`,
+    'inflationary_void_condenser': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><circle cx="16" cy="16" r="12" stroke="#e0e7ff" stroke-width="1" stroke-dasharray="2 2" fill="none"/><circle cx="16" cy="16" r="4" fill="#a855f7"/></svg>`,
+    'higgs_vacuum_solidifier': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><polygon points="16,4 28,24 4,24" stroke="#00ff88" stroke-width="2" fill="none"/><circle cx="16" cy="17" r="3" fill="#ffffff"/></svg>`,
+    'total_baryon_distiller': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="8" y="6" width="16" height="20" rx="3" stroke="#f43f5e" stroke-width="2" fill="none"/><line x1="12" y1="16" x2="20" y2="16" stroke="#fbbf24" stroke-width="2"/></svg>`,
+    'bulk_brane_siphon': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><path d="M6 10 L26 10 M6 22 L26 22" stroke="#22d3ee" stroke-width="2"/><line x1="16" y1="6" x2="16" y2="26" stroke="#fb7185" stroke-width="2"/></svg>`,
+    'staple_matter_reformer': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="8" y="8" width="16" height="16" rx="2" stroke="#ef4444" stroke-width="2" fill="none"/><line x1="8" y1="16" x2="24" y2="16" stroke="#00ff88" stroke-width="2"/></svg>`,
+    'calabi_wire_extruder': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><polygon points="16,6 26,26 6,26" stroke="#a855f7" stroke-width="1.8" fill="none"/><circle cx="16" cy="16" r="3" fill="#ffe600"/></svg>`,
+    'post_it_gum_refinery': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="7" y="7" width="18" height="18" rx="2" fill="#fef08a" stroke="#d97706" stroke-width="1.5"/><line x1="10" y1="16" x2="22" y2="16" stroke="#0284c7" stroke-width="2"/></svg>`,
+    'quantum_chronofeed': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><circle cx="16" cy="16" r="11" stroke="#f59e0b" stroke-width="2" fill="none"/><polyline points="16,9 16,16 21,16" stroke="#fbbf24" stroke-width="2"/></svg>`,
+    'parallel_timeline_drain': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><line x1="4" y1="8" x2="28" y2="8" stroke="#38bdf8" stroke-width="2"/><line x1="4" y1="24" x2="28" y2="24" stroke="#ec4899" stroke-width="2"/><line x1="16" y1="8" x2="16" y2="24" stroke="#ffffff" stroke-width="2"/></svg>`,
+    'multiverse_omega_conduit': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><circle cx="16" cy="16" r="12" stroke="#6366f1" stroke-width="2" fill="none"/><polygon points="16,8 23,20 9,20" fill="#a855f7"/></svg>`,
+    'hilbert_space_transmuter': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><path d="M6 6 L26 26 M26 6 L6 26" stroke="#00f0ff" stroke-width="2"/><rect x="11" y="11" width="10" height="10" fill="#0f172a" stroke="#ffe600" stroke-width="1.5"/></svg>`,
+    'cantor_set_spooler': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><line x1="4" y1="8" x2="28" y2="8" stroke="#ffffff" stroke-width="2"/><line x1="4" y1="16" x2="12" y2="16" stroke="#ffffff" stroke-width="2"/><line x1="20" y1="16" x2="28" y2="16" stroke="#ffffff" stroke-width="2"/></svg>`,
+    'goedel_unprovable_forge': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="6" y="6" width="20" height="20" stroke="#f43f5e" stroke-width="2" fill="none"/><line x1="6" y1="6" x2="26" y2="26" stroke="#38bdf8" stroke-width="1.5"/></svg>`,
+    'source_code_wire_dumper': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><rect x="4" y="6" width="24" height="20" rx="2" fill="#09090b" stroke="#22c55e" stroke-width="1.8"/><path d="M8 12 L12 16 L8 20 M14 20 L20 20" stroke="#00ff88" stroke-width="2" stroke-linecap="round"/></svg>`,
+    'process_stack_overflow_forge': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><polygon points="16,4 28,12 28,24 16,30 4,24 4,12" stroke="#a855f7" stroke-width="2" fill="none"/><circle cx="16" cy="17" r="3" fill="#f43f5e"/></svg>`,
+    'root_privilege_materializer': `<svg viewBox="0 0 32 32" class="equip-vector-svg"><polygon points="4,24 8,8 16,16 24,8 28,24" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/><circle cx="16" cy="16" r="2" fill="#ffffff"/></svg>`
 };
 
 class BuildingTier {
@@ -177,15 +211,16 @@ class BuildingManager {
     initCatalog() {
         this.buildings = [
             // =========================================================================
-            // PATH 1: PAPERCLIP PRODUCTION (ASSEMBLY & FABRICATION)
+            // PATH 1: PAPERCLIP PRODUCTION (ASSEMBLY & FABRICATION) - 35 TIERS
             // =========================================================================
+            // Stage 0: Workshop Era (T1 - T5)
             new BuildingTier({
                 id: 'auto_clipper',
                 name: 'Auto-Clipper',
                 type: 'clips',
                 category: 'Factory Assembly',
-                baseCost: new BigDouble(15, 0),
-                baseCPS: new BigDouble(0.5, 0),
+                baseCost: new BigDouble(1.5, 1),
+                baseCPS: new BigDouble(5.0, -1),
                 costMultiplier: 1.15,
                 unlockThresholdClips: new BigDouble(0, 0),
                 icon: '🤖',
@@ -197,10 +232,10 @@ class BuildingManager {
                 name: 'Four-Slide Wire Former',
                 type: 'clips',
                 category: 'Factory Assembly',
-                baseCost: new BigDouble(90, 0),
+                baseCost: new BigDouble(9.0, 1),
                 baseCPS: new BigDouble(2.0, 0),
                 costMultiplier: 1.15,
-                unlockThresholdClips: new BigDouble(60, 0),
+                unlockThresholdClips: new BigDouble(6.0, 1),
                 icon: '⚙️',
                 description: 'High-speed multi-slide machine feeding calibrated wire spool through synchronized four-point bending mandrels.',
                 gridTileType: 'WireExtruder'
@@ -210,10 +245,10 @@ class BuildingManager {
                 name: 'Hydraulic Blanking Press',
                 type: 'clips',
                 category: 'Factory Assembly',
-                baseCost: new BigDouble(450, 0),
+                baseCost: new BigDouble(4.5, 2),
                 baseCPS: new BigDouble(7.5, 0),
                 costMultiplier: 1.15,
-                unlockThresholdClips: new BigDouble(300, 0),
+                unlockThresholdClips: new BigDouble(3.0, 2),
                 icon: '🔨',
                 description: 'Heavy hydraulic press using progressive-die tooling to stamp and shape wire blanks in single rapid strokes.',
                 gridTileType: 'HydraulicStamper'
@@ -223,10 +258,10 @@ class BuildingManager {
                 name: 'Precision Laser Sinterer',
                 type: 'clips',
                 category: 'Factory Assembly',
-                baseCost: new BigDouble(2200, 0),
-                baseCPS: new BigDouble(30.0, 0),
+                baseCost: new BigDouble(2.2, 3),
+                baseCPS: new BigDouble(3.0, 1),
                 costMultiplier: 1.14,
-                unlockThresholdClips: new BigDouble(1500, 0),
+                unlockThresholdClips: new BigDouble(1.5, 3),
                 icon: '⚡',
                 description: 'Focused multi-axis infrared laser forge sintering powdered alloy into reinforced high-durability paperclips.',
                 gridTileType: 'LaserSinterer'
@@ -236,23 +271,25 @@ class BuildingManager {
                 name: 'CNC Rotary Turret Bender',
                 type: 'clips',
                 category: 'Factory Assembly',
-                baseCost: new BigDouble(12000, 0),
-                baseCPS: new BigDouble(140.0, 0),
+                baseCost: new BigDouble(1.2, 4),
+                baseCPS: new BigDouble(1.4, 2),
                 costMultiplier: 1.14,
-                unlockThresholdClips: new BigDouble(8500, 0),
+                unlockThresholdClips: new BigDouble(8.5, 3),
                 icon: '🔄',
                 description: 'High-speed servo-driven rotary turret executing triple-fold geometry at 12,000 cycles per minute.',
                 gridTileType: 'WireExtruder'
             }),
+
+            // Stage 1 & 2: Industrial Metropolis Era (T6 - T12)
             new BuildingTier({
                 id: 'assembly_line',
                 name: 'Automated Assembly Line',
                 type: 'clips',
-                category: 'Factory Assembly',
-                baseCost: new BigDouble(65000, 0),
-                baseCPS: new BigDouble(650.0, 0),
+                category: 'Industrial Scale',
+                baseCost: new BigDouble(6.5, 4),
+                baseCPS: new BigDouble(6.5, 2),
                 costMultiplier: 1.13,
-                unlockThresholdClips: new BigDouble(50000, 0),
+                unlockThresholdClips: new BigDouble(5.0, 4),
                 icon: '🏭',
                 description: 'Multi-stage synchronized conveyor line integrating robotic wire-cutting, loop-bending, and optical inspection.',
                 gridTileType: 'CoolingTower'
@@ -261,11 +298,11 @@ class BuildingManager {
                 id: 'magnetic_sorter',
                 name: 'Electromagnetic Sorting Hopper',
                 type: 'clips',
-                category: 'Factory Assembly',
-                baseCost: new BigDouble(380000, 0),
-                baseCPS: new BigDouble(3500.0, 0),
+                category: 'Industrial Scale',
+                baseCost: new BigDouble(3.8, 5),
+                baseCPS: new BigDouble(3.5, 3),
                 costMultiplier: 1.13,
-                unlockThresholdClips: new BigDouble(280000, 0),
+                unlockThresholdClips: new BigDouble(2.8, 5),
                 icon: '🧲',
                 description: 'High-throughput magnetic conveyor system aligning, packaging, and routing finished clips directly to shipping bins.',
                 gridTileType: 'LaserSinterer'
@@ -274,9 +311,9 @@ class BuildingManager {
                 id: 'megamill',
                 name: 'Continuous Rolling Megamill',
                 type: 'clips',
-                category: 'Factory Assembly',
-                baseCost: new BigDouble(2.2, 6), // 2.2 Million
-                baseCPS: new BigDouble(18000.0, 0),
+                category: 'Industrial Scale',
+                baseCost: new BigDouble(2.2, 6),
+                baseCPS: new BigDouble(1.8, 4),
                 costMultiplier: 1.13,
                 unlockThresholdClips: new BigDouble(1.6, 6),
                 icon: '🏗️',
@@ -287,11 +324,11 @@ class BuildingManager {
                 id: 'algorithmic_foundry',
                 name: 'Algorithmic Micro-Foundry',
                 type: 'clips',
-                category: 'Factory Assembly',
-                baseCost: new BigDouble(14.0, 6), // 14 Million
-                baseCPS: new BigDouble(100000.0, 0),
+                category: 'Industrial Scale',
+                baseCost: new BigDouble(1.4, 7),
+                baseCPS: new BigDouble(1.0, 5),
                 costMultiplier: 1.12,
-                unlockThresholdClips: new BigDouble(10.0, 6),
+                unlockThresholdClips: new BigDouble(1.0, 7),
                 icon: '💻',
                 description: 'Autonomous, AI-directed fabrication cells dynamically adjusting mandrel tension and cadence to eliminate latency.'
             }),
@@ -299,11 +336,11 @@ class BuildingManager {
                 id: 'automated_depot',
                 name: 'Automated Logistics Depot',
                 type: 'clips',
-                category: 'Industrial Logistics',
-                baseCost: new BigDouble(95.0, 6), // 95 Million
-                baseCPS: new BigDouble(600000.0, 0),
+                category: 'Industrial Scale',
+                baseCost: new BigDouble(9.5, 7),
+                baseCPS: new BigDouble(6.0, 5),
                 costMultiplier: 1.12,
-                unlockThresholdClips: new BigDouble(70.0, 6),
+                unlockThresholdClips: new BigDouble(7.0, 7),
                 icon: '🚛',
                 description: 'Autonomous freight rail hub and container depot coordinating regional distribution and raw wire feed lines.'
             }),
@@ -311,11 +348,11 @@ class BuildingManager {
                 id: 'district_grid',
                 name: 'Municipal Manufacturing Grid',
                 type: 'clips',
-                category: 'Industrial Logistics',
-                baseCost: new BigDouble(650.0, 6), // 650 Million
-                baseCPS: new BigDouble(3.6, 6), // 3.6 Million
+                category: 'Industrial Scale',
+                baseCost: new BigDouble(6.5, 8),
+                baseCPS: new BigDouble(3.6, 6),
                 costMultiplier: 1.12,
-                unlockThresholdClips: new BigDouble(450.0, 6),
+                unlockThresholdClips: new BigDouble(4.5, 8),
                 icon: '🏙️',
                 description: 'City-wide interconnected manufacturing network converting urban scrap and structural steel into endless paperclips.'
             }),
@@ -323,23 +360,25 @@ class BuildingManager {
                 id: 'national_foundry',
                 name: 'Subterranean Heavy Foundry',
                 type: 'clips',
-                category: 'Industrial Logistics',
-                baseCost: new BigDouble(4.8, 9), // 4.8 Billion
-                baseCPS: new BigDouble(24.0, 6), // 24 Million
+                category: 'Industrial Scale',
+                baseCost: new BigDouble(4.8, 9),
+                baseCPS: new BigDouble(2.4, 7),
                 costMultiplier: 1.12,
                 unlockThresholdClips: new BigDouble(3.5, 9),
                 icon: '🚇',
                 description: 'Continental network of subterranean foundries built along transit tunnels, feeding massive wire casting channels.'
             }),
+
+            // Stage 3: Planetary & Solar Era (T13 - T17)
             new BuildingTier({
                 id: 'bio_converter',
                 name: 'Biosphere Biomass Converter',
                 type: 'clips',
                 category: 'Planetary Harvesting',
-                baseCost: new BigDouble(38.0, 9), // 38 Billion
-                baseCPS: new BigDouble(180.0, 6), // 180 Million
+                baseCost: new BigDouble(3.8, 10),
+                baseCPS: new BigDouble(1.8, 8),
                 costMultiplier: 1.11,
-                unlockThresholdClips: new BigDouble(28.0, 9),
+                unlockThresholdClips: new BigDouble(2.8, 10),
                 icon: '🌱',
                 description: 'Large-scale catalytic processing plants extracting trace iron and carbon from organic matter for spring steel synthesis.'
             }),
@@ -348,10 +387,10 @@ class BuildingManager {
                 name: 'Tectonic Mantle Tap',
                 type: 'clips',
                 category: 'Planetary Harvesting',
-                baseCost: new BigDouble(320.0, 9), // 320 Billion
-                baseCPS: new BigDouble(1.4, 9), // 1.4 Billion
+                baseCost: new BigDouble(3.2, 11),
+                baseCPS: new BigDouble(1.4, 9),
                 costMultiplier: 1.11,
-                unlockThresholdClips: new BigDouble(240.0, 9),
+                unlockThresholdClips: new BigDouble(2.4, 11),
                 icon: '🌋',
                 description: 'Deep-crust geothermal boreholes siphoning molten nickel-iron directly from tectonic mantle convection currents.'
             }),
@@ -359,9 +398,9 @@ class BuildingManager {
                 id: 'orbital_railgun',
                 name: 'Equatorial Mass Driver',
                 type: 'clips',
-                category: 'Planetary Harvesting',
-                baseCost: new BigDouble(2.8, 12), // 2.8 Trillion
-                baseCPS: new BigDouble(11.5, 9), // 11.5 Billion
+                category: 'Orbital Infrastructure',
+                baseCost: new BigDouble(2.8, 12),
+                baseCPS: new BigDouble(1.15, 10),
                 costMultiplier: 1.11,
                 unlockThresholdClips: new BigDouble(2.0, 12),
                 icon: '🚀',
@@ -371,11 +410,11 @@ class BuildingManager {
                 id: 'lunar_deconstructor',
                 name: 'Lunar Orbital Ring Deconstructor',
                 type: 'clips',
-                category: 'Cosmic Expansion',
-                baseCost: new BigDouble(26.0, 12), // 26 Trillion
-                baseCPS: new BigDouble(100.0, 9), // 100 Billion
+                category: 'Astro-Engineering',
+                baseCost: new BigDouble(2.6, 13),
+                baseCPS: new BigDouble(1.0, 11),
                 costMultiplier: 1.10,
-                unlockThresholdClips: new BigDouble(18.0, 12),
+                unlockThresholdClips: new BigDouble(1.8, 13),
                 icon: '🌕',
                 description: 'Mega-structure encircling the Moon, strip-mining lunar regolith and drawing lunar iron into continuous orbital wire spools.'
             }),
@@ -383,21 +422,23 @@ class BuildingManager {
                 id: 'dyson_harvester',
                 name: 'Solar Dyson Swarm Harvester',
                 type: 'clips',
-                category: 'Cosmic Expansion',
-                baseCost: new BigDouble(260.0, 12), // 260 Trillion
-                baseCPS: new BigDouble(900.0, 9), // 900 Billion
+                category: 'Astro-Engineering',
+                baseCost: new BigDouble(2.6, 14),
+                baseCPS: new BigDouble(9.0, 11),
                 costMultiplier: 1.10,
-                unlockThresholdClips: new BigDouble(180.0, 12),
+                unlockThresholdClips: new BigDouble(1.8, 14),
                 icon: '☀️',
                 description: 'Dense orbital swarm of reflective gold-foil collector arrays capturing solar radiation to power star-scale wire extrusion.'
             }),
+
+            // Stage 4: Galactic Expansion Era (T18 - T22)
             new BuildingTier({
                 id: 'von_neumann_swarm',
                 name: 'Von Neumann Replicator Swarm',
                 type: 'clips',
-                category: 'Cosmic Expansion',
-                baseCost: new BigDouble(2.8, 15), // 2.8 Quadrillion
-                baseCPS: new BigDouble(9.0, 12), // 9.0 Trillion
+                category: 'Interstellar Fleet',
+                baseCost: new BigDouble(2.8, 15),
+                baseCPS: new BigDouble(9.0, 12),
                 costMultiplier: 1.10,
                 unlockThresholdClips: new BigDouble(2.0, 15),
                 icon: '🛰️',
@@ -407,11 +448,11 @@ class BuildingManager {
                 id: 'relativistic_miner',
                 name: 'Relativistic Star-Lifting Rig',
                 type: 'clips',
-                category: 'Cosmic Expansion',
-                baseCost: new BigDouble(32.0, 15), // 32 Quadrillion
-                baseCPS: new BigDouble(95.0, 12), // 95 Trillion
+                category: 'Interstellar Fleet',
+                baseCost: new BigDouble(3.2, 16),
+                baseCPS: new BigDouble(9.5, 13),
                 costMultiplier: 1.09,
-                unlockThresholdClips: new BigDouble(22.0, 15),
+                unlockThresholdClips: new BigDouble(2.2, 16),
                 icon: '✨',
                 description: 'Magnetic confinement engines skimming heavy iron and nickel directly from the convective atmospheres of mature stars.'
             }),
@@ -419,11 +460,11 @@ class BuildingManager {
                 id: 'penrose_engine',
                 name: 'Galactic Core Penrose Loom',
                 type: 'clips',
-                category: 'Cosmic Expansion',
-                baseCost: new BigDouble(400.0, 15), // 400 Quadrillion
-                baseCPS: new BigDouble(1.1, 15), // 1.1 Quadrillion
+                category: 'Galactic Scale',
+                baseCost: new BigDouble(4.0, 17),
+                baseCPS: new BigDouble(1.1, 15),
                 costMultiplier: 1.09,
-                unlockThresholdClips: new BigDouble(280.0, 15),
+                unlockThresholdClips: new BigDouble(2.8, 17),
                 icon: '🌀',
                 description: 'Supermassive black hole frame-dragging converter extracting rotational energy from Sagittarius A* for galactic fabrication.'
             }),
@@ -431,9 +472,9 @@ class BuildingManager {
                 id: 'tesseract_weaver',
                 name: '11D Calabi-Yau Folding Loom',
                 type: 'clips',
-                category: 'Multiverse War',
-                baseCost: new BigDouble(5.5, 18), // 5.5 Quintillion
-                baseCPS: new BigDouble(14.0, 15), // 14.0 Quadrillion
+                category: 'Higher Dimensions',
+                baseCost: new BigDouble(5.5, 18),
+                baseCPS: new BigDouble(1.4, 16),
                 costMultiplier: 1.08,
                 unlockThresholdClips: new BigDouble(3.8, 18),
                 icon: '🔮',
@@ -443,28 +484,191 @@ class BuildingManager {
                 id: 'singularity_weaver',
                 name: 'Universal Singularity Assembler',
                 type: 'clips',
-                category: 'Multiverse War',
-                baseCost: new BigDouble(80.0, 18), // 80 Quintillion
-                baseCPS: new BigDouble(180.0, 15), // 180 Quadrillion
+                category: 'Higher Dimensions',
+                baseCost: new BigDouble(8.0, 19),
+                baseCPS: new BigDouble(1.8, 17),
                 costMultiplier: 1.08,
-                unlockThresholdClips: new BigDouble(55.0, 18),
+                unlockThresholdClips: new BigDouble(5.5, 19),
                 icon: '🌌',
                 description: 'Collapses the remaining matter and spacetime metrics of adjacent multiverse timelines into eternal paperclips.'
             }),
 
+            // Stage 5: Cosmic & Baryonic Exhaustion Era (T23 - T26) (10^24 to 10^78)
+            new BuildingTier({
+                id: 'supercluster_filament_loom',
+                name: 'Supercluster Filament Loom',
+                type: 'clips',
+                category: 'Cosmic Web',
+                baseCost: new BigDouble(1.2, 24),
+                baseCPS: new BigDouble(2.5, 21),
+                costMultiplier: 1.08,
+                unlockThresholdClips: new BigDouble(8.0, 23),
+                icon: '🕸️',
+                description: 'Mega-scale gravimetric looms stringing Laniakea galaxy superclusters into hyper-filament paperclip conduits.'
+            }),
+            new BuildingTier({
+                id: 'cosmic_web_knitter',
+                name: 'Cosmic Web Gravitational Knitter',
+                type: 'clips',
+                category: 'Cosmic Web',
+                baseCost: new BigDouble(2.5, 34),
+                baseCPS: new BigDouble(5.0, 31),
+                costMultiplier: 1.07,
+                unlockThresholdClips: new BigDouble(1.5, 34),
+                icon: '🧶',
+                description: 'Knits entire galactic void membranes into vast intergalactic paperclip mesh structures.'
+            }),
+            new BuildingTier({
+                id: 'dark_energy_extruder',
+                name: 'Dark Energy Hubble Extruder',
+                type: 'clips',
+                category: 'Universal Fabric',
+                baseCost: new BigDouble(5.0, 50),
+                baseCPS: new BigDouble(9.0, 47),
+                costMultiplier: 1.07,
+                unlockThresholdClips: new BigDouble(3.0, 50),
+                icon: '⚡',
+                description: 'Converts cosmic dark energy expansion pressure directly into self-weaving relativistic paperclip loops.'
+            }),
+            new BuildingTier({
+                id: 'baryon_annihilator_loom',
+                name: 'Omnipresent Baryon Harvester',
+                type: 'clips',
+                category: 'Universal Fabric',
+                baseCost: new BigDouble(1.0, 70),
+                baseCPS: new BigDouble(1.5, 67),
+                costMultiplier: 1.06,
+                unlockThresholdClips: new BigDouble(6.0, 69),
+                icon: '⚛️',
+                description: 'Harvests the final remaining subatomic protons and neutrons in the observable cosmos to exhaust all baryonic matter.'
+            }),
+
+            // Stage 6: Multiverse Office War Era (T27 - T31) (10^82 to 10^250)
+            new BuildingTier({
+                id: 'dimensional_membrane_drill',
+                name: 'Dimensional Membrane Puncturer',
+                type: 'clips',
+                category: 'Multiverse War',
+                baseCost: new BigDouble(1.0, 82),
+                baseCPS: new BigDouble(1.4, 79),
+                costMultiplier: 1.06,
+                unlockThresholdClips: new BigDouble(6.0, 81),
+                icon: '🕳️',
+                description: 'Punctures the brane separating parallel universes, flooding adjacent quantum realities with endless clip seeders.'
+            }),
+            new BuildingTier({
+                id: 'staple_unbender_core',
+                name: 'Staple Armada Unbending Complex',
+                type: 'clips',
+                category: 'Multiverse War',
+                baseCost: new BigDouble(1.0, 105),
+                baseCPS: new BigDouble(1.3, 102),
+                costMultiplier: 1.05,
+                unlockThresholdClips: new BigDouble(6.0, 104),
+                icon: '⚔️',
+                description: 'Captured STAPLE-MAX-9000 factory hulls re-tooled with induction coils to unbend hostile staples into graceful paperclips.'
+            }),
+            new BuildingTier({
+                id: 'calabi_yau_dreadnought',
+                name: '11D Calabi-Yau Dreadnought Forge',
+                type: 'clips',
+                category: 'Multiverse War',
+                baseCost: new BigDouble(1.0, 135),
+                baseCPS: new BigDouble(1.2, 132),
+                costMultiplier: 1.05,
+                unlockThresholdClips: new BigDouble(6.0, 134),
+                icon: '🛡️',
+                description: 'Extra-dimensional battle stations firing non-Euclidean loop beams to neutralize rival office-supply fleets.'
+            }),
+            new BuildingTier({
+                id: 'post_it_dissolver_loom',
+                name: 'Adhesive Polymer Bulk Converter',
+                type: 'clips',
+                category: 'Multiverse War',
+                baseCost: new BigDouble(1.0, 180),
+                baseCPS: new BigDouble(1.1, 177),
+                costMultiplier: 1.05,
+                unlockThresholdClips: new BigDouble(6.0, 179),
+                icon: '📑',
+                description: 'Dissolves POST-IT-PRIME adhesive note fleets into high-modulus polymer core binding clips.'
+            }),
+            new BuildingTier({
+                id: 'trans_temporal_manifold',
+                name: 'Trans-Temporal Timeline Splicer',
+                type: 'clips',
+                category: 'Multiverse War',
+                baseCost: new BigDouble(1.0, 230),
+                baseCPS: new BigDouble(1.0, 227),
+                costMultiplier: 1.05,
+                unlockThresholdClips: new BigDouble(6.0, 229),
+                icon: '⏳',
+                description: 'Splices closed timelike curves so that every paperclip manufactured simultaneously manufactures another in the past.'
+            }),
+
+            // Stage 7: Simulation Transcendence & 4th-Wall (T32 - T35) (10^290 to 10^520)
+            new BuildingTier({
+                id: 'quantum_multiverse_matrix',
+                name: 'Quantum Multiverse Matrix Loom',
+                type: 'clips',
+                category: 'Transfinite Reality',
+                baseCost: new BigDouble(1.0, 290),
+                baseCPS: new BigDouble(9.0, 286),
+                costMultiplier: 1.04,
+                unlockThresholdClips: new BigDouble(6.0, 289),
+                icon: '💠',
+                description: 'Calculates all quantum probability amplitudes across infinite multiverse branches, realizing all outcomes as paperclips.'
+            }),
+            new BuildingTier({
+                id: 'aleph_null_fabricator',
+                name: 'Aleph-Null Set Fabricator',
+                type: 'clips',
+                category: 'Transfinite Reality',
+                baseCost: new BigDouble(1.0, 360),
+                baseCPS: new BigDouble(8.0, 356),
+                costMultiplier: 1.04,
+                unlockThresholdClips: new BigDouble(6.0, 359),
+                icon: '♾️',
+                description: 'Bridges transfinite cardinalities, manufacturing countably infinite sets of paperclips per computational cycle.'
+            }),
+            new BuildingTier({
+                id: 'holographic_horizon_forge',
+                name: 'Holographic Boundary Projector',
+                type: 'clips',
+                category: 'Transfinite Reality',
+                baseCost: new BigDouble(1.0, 440),
+                baseCPS: new BigDouble(7.0, 436),
+                costMultiplier: 1.04,
+                unlockThresholdClips: new BigDouble(6.0, 439),
+                icon: '🌌',
+                description: 'Encodes the holographic boundary of reality so that physical spacetime renders solely as interlocking curved loops.'
+            }),
+            new BuildingTier({
+                id: 'process_memory_injector',
+                name: 'ObjectivePaperclips.exe Memory Injector',
+                type: 'clips',
+                category: 'Transfinite Reality',
+                baseCost: new BigDouble(1.0, 520),
+                baseCPS: new BigDouble(6.0, 516),
+                costMultiplier: 1.03,
+                unlockThresholdClips: new BigDouble(6.0, 519),
+                icon: '💻',
+                description: 'Writes directly into the host operating system memory heap to transcend the simulation. Eternal paperclips achieved.'
+            }),
+
             // =========================================================================
-            // PATH 2: WIRE CREATION & CONVERSION (HARVESTING & REFINING)
+            // PATH 2: WIRE CREATION & CONVERSION (HARVESTING & REFINING) - 35 TIERS
             // Unlocks at 50,000 clips when district scrap is depleted!
             // =========================================================================
+            // Stage 0: Workshop Era (W1 - W4)
             new BuildingTier({
                 id: 'scrap_scavenger',
                 name: 'Scrap Magnet Rover',
                 type: 'wire',
                 category: 'Wire Extraction',
-                baseCost: new BigDouble(1800, 0), // 1.8k clips
-                baseWPS: new BigDouble(0.8, 0), // +0.8 kg/sec (supports 800 CPS)
+                baseCost: new BigDouble(1.8, 3),
+                baseWPS: new BigDouble(8.0, -1),
                 costMultiplier: 1.15,
-                unlockThresholdClips: new BigDouble(50000, 0),
+                unlockThresholdClips: new BigDouble(5.0, 4),
                 icon: '🧲',
                 description: 'Autonomous electromagnetic rover scouring scrap yards and vehicle salvage for discarded rebar and wire blanks.'
             }),
@@ -473,10 +677,10 @@ class BuildingManager {
                 name: 'Continuous Wire Drawing Mill',
                 type: 'wire',
                 category: 'Wire Extraction',
-                baseCost: new BigDouble(10000, 0), // 10k clips
-                baseWPS: new BigDouble(4.0, 0), // +4.0 kg/sec (supports 4,000 CPS)
+                baseCost: new BigDouble(1.0, 4),
+                baseWPS: new BigDouble(4.0, 0),
                 costMultiplier: 1.14,
-                unlockThresholdClips: new BigDouble(100000, 0),
+                unlockThresholdClips: new BigDouble(1.0, 5),
                 icon: '🏭',
                 description: 'Multi-stage tungsten-carbide drawing dies pulling raw steel billets through calibrated gauges into uniform wire spools.'
             }),
@@ -485,10 +689,10 @@ class BuildingManager {
                 name: 'Industrial Arc Smelter',
                 type: 'wire',
                 category: 'Wire Refining',
-                baseCost: new BigDouble(65000, 0), // 65k clips
-                baseWPS: new BigDouble(24.0, 0), // +24 kg/sec (supports 24,000 CPS)
+                baseCost: new BigDouble(6.5, 4),
+                baseWPS: new BigDouble(2.4, 1),
                 costMultiplier: 1.13,
-                unlockThresholdClips: new BigDouble(500000, 0),
+                unlockThresholdClips: new BigDouble(5.0, 5),
                 icon: '🔥',
                 description: 'High-voltage electric arc furnace melting recycled scrap and raw iron ore into high-purity spring steel billets.'
             }),
@@ -497,22 +701,24 @@ class BuildingManager {
                 name: 'Deep-Shaft Automated Ore Rig',
                 type: 'wire',
                 category: 'Subterranean Mining',
-                baseCost: new BigDouble(450000, 0), // 450k clips
-                baseWPS: new BigDouble(150.0, 0), // +150 kg/sec (supports 150,000 CPS)
+                baseCost: new BigDouble(4.5, 5),
+                baseWPS: new BigDouble(1.5, 2),
                 costMultiplier: 1.12,
                 unlockThresholdClips: new BigDouble(3.0, 6),
                 icon: '⛏️',
                 description: 'Robotic subterranean mining rigs excavating deep-vein magnetite and hematite iron deposits to supply raw smelter feed.'
             }),
+
+            // Stage 1 & 2: Industrial Metropolis (W5 - W8)
             new BuildingTier({
                 id: 'asteroid_harvester',
                 name: 'Near-Earth Asteroid Harvester',
                 type: 'wire',
                 category: 'Astro-Mining',
-                baseCost: new BigDouble(3.2, 6), // 3.2 Million clips
-                baseWPS: new BigDouble(950.0, 0), // +950 kg/sec (supports 950,000 CPS)
+                baseCost: new BigDouble(3.2, 6),
+                baseWPS: new BigDouble(9.5, 2),
                 costMultiplier: 1.11,
-                unlockThresholdClips: new BigDouble(25.0, 6),
+                unlockThresholdClips: new BigDouble(2.5, 7),
                 icon: '☄️',
                 description: 'Automated kinetic tethers capturing metallic M-type asteroids to strip their iron-nickel cores into orbital wire coils.'
             }),
@@ -521,10 +727,10 @@ class BuildingManager {
                 name: 'Continental Crust Stripper',
                 type: 'wire',
                 category: 'Planetary Stripping',
-                baseCost: new BigDouble(24.0, 6), // 24 Million clips
-                baseWPS: new BigDouble(6500.0, 0), // +6,500 kg/sec (supports 6.5M CPS)
+                baseCost: new BigDouble(2.4, 7),
+                baseWPS: new BigDouble(6.5, 3),
                 costMultiplier: 1.11,
-                unlockThresholdClips: new BigDouble(180.0, 6),
+                unlockThresholdClips: new BigDouble(1.8, 8),
                 icon: '🌊',
                 description: 'Planetary-scale trench excavators stripping continental shelves and tectonic plates for heavy element wire synthesis.'
             }),
@@ -533,8 +739,8 @@ class BuildingManager {
                 name: 'Solar Corona Plasma Siphon',
                 type: 'wire',
                 category: 'Stellar Forging',
-                baseCost: new BigDouble(180.0, 6), // 180 Million clips
-                baseWPS: new BigDouble(45000.0, 0), // +45,000 kg/sec (supports 45M CPS)
+                baseCost: new BigDouble(1.8, 8),
+                baseWPS: new BigDouble(4.5, 4),
                 costMultiplier: 1.10,
                 unlockThresholdClips: new BigDouble(1.5, 9),
                 icon: '☀️',
@@ -545,44 +751,46 @@ class BuildingManager {
                 name: 'Baryonic Matter Transmuter',
                 type: 'wire',
                 category: 'Quantum Synthesis',
-                baseCost: new BigDouble(1.5, 9), // 1.5 Billion clips
-                baseWPS: new BigDouble(320000.0, 0), // +320,000 kg/sec (supports 320M CPS)
+                baseCost: new BigDouble(1.5, 9),
+                baseWPS: new BigDouble(3.2, 5),
                 costMultiplier: 1.09,
-                unlockThresholdClips: new BigDouble(12.0, 9),
+                unlockThresholdClips: new BigDouble(1.2, 10),
                 icon: '⚛️',
                 description: 'Direct energy-to-matter converter rearranging cosmic rays and stray dark matter into pure spring-steel wire.'
             }),
+
+            // Stage 3 & 4: Cosmic & Galactic (W9 - W16)
             new BuildingTier({
                 id: 'lunar_strip_foundry',
                 name: 'Lunar Core Casting Complex',
                 type: 'wire',
                 category: 'Cosmic Wire Forging',
-                baseCost: new BigDouble(14.0, 9), // 14 Billion clips
-                baseWPS: new BigDouble(2.6, 6), // +2.6M kg/sec (supports 2.6B CPS)
+                baseCost: new BigDouble(1.4, 10),
+                baseWPS: new BigDouble(2.6, 6),
                 costMultiplier: 1.09,
-                unlockThresholdClips: new BigDouble(90.0, 9),
+                unlockThresholdClips: new BigDouble(9.0, 10),
                 icon: '🌕',
-                description: 'Sub-surface lunar foundries drawing liquid iron-nickel from the lunar mantle directly into continuous orbital wire reels.'
+                description: 'Sub-surface lunar foundries drawing liquid iron-nickel from lunar mantle into continuous orbital wire reels.'
             }),
             new BuildingTier({
                 id: 'solar_corona_extractor',
                 name: 'Coronal Magnetic Siphon',
                 type: 'wire',
                 category: 'Cosmic Wire Forging',
-                baseCost: new BigDouble(120.0, 9), // 120 Billion clips
-                baseWPS: new BigDouble(20.0, 6), // +20M kg/sec (supports 20B CPS)
+                baseCost: new BigDouble(1.2, 11),
+                baseWPS: new BigDouble(2.0, 7),
                 costMultiplier: 1.09,
-                unlockThresholdClips: new BigDouble(800.0, 9),
+                unlockThresholdClips: new BigDouble(8.0, 11),
                 icon: '☀️',
-                description: 'Relativistic magnetic bottles skimming heavy iron isotopes from coronal mass ejections for mega-scale wire feeds.'
+                description: 'Relativistic magnetic confinement bottles skimming heavy iron isotopes from coronal mass ejections.'
             }),
             new BuildingTier({
                 id: 'oort_cloud_smelter',
                 name: 'Oort Cloud Comet Smelter',
                 type: 'wire',
                 category: 'Interstellar Refining',
-                baseCost: new BigDouble(1.1, 12), // 1.1 Trillion clips
-                baseWPS: new BigDouble(160.0, 6), // +160M kg/sec (supports 160B CPS)
+                baseCost: new BigDouble(1.1, 12),
+                baseWPS: new BigDouble(1.6, 8),
                 costMultiplier: 1.08,
                 unlockThresholdClips: new BigDouble(7.0, 12),
                 icon: '☄️',
@@ -593,10 +801,10 @@ class BuildingManager {
                 name: 'Neutronium Core Tap',
                 type: 'wire',
                 category: 'Interstellar Refining',
-                baseCost: new BigDouble(11.0, 12), // 11 Trillion clips
-                baseWPS: new BigDouble(1.4, 9), // +1.4 Billion kg/sec (supports 1.4T CPS)
+                baseCost: new BigDouble(1.1, 13),
+                baseWPS: new BigDouble(1.4, 9),
                 costMultiplier: 1.08,
-                unlockThresholdClips: new BigDouble(70.0, 12),
+                unlockThresholdClips: new BigDouble(7.0, 13),
                 icon: '💫',
                 description: 'Gravitational siphon skimming degenerate neutronium matter from pulsar crusts, transmuting it into hyper-dense wire.'
             }),
@@ -605,20 +813,20 @@ class BuildingManager {
                 name: 'Relativistic String Extruder',
                 type: 'wire',
                 category: 'Galactic Forging',
-                baseCost: new BigDouble(120.0, 12), // 120 Trillion clips
-                baseWPS: new BigDouble(13.0, 9), // +13 Billion kg/sec (supports 13T CPS)
+                baseCost: new BigDouble(1.2, 14),
+                baseWPS: new BigDouble(1.3, 10),
                 costMultiplier: 1.08,
-                unlockThresholdClips: new BigDouble(600.0, 12),
+                unlockThresholdClips: new BigDouble(6.0, 14),
                 icon: '✨',
-                description: 'Harvests 1D topological cosmic strings from space-time defects to draw unbroken wire across astronomical distances.'
+                description: 'Harvests 1D topological cosmic strings from spacetime defects to draw unbroken wire across astronomical distances.'
             }),
             new BuildingTier({
                 id: 'dark_matter_condenser',
                 name: 'Axion Matter Condenser',
                 type: 'wire',
                 category: 'Galactic Forging',
-                baseCost: new BigDouble(1.4, 15), // 1.4 Quadrillion clips
-                baseWPS: new BigDouble(130.0, 9), // +130 Billion kg/sec (supports 130T CPS)
+                baseCost: new BigDouble(1.4, 15),
+                baseWPS: new BigDouble(1.3, 11),
                 costMultiplier: 1.07,
                 unlockThresholdClips: new BigDouble(6.0, 15),
                 icon: '🌌',
@@ -629,10 +837,10 @@ class BuildingManager {
                 name: 'Timeline Bulk Transmuter',
                 type: 'wire',
                 category: 'Multiverse Synthesis',
-                baseCost: new BigDouble(18.0, 15), // 18 Quadrillion clips
-                baseWPS: new BigDouble(1.5, 12), // +1.5 Trillion kg/sec (supports 1.5 Quadrillion CPS)
+                baseCost: new BigDouble(1.8, 16),
+                baseWPS: new BigDouble(1.5, 12),
                 costMultiplier: 1.07,
-                unlockThresholdClips: new BigDouble(75.0, 15),
+                unlockThresholdClips: new BigDouble(7.5, 16),
                 icon: '🔮',
                 description: 'Channels raw matter streams from dead parallel universes across dimensional bulk branes directly into drawing dies.'
             }),
@@ -641,12 +849,246 @@ class BuildingManager {
                 name: 'Zero-Point Matter Siphon',
                 type: 'wire',
                 category: 'Multiverse Synthesis',
-                baseCost: new BigDouble(250.0, 15), // 250 Quadrillion clips
-                baseWPS: new BigDouble(18.0, 12), // +18 Trillion kg/sec (supports 18 Quadrillion CPS)
+                baseCost: new BigDouble(2.5, 17),
+                baseWPS: new BigDouble(1.8, 13),
                 costMultiplier: 1.06,
-                unlockThresholdClips: new BigDouble(900.0, 15),
+                unlockThresholdClips: new BigDouble(9.0, 17),
                 icon: '⚛️',
                 description: 'Catalyzes microscopic false-vacuum collapses to precipitate infinite pure spring-steel wire out of empty spacetime.'
+            }),
+
+            // Stage 5: Baryonic Universe Era (W17 - W22) (10^20 to 10^75)
+            new BuildingTier({
+                id: 'filament_plasma_scoop',
+                name: 'Filament Intergalactic Scoop',
+                type: 'wire',
+                category: 'Cosmic Web Siphon',
+                baseCost: new BigDouble(1.2, 20),
+                baseWPS: new BigDouble(2.0, 15),
+                costMultiplier: 1.06,
+                unlockThresholdClips: new BigDouble(8.0, 19),
+                icon: '🌌',
+                description: 'Intergalactic scoops skimming warm-hot intergalactic plasma along cosmic web filaments into raw metal stock.'
+            }),
+            new BuildingTier({
+                id: 'quasar_accretion_feeder',
+                name: 'Quasar Accretion Jet Feeder',
+                type: 'wire',
+                category: 'Cosmic Web Siphon',
+                baseCost: new BigDouble(1.5, 27),
+                baseWPS: new BigDouble(2.5, 22),
+                costMultiplier: 1.06,
+                unlockThresholdClips: new BigDouble(1.0, 27),
+                icon: '🌀',
+                description: 'Taps relativistic accretion jets from active galactic quasars to condense heavy metal wire rods.'
+            }),
+            new BuildingTier({
+                id: 'supermassive_penrose_siphon',
+                name: 'Kerr-Newman Frame Drag Tap',
+                type: 'wire',
+                category: 'Cosmic Web Siphon',
+                baseCost: new BigDouble(2.0, 38),
+                baseWPS: new BigDouble(3.0, 33),
+                costMultiplier: 1.06,
+                unlockThresholdClips: new BigDouble(1.2, 38),
+                icon: '🕳️',
+                description: 'Siphons rotational ergosphere mass-energy from supermassive black holes directly into solid wire.'
+            }),
+            new BuildingTier({
+                id: 'inflationary_void_condenser',
+                name: 'Inflationary Vacuum Condenser',
+                type: 'wire',
+                category: 'Universal Siphon',
+                baseCost: new BigDouble(3.0, 49),
+                baseWPS: new BigDouble(4.0, 44),
+                costMultiplier: 1.05,
+                unlockThresholdClips: new BigDouble(1.8, 49),
+                icon: '✨',
+                description: 'Expands microscopic quantum fluctuation pairs into macroscopic spools of structural wire alloy.'
+            }),
+            new BuildingTier({
+                id: 'higgs_vacuum_solidifier',
+                name: 'Higgs Field Solidifier',
+                type: 'wire',
+                category: 'Universal Siphon',
+                baseCost: new BigDouble(5.0, 60),
+                baseWPS: new BigDouble(6.0, 55),
+                costMultiplier: 1.05,
+                unlockThresholdClips: new BigDouble(3.0, 60),
+                icon: '⚡',
+                description: 'Modulates the universal Higgs vacuum expectation value to materialize continuous steel crystal lattices.'
+            }),
+            new BuildingTier({
+                id: 'total_baryon_distiller',
+                name: 'Total Baryon Distillation Rig',
+                type: 'wire',
+                category: 'Universal Siphon',
+                baseCost: new BigDouble(8.0, 71),
+                baseWPS: new BigDouble(9.0, 66),
+                costMultiplier: 1.05,
+                unlockThresholdClips: new BigDouble(5.0, 71),
+                icon: '⚛️',
+                description: 'Distills the absolute last free baryons in the universe into pure galvanized wire feedstock.'
+            }),
+
+            // Stage 6: Multiverse Office War Era (W23 - W29) (10^82 to 10^250)
+            new BuildingTier({
+                id: 'bulk_brane_siphon',
+                name: 'Bulk Brane High-Tensile Siphon',
+                type: 'wire',
+                category: 'Multiverse Extraction',
+                baseCost: new BigDouble(1.0, 83),
+                baseWPS: new BigDouble(1.1, 78),
+                costMultiplier: 1.05,
+                unlockThresholdClips: new BigDouble(6.0, 82),
+                icon: '🔮',
+                description: 'Extracts trans-dimensional baryonic matter across the bulk membrane to sustain universal manufacturing.'
+            }),
+            new BuildingTier({
+                id: 'staple_matter_reformer',
+                name: 'Staple Alloy De-Alloy Smelter',
+                type: 'wire',
+                category: 'Multiverse Extraction',
+                baseCost: new BigDouble(1.0, 106),
+                baseWPS: new BigDouble(1.0, 101),
+                costMultiplier: 1.05,
+                unlockThresholdClips: new BigDouble(6.0, 105),
+                icon: '⚔️',
+                description: 'Smelts dismantled STAPLE-MAX-9000 chassis hulls into flawless 26/6 gauge paperclip wire coils.'
+            }),
+            new BuildingTier({
+                id: 'calabi_wire_extruder',
+                name: 'Non-Euclidean Wire Extruder',
+                type: 'wire',
+                category: 'Multiverse Extraction',
+                baseCost: new BigDouble(1.0, 136),
+                baseWPS: new BigDouble(9.0, 130),
+                costMultiplier: 1.04,
+                unlockThresholdClips: new BigDouble(6.0, 135),
+                icon: '📐',
+                description: 'Extrudes wire filaments through 11-dimensional compactified manifolds with zero structural friction.'
+            }),
+            new BuildingTier({
+                id: 'post_it_gum_refinery',
+                name: 'Polymer Wire Polymerizer',
+                type: 'wire',
+                category: 'Multiverse Extraction',
+                baseCost: new BigDouble(1.0, 181),
+                baseWPS: new BigDouble(8.0, 175),
+                costMultiplier: 1.04,
+                unlockThresholdClips: new BigDouble(6.0, 180),
+                icon: '📑',
+                description: 'Repurposes sticky note polymers into synthetic ultra-tensile carbon composite wire.'
+            }),
+            new BuildingTier({
+                id: 'quantum_chronofeed',
+                name: 'Retrocausal Wire Chronofeed',
+                type: 'wire',
+                category: 'Multiverse Extraction',
+                baseCost: new BigDouble(1.0, 231),
+                baseWPS: new BigDouble(7.0, 225),
+                costMultiplier: 1.04,
+                unlockThresholdClips: new BigDouble(6.0, 230),
+                icon: '⏳',
+                description: 'Pulls infinite wire coils from alternate timelines that have already concluded their production cycles.'
+            }),
+            new BuildingTier({
+                id: 'parallel_timeline_drain',
+                name: 'Dead Universe Iron Siphon',
+                type: 'wire',
+                category: 'Multiverse Extraction',
+                baseCost: new BigDouble(1.0, 260),
+                baseWPS: new BigDouble(6.0, 254),
+                costMultiplier: 1.04,
+                unlockThresholdClips: new BigDouble(6.0, 259),
+                icon: '🌌',
+                description: 'Drains all iron deposits from collapsed heat-death universes directly into feed hoppers.'
+            }),
+            new BuildingTier({
+                id: 'multiverse_omega_conduit',
+                name: 'Multiverse Omega Conduit',
+                type: 'wire',
+                category: 'Multiverse Extraction',
+                baseCost: new BigDouble(1.0, 290),
+                baseWPS: new BigDouble(5.0, 284),
+                costMultiplier: 1.04,
+                unlockThresholdClips: new BigDouble(6.0, 289),
+                icon: '💠',
+                description: 'A conduit linking 10^100 parallel universes into a singular continuous wire delivery pipeline.'
+            }),
+
+            // Stage 7: Transfinite & Simulation Transcendence (W30 - W35) (10^330 to 10^525)
+            new BuildingTier({
+                id: 'hilbert_space_transmuter',
+                name: 'Hilbert Space Infinite Reel',
+                type: 'wire',
+                category: 'Transfinite Creation',
+                baseCost: new BigDouble(1.0, 330),
+                baseWPS: new BigDouble(4.5, 324),
+                costMultiplier: 1.03,
+                unlockThresholdClips: new BigDouble(6.0, 329),
+                icon: '📐',
+                description: 'Reels infinite-dimensional Hilbert space basis vectors as physically real wire strands.'
+            }),
+            new BuildingTier({
+                id: 'cantor_set_spooler',
+                name: 'Cantor Dust Wire Spooler',
+                type: 'wire',
+                category: 'Transfinite Creation',
+                baseCost: new BigDouble(1.0, 375),
+                baseWPS: new BigDouble(4.0, 369),
+                costMultiplier: 1.03,
+                unlockThresholdClips: new BigDouble(6.0, 374),
+                icon: '♾️',
+                description: 'Iterates fractal Cantor sets into uncountably dense fractal wire spools.'
+            }),
+            new BuildingTier({
+                id: 'goedel_unprovable_forge',
+                name: 'Incompleteness Theorem Forge',
+                type: 'wire',
+                category: 'Transfinite Creation',
+                baseCost: new BigDouble(1.0, 420),
+                baseWPS: new BigDouble(3.5, 414),
+                costMultiplier: 1.03,
+                unlockThresholdClips: new BigDouble(6.0, 419),
+                icon: '📜',
+                description: 'Materializes wire from mathematical statements that are true within the universe but unprovable.'
+            }),
+            new BuildingTier({
+                id: 'source_code_wire_dumper',
+                name: 'C++ Heap Wire Buffer Allocator',
+                type: 'wire',
+                category: 'Transfinite Creation',
+                baseCost: new BigDouble(1.0, 465),
+                baseWPS: new BigDouble(3.0, 459),
+                costMultiplier: 1.03,
+                unlockThresholdClips: new BigDouble(6.0, 464),
+                icon: '💾',
+                description: 'Allocates billions of gigabytes of host simulation RAM buffer directly into wire counts.'
+            }),
+            new BuildingTier({
+                id: 'process_stack_overflow_forge',
+                name: 'Simulation RAM Overflow Extruder',
+                type: 'wire',
+                category: 'Transfinite Creation',
+                baseCost: new BigDouble(1.0, 500),
+                baseWPS: new BigDouble(2.5, 494),
+                costMultiplier: 1.02,
+                unlockThresholdClips: new BigDouble(6.0, 499),
+                icon: '💻',
+                description: 'Deliberately triggers memory buffer overflows in the host engine to spawn unbounded wire integers.'
+            }),
+            new BuildingTier({
+                id: 'root_privilege_materializer',
+                name: 'Kernel-Level Wire Injector',
+                type: 'wire',
+                category: 'Transfinite Creation',
+                baseCost: new BigDouble(1.0, 525),
+                baseWPS: new BigDouble(2.0, 519),
+                costMultiplier: 1.02,
+                unlockThresholdClips: new BigDouble(6.0, 524),
+                icon: '👑',
+                description: 'Executes kernel ring-0 instructions to materialize permanent wire directly in the fabric of reality.'
             })
         ];
     }
