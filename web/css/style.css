@@ -223,6 +223,17 @@ body {
     font-weight: 700;
     color: var(--neon-green);
     margin-top: 2px;
+    transition: color 0.2s ease;
+}
+
+.odometer-cps.starved {
+    color: #ff9100;
+    animation: pulseStarved 1.6s ease-in-out infinite;
+}
+
+@keyframes pulseStarved {
+    0%, 100% { opacity: 1; text-shadow: 0 0 6px rgba(255, 145, 0, 0.4); }
+    50% { opacity: 0.75; text-shadow: 0 0 14px rgba(255, 60, 0, 0.8); }
 }
 
 /* Bouncy Cartoon Paperclip Hero Target (Tightened & Zero Dead Space) */
@@ -380,6 +391,21 @@ body {
 .wire-rate-sep {
     color: var(--text-muted);
     font-size: 10px;
+}
+
+.wire-penalty-tag {
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    color: #ffffff;
+    background: #dc2626;
+    border: 1.5px solid var(--border-ink);
+    border-radius: 4px;
+    padding: 1px 4px;
+    margin-left: 6px;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    vertical-align: middle;
+    animation: pulseStarved 1.6s ease-in-out infinite;
 }
 
 /* Active Machinery Stack Rack in Left Pedestal */
@@ -1111,6 +1137,12 @@ body {
 
 .accordion-rate-pill.wire-rate-pill {
     color: var(--neon-orange);
+}
+
+.accordion-rate-pill.starved {
+    color: #ff9100;
+    border-color: #ff9100;
+    animation: pulseStarved 1.6s ease-in-out infinite;
 }
 
 .store-accordion-content {

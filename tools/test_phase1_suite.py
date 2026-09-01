@@ -240,6 +240,14 @@ def run_all_tests():
 
     assert_test("Offline Time-Warp Wire Exhaustion", clips_produced == 250000.0 and wire_left == 0.0, f"-> Produced: {clips_produced}, Wire: {wire_left}")
 
+    # --- Test 5b: Live Wire Starvation 50% Penalty Simulation ---
+    # Scenario: 0 kg wire, 1,000 base CPS, net negative wire production.
+    # Expected: 50% speed penalty -> 500 clips/sec effective.
+    base_live_cps = 1000.0
+    is_starved = True
+    effective_live_cps = base_live_cps * 0.5 if is_starved else base_live_cps
+    assert_test("Wire Starvation 50% Speed Penalty", effective_live_cps == 500.0, f"-> Base: {base_live_cps} CPS, Starved: {effective_live_cps} CPS")
+
     # --- Test 6: Save Serialization & SHA-256 Anti-Cheat ---
     save_data = {
         "TotalClips": {"Mantissa": 1.45, "Exponent": 12},

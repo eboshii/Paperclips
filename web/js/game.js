@@ -441,6 +441,22 @@ class GameEngine {
         return baseWPS.mul(prestigeMult * techMult);
     }
 
+    isWireStarved() {
+        if (!this.isWireUnlocked) return false;
+        if (this.wire.gt(BigDouble.zero())) return false;
+        const incomeWPS = this.calculateTotalWPS();
+        const usageWPS = this.calculateWireUsageRate();
+        return incomeWPS.lt(usageWPS);
+    }
+
+    getEffectiveCPS() {
+        const totalCPS = this.calculateTotalCPS();
+        if (this.isWireStarved()) {
+            return totalCPS.mul(0.5);
+        }
+        return totalCPS;
+    }
+
     updateMaxOps() {
         let baseMax = 1000.0;
 
@@ -521,31 +537,38 @@ class GameEngine {
             this.flywheelCharge = Math.max(0, this.flywheelCharge - (this.flywheelDecayRate * dt));
         }
 
-        // 3. Automated Clip Production Engine
-        const currentCPS = this.calculateTotalCPS();
-        if (currentCPS.gt(BigDouble.zero())) {
-            const clipsProduced = currentCPS.mul(dt);
+        // 3. Automated Wire Generation Engine (From Wire Creation Buildings)
+        if (this.isWireUnlocked) {
+            const currentWPS = this.calculateTotalWPS();
+            if (currentWPS.gt(BigDouble.zero())) {
+                const wireProduced = currentWPS.mul(dt);
+                this.wire = this.wire.add(wireProduced);
+            }
+        }
+
+        // 4. Automated Clip Production Engine (50% speed penalty if out of wire)
+        const baseCalculatedCPS = this.calculateTotalCPS();
+        const isStarved = this.isWireStarved();
+        const activeCPS = isStarved ? baseCalculatedCPS.mul(0.5) : baseCalculatedCPS;
+
+        if (activeCPS.gt(BigDouble.zero())) {
+            const clipsProduced = activeCPS.mul(dt);
 
             if (clipsProduced.exponent >= 5 || isCatchUp) {
                 // High volume production / background catch-up: add directly
-                if (!this.isWireUnlocked) {
-                    this.clips = this.clips.add(clipsProduced);
-                    this.lifetimeClips = this.lifetimeClips.add(clipsProduced);
-                } else {
+                this.clips = this.clips.add(clipsProduced);
+                this.lifetimeClips = this.lifetimeClips.add(clipsProduced);
+
+                if (this.isWireUnlocked) {
                     const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
                     const wireNeeded = clipsProduced.mul(wirePerClip);
                     if (this.wire.gte(wireNeeded)) {
-                        this.clips = this.clips.add(clipsProduced);
-                        this.lifetimeClips = this.lifetimeClips.add(clipsProduced);
                         this.wire = this.wire.sub(wireNeeded);
-                    } else if (this.wire.gt(BigDouble.zero())) {
-                        const actualClips = this.wire.div(wirePerClip);
-                        this.clips = this.clips.add(actualClips);
-                        this.lifetimeClips = this.lifetimeClips.add(actualClips);
+                    } else {
                         this.wire = BigDouble.zero();
                     }
                 }
-                if (!isCatchUp && this.visualizer) this.visualizer.spawnPaperclips(15, null, currentCPS);
+                if (!isCatchUp && this.visualizer) this.visualizer.spawnPaperclips(15, null, activeCPS);
             } else {
                 // Low / medium volume: accumulate sub-integers to grant strictly whole paperclips
                 this.fractionalClips += clipsProduced.toDouble();
@@ -553,42 +576,22 @@ class GameEngine {
                     const wholeClipsToAdd = Math.floor(this.fractionalClips);
                     this.fractionalClips -= wholeClipsToAdd;
 
-                    if (!this.isWireUnlocked) {
-                        const wholeBD = BigDouble.fromNumber(wholeClipsToAdd);
-                        this.clips = this.clips.add(wholeBD);
-                        this.lifetimeClips = this.lifetimeClips.add(wholeBD);
-                        if (!isCatchUp && this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd, null, currentCPS);
-                    } else {
+                    const wholeBD = BigDouble.fromNumber(wholeClipsToAdd);
+                    this.clips = this.clips.add(wholeBD);
+                    this.lifetimeClips = this.lifetimeClips.add(wholeBD);
+
+                    if (this.isWireUnlocked) {
                         const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
                         const wireNeeded = new BigDouble(wirePerClip * wholeClipsToAdd, 0);
 
                         if (this.wire.gte(wireNeeded)) {
-                            const wholeBD = BigDouble.fromNumber(wholeClipsToAdd);
-                            this.clips = this.clips.add(wholeBD);
-                            this.lifetimeClips = this.lifetimeClips.add(wholeBD);
                             this.wire = this.wire.sub(wireNeeded);
-                            if (!isCatchUp && this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd, null, currentCPS);
-                        } else if (this.wire.gt(BigDouble.zero())) {
-                            const actualClips = Math.floor(this.wire.toDouble() / wirePerClip);
-                            if (actualClips > 0) {
-                                const wholeBD = BigDouble.fromNumber(actualClips);
-                                this.clips = this.clips.add(wholeBD);
-                                this.lifetimeClips = this.lifetimeClips.add(wholeBD);
-                                if (!isCatchUp && this.visualizer) this.visualizer.spawnPaperclips(actualClips, null, currentCPS);
-                            }
+                        } else {
                             this.wire = BigDouble.zero();
                         }
                     }
+                    if (!isCatchUp && this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd, null, activeCPS);
                 }
-            }
-        }
-
-        // 4. Wire Generation Engine (From Wire Creation Buildings)
-        if (this.isWireUnlocked) {
-            const currentWPS = this.calculateTotalWPS();
-            if (currentWPS.gt(BigDouble.zero())) {
-                const wireProduced = currentWPS.mul(dt);
-                this.wire = this.wire.add(wireProduced);
             }
         }
 
@@ -696,7 +699,15 @@ class GameEngine {
 
         const cpsCountEl = document.getElementById('odometer-cps');
         if (cpsCountEl) {
-            cpsCountEl.textContent = currentCPS.gt(BigDouble.zero()) ? `+${currentCPS.toShortScale(1)} / sec` : '+0 / sec';
+            const isStarved = this.isWireStarved();
+            const effectiveCPS = this.getEffectiveCPS();
+            if (isStarved && effectiveCPS.gt(BigDouble.zero())) {
+                cpsCountEl.textContent = `+${effectiveCPS.toShortScale(1)} / sec (-50% NO WIRE)`;
+                cpsCountEl.classList.add('starved');
+            } else {
+                cpsCountEl.textContent = effectiveCPS.gt(BigDouble.zero()) ? `+${effectiveCPS.toShortScale(1)} / sec` : '+0 / sec';
+                cpsCountEl.classList.remove('starved');
+            }
         }
 
         // Flywheel Overclock: Hidden until Kinetic Flywheel tech is researched
@@ -729,9 +740,14 @@ class GameEngine {
         if (this.isWireUnlocked) {
             const incomeWPS = this.calculateTotalWPS();
             const usageWPS = this.calculateWireUsageRate();
+            const isStarved = this.isWireStarved();
 
             if (wireEl) {
-                wireEl.textContent = `${this.wire.toShortScale(1)} kg`;
+                if (isStarved) {
+                    wireEl.innerHTML = `${this.wire.toShortScale(1)} kg <span class="wire-penalty-tag">50% PENALTY</span>`;
+                } else {
+                    wireEl.textContent = `${this.wire.toShortScale(1)} kg`;
+                }
             }
             if (wireInEl) {
                 wireInEl.textContent = `+${incomeWPS.toShortScale(1)} kg/s in`;
@@ -865,11 +881,17 @@ class GameEngine {
             wireSection.style.display = this.isWireUnlocked ? 'flex' : 'none';
         }
 
-        const currentCPS = this.calculateTotalCPS();
-        const currentWPS = this.calculateTotalWPS();
+        const isStarved = this.isWireStarved();
+        const effectiveCPS = this.getEffectiveCPS();
 
         if (clipRatePill) {
-            clipRatePill.textContent = currentCPS.gt(BigDouble.zero()) ? `+${currentCPS.toShortScale(1)} CPS` : '+0 CPS';
+            if (isStarved && effectiveCPS.gt(BigDouble.zero())) {
+                clipRatePill.textContent = `+${effectiveCPS.toShortScale(1)} CPS (-50%)`;
+                clipRatePill.classList.add('starved');
+            } else {
+                clipRatePill.textContent = effectiveCPS.gt(BigDouble.zero()) ? `+${effectiveCPS.toShortScale(1)} CPS` : '+0 CPS';
+                clipRatePill.classList.remove('starved');
+            }
         }
 
         if (wireRatePill && this.isWireUnlocked) {
@@ -966,11 +988,18 @@ class GameEngine {
             wireSection.style.display = this.isWireUnlocked ? 'flex' : 'none';
         }
 
-        const currentCPS = this.calculateTotalCPS();
+        const isStarved = this.isWireStarved();
+        const effectiveCPS = this.getEffectiveCPS();
         const currentWPS = this.calculateTotalWPS();
 
         if (clipRatePill) {
-            clipRatePill.textContent = currentCPS.gt(BigDouble.zero()) ? `+${currentCPS.toShortScale(1)} CPS` : '+0 CPS';
+            if (isStarved && effectiveCPS.gt(BigDouble.zero())) {
+                clipRatePill.textContent = `+${effectiveCPS.toShortScale(1)} CPS (-50%)`;
+                clipRatePill.classList.add('starved');
+            } else {
+                clipRatePill.textContent = effectiveCPS.gt(BigDouble.zero()) ? `+${effectiveCPS.toShortScale(1)} CPS` : '+0 CPS';
+                clipRatePill.classList.remove('starved');
+            }
         }
 
         if (wireRatePill && this.isWireUnlocked) {
