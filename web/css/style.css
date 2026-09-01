@@ -358,38 +358,28 @@ body {
 .ops-badge .res-amount { color: var(--neon-cyan); }
 .pop-badge .res-amount { color: var(--neon-pink); }
 
-/* Integrated Buy Wire Button */
-.btn-buy-wire-action {
-    background: linear-gradient(180deg, #00e676 0%, #00a854 100%);
-    border: 2px solid var(--border-ink);
-    border-radius: 8px;
-    padding: 6px 12px;
-    cursor: pointer;
+/* Wire In/Out Rates Sub-row */
+.wire-rates-row {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    gap: 4px;
+    margin-top: 2px;
     font-family: var(--font-cartoon);
-    font-weight: 800;
-    color: #ffffff;
-    box-shadow: 0 3px 0 var(--border-ink);
-    transition: transform 0.08s ease, filter 0.1s ease;
+    font-size: 11px;
+    font-weight: 700;
 }
 
-.btn-buy-wire-action:hover {
-    filter: brightness(1.15);
-    transform: translateY(-1px);
+.wire-rate-in {
+    color: #00e676;
 }
 
-.btn-buy-wire-action:active {
-    transform: translateY(1px);
-    box-shadow: 0 1px 0 var(--border-ink);
+.wire-rate-out {
+    color: #ff9100;
 }
 
-.wire-cost-sub {
-    font-size: 9px;
-    opacity: 0.85;
-    margin-top: 1px;
+.wire-rate-sep {
+    color: var(--text-muted);
+    font-size: 10px;
 }
 
 /* Active Machinery Stack Rack in Left Pedestal */

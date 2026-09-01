@@ -412,11 +412,11 @@ class BuildingManager {
                 name: 'Scrap Magnet Scavenger',
                 type: 'wire',
                 category: 'Wire Extraction',
-                baseCost: new BigDouble(50000, 0), // 50k clips
-                baseWPS: new BigDouble(1.0, 0), // +1.0 kg/sec (supports 1,000 CPS)
+                baseCost: new BigDouble(1200, 0), // 1.2k clips
+                baseWPS: new BigDouble(0.5, 0), // +0.5 kg/sec (supports 500 CPS)
                 costMultiplier: 1.15,
                 unlockThresholdClips: new BigDouble(50000, 0),
-                icon: '',
+                icon: '🧲',
                 description: 'Autonomous electromagnetic rover scouring urban scrap yards for raw rebar and wire blanks.'
             }),
             new BuildingTier({
@@ -424,11 +424,11 @@ class BuildingManager {
                 name: 'Continuous Wire Extrusion Mill',
                 type: 'wire',
                 category: 'Wire Extraction',
-                baseCost: new BigDouble(280000, 0), // 280k clips
-                baseWPS: new BigDouble(4.5, 0), // +4.5 kg/sec (supports 4,500 CPS)
+                baseCost: new BigDouble(8500, 0), // 8.5k clips
+                baseWPS: new BigDouble(3.0, 0), // +3.0 kg/sec (supports 3,000 CPS)
                 costMultiplier: 1.14,
-                unlockThresholdClips: new BigDouble(150000, 0),
-                icon: '',
+                unlockThresholdClips: new BigDouble(120000, 0),
+                icon: '🏭',
                 description: 'High-speed continuous-cast rolling mill drawing solid steel billets into calibrated wire coils.'
             }),
             new BuildingTier({
@@ -436,11 +436,11 @@ class BuildingManager {
                 name: 'Industrial Arc Smelter',
                 type: 'wire',
                 category: 'Wire Refining',
-                baseCost: new BigDouble(1.5, 6), // 1.5 Million clips
+                baseCost: new BigDouble(65000, 0), // 65k clips
                 baseWPS: new BigDouble(20.0, 0), // +20 kg/sec (supports 20,000 CPS)
                 costMultiplier: 1.13,
-                unlockThresholdClips: new BigDouble(800000, 0),
-                icon: '',
+                unlockThresholdClips: new BigDouble(500000, 0),
+                icon: '🔥',
                 description: 'High-temperature electric arc furnace reducing mined iron ore into high-tensile wire spools.'
             }),
             new BuildingTier({
@@ -448,11 +448,11 @@ class BuildingManager {
                 name: 'Lithospheric Magma Siphon',
                 type: 'wire',
                 category: 'Geothermal Mining',
-                baseCost: new BigDouble(15.0, 6), // 15 Million clips
-                baseWPS: new BigDouble(150.0, 0), // +150 kg/sec (supports 150,000 CPS)
+                baseCost: new BigDouble(450000, 0), // 450k clips
+                baseWPS: new BigDouble(120.0, 0), // +120 kg/sec (supports 120,000 CPS)
                 costMultiplier: 1.12,
-                unlockThresholdClips: new BigDouble(8.0, 6),
-                icon: '',
+                unlockThresholdClips: new BigDouble(3.0, 6),
+                icon: '🌋',
                 description: 'Deep-crust induction conduits siphoning molten nickel-iron directly from tectonic mantle chambers.'
             }),
             new BuildingTier({
@@ -460,11 +460,11 @@ class BuildingManager {
                 name: 'Orbital Asteroid Harvester',
                 type: 'wire',
                 category: 'Astro-Mining',
-                baseCost: new BigDouble(150.0, 6), // 150 Million clips
-                baseWPS: new BigDouble(2500.0, 0), // +2,500 kg/sec (supports 2.5M CPS)
+                baseCost: new BigDouble(3.2, 6), // 3.2 Million clips
+                baseWPS: new BigDouble(800.0, 0), // +800 kg/sec (supports 800,000 CPS)
                 costMultiplier: 1.11,
-                unlockThresholdClips: new BigDouble(80.0, 6),
-                icon: '️',
+                unlockThresholdClips: new BigDouble(20.0, 6),
+                icon: '☄️',
                 description: 'Captures metallic M-type asteroids and strips their iron-nickel cores into continuous orbital wire ribbons.'
             }),
             new BuildingTier({
@@ -472,11 +472,11 @@ class BuildingManager {
                 name: 'Continental Crust Stripper',
                 type: 'wire',
                 category: 'Planetary Stripping',
-                baseCost: new BigDouble(2.0, 9), // 2 Billion clips
-                baseWPS: new BigDouble(40000.0, 0), // +40,000 kg/sec (supports 40M CPS)
+                baseCost: new BigDouble(25.0, 6), // 25 Million clips
+                baseWPS: new BigDouble(6000.0, 0), // +6,000 kg/sec (supports 6M CPS)
                 costMultiplier: 1.11,
-                unlockThresholdClips: new BigDouble(1.0, 9),
-                icon: '',
+                unlockThresholdClips: new BigDouble(150.0, 6),
+                icon: '🌊',
                 description: 'Planetary-scale trench excavators stripping continental shelves for heavy element wire synthesis.'
             }),
             new BuildingTier({
@@ -484,11 +484,11 @@ class BuildingManager {
                 name: 'Solar Corona Plasma Siphon',
                 type: 'wire',
                 category: 'Stellar Forging',
-                baseCost: new BigDouble(100.0, 9), // 100 Billion clips
-                baseWPS: new BigDouble(800000.0, 0), // +800,000 kg/sec (supports 800M CPS)
+                baseCost: new BigDouble(180.0, 6), // 180 Million clips
+                baseWPS: new BigDouble(45000.0, 0), // +45,000 kg/sec (supports 45M CPS)
                 costMultiplier: 1.10,
-                unlockThresholdClips: new BigDouble(50.0, 9),
-                icon: '️',
+                unlockThresholdClips: new BigDouble(1.0, 9),
+                icon: '🔥',
                 description: 'Magnetic confinement funnels drinking stellar corona plasma to fuse heavy iron wire atoms.'
             }),
             new BuildingTier({
@@ -496,11 +496,11 @@ class BuildingManager {
                 name: 'Baryonic Matter Transmuter',
                 type: 'wire',
                 category: 'Quantum Synthesis',
-                baseCost: new BigDouble(50.0, 12), // 50 Trillion clips
-                baseWPS: new BigDouble(60.0, 6), // +60 Million kg/sec (supports 60 Billion CPS)
+                baseCost: new BigDouble(1.5, 9), // 1.5 Billion clips
+                baseWPS: new BigDouble(350000.0, 0), // +350,000 kg/sec (supports 350M CPS)
                 costMultiplier: 1.09,
-                unlockThresholdClips: new BigDouble(20.0, 12),
-                icon: '',
+                unlockThresholdClips: new BigDouble(10.0, 9),
+                icon: '⚛️',
                 description: 'Direct energy-to-matter converter rearranging cosmic rays and dark matter into pure spring-steel wire.'
             })
         ];

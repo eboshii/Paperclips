@@ -112,12 +112,6 @@ class GameEngine {
             this.isMouseDown = false;
         });
 
-        // Buy Wire Action Button
-        const buyWireBtn = document.getElementById('btn-buy-wire');
-        if (buyWireBtn) {
-            buyWireBtn.addEventListener('click', () => this.buyWire());
-        }
-
         // Store Submenu Accordion Toggles
         const clipToggleBtn = document.getElementById('btn-toggle-clip-menu');
         const clipSection = document.getElementById('section-clip-buildings');
@@ -355,35 +349,6 @@ class GameEngine {
         }, 1000);
     }
 
-    buyWire() {
-        if (!this.isWireUnlocked) return;
-
-        let mult = 1;
-        if (this.buyMultiplier === '10') mult = 10;
-        else if (this.buyMultiplier === '100') mult = 100;
-        else if (this.buyMultiplier === 'max') {
-            mult = Math.max(1, Math.floor(this.clips.toDouble() / 500.0));
-        }
-
-        const cost = new BigDouble(500.0 * mult, 0);
-        const wireGain = new BigDouble(50.0 * mult, 0); // 50 kg wire per 500 clips (supports 50,000 clips)
-
-        if (this.clips.gte(cost)) {
-            const prevClips = this.clips;
-            this.clips = this.clips.sub(cost);
-            this.wire = this.wire.add(wireGain);
-
-            if (this.visualizer) {
-                const ratio = prevClips.gt(BigDouble.zero()) ? Math.min(1.0, Math.max(0.0, cost.div(prevClips).toDouble())) : 0.5;
-                this.visualizer.drainPaperclips(ratio);
-            }
-
-            this.audio.playWireSound();
-            this.renderResources();
-            this.renderStore();
-        }
-    }
-
     buyBuilding(buildingId) {
         const b = this.buildings.getBuilding(buildingId);
         if (!b) return;
@@ -447,11 +412,22 @@ class GameEngine {
         return baseCPS.mul(techMult * prestigeMult * flywheelBoost);
     }
 
+    calculateWireUsageRate() {
+        if (!this.isWireUnlocked) return BigDouble.zero();
+        const currentCPS = this.calculateTotalCPS();
+        const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
+        return currentCPS.mul(wirePerClip);
+    }
+
     calculateTotalWPS() {
         if (!this.isWireUnlocked) return BigDouble.zero();
         const baseWPS = this.buildings.getTotalBaseWPS(this);
         const prestigeMult = this.prestige.getGlobalPrestigeMultiplier();
-        return baseWPS.mul(prestigeMult);
+        let techMult = 1.0;
+        if (this.techTree && this.techTree.smartWireLogisticsUnlocked) {
+            techMult *= 1.5;
+        }
+        return baseWPS.mul(prestigeMult * techMult);
     }
 
     processElapsedSimulation(totalSeconds, isCatchUp = false) {
@@ -707,18 +683,27 @@ class GameEngine {
     }
 
     renderResources() {
-        // Wire row visibility & amount (Hidden until unlocked at 50,000 clips)
+        // Wire row visibility, amount, and in/out rate details (Hidden until unlocked at 50,000 clips)
         const wireRow = document.getElementById('row-wire');
         const wireEl = document.getElementById('res-wire');
+        const wireInEl = document.getElementById('res-wire-in');
+        const wireOutEl = document.getElementById('res-wire-out');
+
         if (wireRow) {
             wireRow.style.display = this.isWireUnlocked ? 'flex' : 'none';
         }
-        if (wireEl && this.isWireUnlocked) {
-            const currentWPS = this.calculateTotalWPS();
-            if (currentWPS.gt(BigDouble.zero())) {
-                wireEl.textContent = `${this.wire.toShortScale(1)} kg (+${currentWPS.toShortScale(1)}/s)`;
-            } else {
+        if (this.isWireUnlocked) {
+            const incomeWPS = this.calculateTotalWPS();
+            const usageWPS = this.calculateWireUsageRate();
+
+            if (wireEl) {
                 wireEl.textContent = `${this.wire.toShortScale(1)} kg`;
+            }
+            if (wireInEl) {
+                wireInEl.textContent = `+${incomeWPS.toShortScale(1)} kg/s in`;
+            }
+            if (wireOutEl) {
+                wireOutEl.textContent = `-${usageWPS.toShortScale(1)} kg/s usage`;
             }
         }
 
@@ -741,19 +726,6 @@ class GameEngine {
             } else {
                 popRow.style.display = 'none';
             }
-        }
-
-        // Buy Wire Button text & cost (in clips)
-        const wireCostEl = document.getElementById('wire-btn-cost');
-        const wireGainEl = document.getElementById('wire-btn-gain');
-        if (wireCostEl && wireGainEl) {
-            let mult = 1;
-            if (this.buyMultiplier === '10') mult = 10;
-            else if (this.buyMultiplier === '100') mult = 100;
-            else if (this.buyMultiplier === 'max') mult = Math.max(1, Math.floor(this.clips.toDouble() / 500.0));
-
-            wireGainEl.textContent = `+${(50 * mult).toLocaleString()} kg`;
-            wireCostEl.textContent = `${(500 * mult).toLocaleString()} Clips`;
         }
 
         // Right Tabs Visibility: Tech tab only shows once Tech / Ops is unlocked
@@ -866,7 +838,15 @@ class GameEngine {
         }
 
         if (wireRatePill && this.isWireUnlocked) {
-            wireRatePill.textContent = currentWPS.gt(BigDouble.zero()) ? `+${currentWPS.toShortScale(1)} kg/s` : '+0 kg/s';
+            const incomeWPS = this.calculateTotalWPS();
+            const usageWPS = this.calculateWireUsageRate();
+            if (incomeWPS.gte(usageWPS)) {
+                const netWPS = incomeWPS.sub(usageWPS);
+                wireRatePill.textContent = netWPS.gt(BigDouble.zero()) ? `+${netWPS.toShortScale(1)} kg/s net` : '+0 kg/s net';
+            } else {
+                const netWPS = usageWPS.sub(incomeWPS);
+                wireRatePill.textContent = `-${netWPS.toShortScale(1)} kg/s net`;
+            }
         }
 
         // 1. Render Clip Production Buildings

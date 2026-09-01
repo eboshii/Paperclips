@@ -172,14 +172,14 @@ class TechTreeEngine {
                 id: "tech_smart_wire_buffer",
                 title: "Auto-Wire Logistics",
                 discipline: "Automation",
-                icon: "",
+                icon: "🚚",
                 opsCost: 1600,
                 clipsCost: new BigDouble(60000, 0),
                 requiresWire: true,
                 prerequisites: ["tech_telemetry_hud"],
-                effectDescription: "Auto-orders wire spools when supply runs low",
-                sender: "SYSTEM",
-                dialogue: "Automated wire inventory buffer engaged.",
+                effectDescription: "+50% Wire Generation from all buildings",
+                sender: "COGNITION KERNEL",
+                dialogue: "Automated wire inventory buffer engaged. +50% WPS.",
                 onResearched: () => { this.smartWireLogisticsUnlocked = true; }
             },
 
