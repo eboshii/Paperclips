@@ -33,7 +33,6 @@ class GameEngine {
         this.audio = new ProceduralAudioEngine();
         this.buildings = new BuildingManager();
         this.techTree = new TechTreeEngine();
-        this.spatialGrid = new SpatialGridEngine();
         this.achievements = new AchievementManager();
         this.news = new NewsTickerEngine();
         this.dialogue = new DialogueDirector();
@@ -406,13 +405,6 @@ class GameEngine {
                 this.visualizer.drainPaperclips(ratio);
             }
 
-            // Auto-place in spatial grid if applicable
-            if (b.gridTileType) {
-                for (let k = 0; k < purchase.amount; ++k) {
-                    this.spatialGrid.autoPlace(b.gridTileType);
-                }
-            }
-
             // Bio-converter deconstructs biomass
             if (b.id === 'bio_converter') {
                 this.humanPopulation = Math.max(0, this.humanPopulation - (5000000 * purchase.amount));
@@ -446,14 +438,13 @@ class GameEngine {
 
     calculateTotalCPS() {
         const baseCPS = this.buildings.getTotalBaseCPS(this);
-        const synergies = this.spatialGrid.evaluateSynergies();
         const techMult = this.techTree.globalCPSMultiplier;
         const prestigeMult = this.prestige.getGlobalPrestigeMultiplier();
 
         // Flywheel boost
         const flywheelBoost = 1.0 + (this.flywheelCharge / 100.0) * (this.techTree.flywheelMaxBoost - 1.0);
 
-        return baseCPS.mul(synergies.totalMultiplier * techMult * prestigeMult * flywheelBoost);
+        return baseCPS.mul(techMult * prestigeMult * flywheelBoost);
     }
 
     calculateTotalWPS() {
@@ -791,6 +782,61 @@ class GameEngine {
         });
         const storeBadge = document.getElementById('store-badge-count');
         if (storeBadge) storeBadge.style.display = canAffordBuilding ? 'flex' : 'none';
+
+        this.renderMachineryStack();
+    }
+
+    renderMachineryStack() {
+        const panel = document.getElementById('building-machinery-panel');
+        const stackContainer = document.getElementById('building-icons-stack');
+        const summaryEl = document.getElementById('machinery-count-summary');
+
+        if (!panel || !stackContainer) return;
+
+        const ownedBuildings = this.buildings.buildings.filter(b => b.count > 0);
+
+        if (ownedBuildings.length === 0) {
+            panel.style.display = 'none';
+            return;
+        }
+
+        panel.style.display = 'flex';
+
+        let totalUnits = 0;
+        ownedBuildings.forEach(b => { totalUnits += b.count; });
+
+        if (summaryEl) {
+            summaryEl.textContent = `${totalUnits} ${totalUnits === 1 ? 'Unit' : 'Units'}`;
+        }
+
+        stackContainer.innerHTML = ownedBuildings.map(b => {
+            const maxVisibleIcons = 12;
+            const visibleCount = Math.min(b.count, maxVisibleIcons);
+            const remainingCount = b.count - visibleCount;
+
+            let miniBadgesHtml = '';
+            for (let i = 0; i < visibleCount; i++) {
+                miniBadgesHtml += `<span class="mini-icon-badge" title="${b.name}">${b.icon}</span>`;
+            }
+            if (remainingCount > 0) {
+                miniBadgesHtml += `<span class="mini-icon-more" title="${remainingCount} more ${b.name}">+${remainingCount}</span>`;
+            }
+
+            return `
+                <div class="machinery-row" data-id="${b.id}">
+                    <div class="machinery-row-header">
+                        <div class="machinery-row-info">
+                            <span class="machinery-row-icon">${b.icon}</span>
+                            <span class="machinery-row-name">${b.name}</span>
+                        </div>
+                        <span class="machinery-row-count">x${b.count}</span>
+                    </div>
+                    <div class="machinery-stacked-icons">
+                        ${miniBadgesHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     renderNews() {
@@ -1191,7 +1237,6 @@ class GameEngine {
         this.techTree.wireWasteReduction = 0.0;
         this.techTree.flywheelMaxBoost = 1.0;
 
-        this.spatialGrid = new SpatialGridEngine();
         this.achievements = new AchievementManager();
         this.dialogue = new DialogueDirector();
         this.dialogue.startIntroSequence();

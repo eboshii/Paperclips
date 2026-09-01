@@ -1729,67 +1729,13 @@ class CosmicVisualizer {
     }
 
     // =========================================================================
-    // ISOMETRIC WORKSHOP & MACHINE OVERLAYS
+    // HERO PAPERCLIP & CENTERPIECE OVERLAYS
     // =========================================================================
     renderFactoryFloor(ctx, state) {
         const time = this.cosmicRotation;
-        const grid = state ? state.spatialGrid : null;
-        const tileSize = 20;
-
-        ctx.save();
-        ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2 + 10);
-        ctx.scale(this.camZoom, this.camZoom);
-        ctx.rotate(this.camYaw * 0.5);
-        ctx.scale(1, Math.cos(this.camPitch));
-
-        for (let y = -3; y < 3; ++y) {
-            for (let x = -3; x < 3; ++x) {
-                const px = (x - y) * (tileSize * 0.866);
-                const py = (x + y) * (tileSize * 0.5);
-
-                ctx.strokeStyle = '#262d38';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(px - tileSize / 2, py - tileSize / 2, tileSize, tileSize);
-
-                if (grid) {
-                    const tileType = grid.getTile(x + 3, y + 3);
-                    if (tileType) {
-                        this.drawPixelMachine(ctx, px, py, tileType, time);
-                    }
-                }
-            }
-        }
-        ctx.restore();
 
         // Center Hero Hologram Paperclip (High-Contrast Shadow Backing)
         this.drawCartoonPaperclip(ctx, ctx.canvas.width / 2, ctx.canvas.height / 2 - 12, 0.9 * this.heroRecoil, this.heroRotation + time * 0.4);
-    }
-
-    drawPixelMachine(ctx, x, y, type, time) {
-        if (type === 'WireExtruder') {
-            ctx.fillStyle = '#00f0ff';
-            ctx.fillRect(x - 6, y - 6, 12, 12);
-            ctx.fillStyle = '#ffe600';
-            ctx.fillRect(x - 2 + Math.sin(time * 6) * 3, y - 2, 4, 4);
-        } else if (type === 'HydraulicStamper') {
-            ctx.fillStyle = '#ff2a85';
-            ctx.fillRect(x - 7, y - 7, 14, 14);
-            const pHeight = 4 + Math.abs(Math.sin(time * 8)) * 5;
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(x - 3, y - pHeight, 6, pHeight);
-        } else if (type === 'LaserSinterer') {
-            ctx.fillStyle = '#a855f7';
-            ctx.fillRect(x - 7, y - 7, 14, 14);
-            ctx.strokeStyle = '#ffe600';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(x, y - 7);
-            ctx.lineTo(x, y + 7);
-            ctx.stroke();
-        } else {
-            ctx.fillStyle = '#00ff88';
-            ctx.fillRect(x - 6, y - 6, 12, 12);
-        }
     }
 
     // =========================================================================

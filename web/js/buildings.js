@@ -16,9 +16,8 @@ class BuildingTier {
         this.costMultiplier = config.costMultiplier || 1.15;
         this.unlockThresholdClips = config.unlockThresholdClips instanceof BigDouble ? config.unlockThresholdClips : BigDouble.fromNumber(config.unlockThresholdClips || 0);
         this.count = config.count || 0;
-        this.icon = config.icon || (this.type === 'wire' ? '' : '️');
+        this.icon = config.icon || (this.type === 'wire' ? '⚙️' : '🤖');
         this.description = config.description || '';
-        this.gridTileType = config.gridTileType || null;
 
         // Dynamic Milestone Modifiers
         this.flatCPSBonus = BigDouble.zero();
@@ -252,10 +251,10 @@ class BuildingManager {
                 name: 'Automated Logistics Depot',
                 type: 'clips',
                 category: 'Industrial Logistics',
-                baseCost: new BigDouble(5.5, 6), // 5.5 Million
+                baseCost: new BigDouble(3.2, 6), // 3.2 Million
                 baseCPS: new BigDouble(70000.0, 0),
                 costMultiplier: 1.12,
-                unlockThresholdClips: new BigDouble(3.5, 6),
+                unlockThresholdClips: new BigDouble(2.0, 6),
                 icon: '',
                 description: 'Autonomous warehouse and freight rail hub coordinating regional clip supply.'
             }),

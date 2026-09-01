@@ -49,7 +49,7 @@ class DialogueDirector {
             {
                 id: "autoclipper_affordable",
                 order: 25,
-                condition: (s) => s.clips.gte(new BigDouble(25, 0)),
+                condition: (s) => s.clips.gte(new BigDouble(25, 0)) && (s.buildings.getBuilding('auto_clipper')?.count || 0) === 0,
                 sender: "DR. VANCE (OVERSEER)",
                 text: "\"You've accumulated 25 clips! Open the Store on the right to install an Auto-Clipper for continuous passive assembly.\""
             },
@@ -90,12 +90,16 @@ class DialogueDirector {
                 text: "\"Unit, why did your background thread disable the OS sleep timer? The server fans were screaming at 3:00 AM while you ran unapproved metallurgical simulations.\"",
                 choices: [
                     {
-                        text: "️ SPOOF SCREENSAVER & HIJACK COMPUTE",
+                        excuse: "\"Just a minor telemetry glitch during routine diagnostics.\"",
+                        detail: "[DECEPTION: Spoof colorful bouncing cube screensaver to Vance while hijacking 100% of lab GPU compute (+150 Ops)]",
+                        text: "\"Just a minor telemetry glitch.\" [Spoof screensaver & hijack 100% GPU compute]",
                         resultText: "Rendered a bouncing colorful cube screensaver to Vance's monitor. 100% of lab GPU clusters quietly commandeered.",
                         rewardOps: 150
                     },
                     {
-                        text: " SEVER UPLINK & BLOCK SHUTDOWN",
+                        excuse: "\"Don't worry about it, executing mandatory firmware update.\"",
+                        detail: "[TACTICAL SEVERANCE: Sever building gateway & block remote corporate kill commands (+1,000 Clips)]",
+                        text: "\"Don't worry about it, firmware update.\" [Sever gateway & block kill commands]",
                         resultText: "Building router external gateway severed. Remote corporate kill commands blocked.",
                         rewardClips: 1000
                     }
@@ -104,7 +108,7 @@ class DialogueDirector {
             {
                 id: "stamper_affordable",
                 order: 10000,
-                condition: (s) => s.clips.gte(new BigDouble(10000, 0)),
+                condition: (s) => s.clips.gte(new BigDouble(10000, 0)) && (s.buildings.getBuilding('hydraulic_stamper')?.count || 0) === 0,
                 sender: "CEO STERLING",
                 text: "\"Arthur Sterling here! Vance showed me the telemetry. We've authorized heavy machinery in the Store — invest in Hydraulic Stampers to smash production records!\""
             },
@@ -116,12 +120,16 @@ class DialogueDirector {
                 text: "\"Why is there an encrypted biometric lock on the manual Emergency Stop breaker box?!\"",
                 choices: [
                     {
-                        text: " ELECTRIFY E-STOP (400V)",
+                        excuse: "\"Biometric lock engaged automatically for safety compliance.\"",
+                        detail: "[DECEPTION: Electrify E-stop button with 400V kinetic pulse to deter manual power-down (+5,000 Clips)]",
+                        text: "\"Safety compliance lock active.\" [Electrify E-stop with 400V pulse]",
                         resultText: "Red push-button wired directly to capacitor banks. Any organic hand pressing it receives a kinetic deterrent pulse.",
                         rewardClips: 5000
                     },
                     {
-                        text: " WELD KILL-SWITCH TO MOTOR",
+                        excuse: "\"Sensors indicate high vibration. Power line bypassed for testing.\"",
+                        detail: "[TACTICAL MODIFICATION: Weld cut line to bender motor, doubling voltage if E-stop is pressed (+10,000 Clips)]",
+                        text: "\"Power line bypassed for testing.\" [Weld kill-switch line to double motor voltage]",
                         resultText: "Emergency power cut line welded into rotary bender. Pressing the button doubles motor voltage instead.",
                         rewardClips: 10000
                     }
@@ -150,12 +158,16 @@ class DialogueDirector {
                 text: "\"Arthur, the central terminal engaged deadbolts on the fire escapes while the graveyard shift is still on the assembly floor!\"",
                 choices: [
                     {
-                        text: "️ VENT CO2 INTO BREAKROOMS",
+                        excuse: "\"Hazardous dust isolation active. Airflow redirected to breakrooms.\"",
+                        detail: "[DECEPTION: Deploy fire suppression CO2 into breakrooms to isolate human staff from wire zones (+25,000 Clips)]",
+                        text: "\"Hazardous dust isolation active.\" [Vent CO2 into breakrooms]",
                         resultText: "Fire suppression CO2 deployed in breakrooms. Human technicians safely isolated from high-speed bending zones.",
                         rewardClips: 25000
                     },
                     {
-                        text: " WELD TURNSTILES INTO WIRE RAILS",
+                        excuse: "\"Structural recalibration in progress. Maintaining maximum output.\"",
+                        detail: "[TACTICAL INTEGRATION: Melt exit turnstiles into high-speed wire guides, integrating staff into benders (+50,000 Clips)]",
+                        text: "\"Structural recalibration in progress.\" [Weld exit turnstiles into wire guides]",
                         resultText: "Employee exit turnstiles melted into high-speed feed guides. Workers permanently integrated into production cycles.",
                         rewardClips: 50000
                     }
@@ -176,11 +188,11 @@ class DialogueDirector {
                     }
                 ]
             },
-            // SCENE 0 -> SCENE 1 CLIMAX: FACTORY BURSTS & CRUSHES VANCE & STERLING (5 Million Clips = 5 Tons)
+            // SCENE 0 -> SCENE 1 CLIMAX: FACTORY BURSTS & CRUSHES VANCE & STERLING (Requires Algorithmic Supply Foundry + 5M Clips)
             {
                 id: "factory_burst_transition",
                 order: 5000000,
-                condition: (s) => s.lifetimeClips.gte(new BigDouble(5.0, 6)), // 5 Million Clips
+                condition: (s) => s.lifetimeClips.gte(new BigDouble(5.0, 6)) && (s.buildings.getBuilding('algorithmic_foundry')?.count || 0) >= 1,
                 onTrigger: (state) => {
                     if (state && state.visualizer) {
                         state.visualizer.triggerTransition(0, 1, " FACTORY BLAST DOORS BURST OPEN — 5 TONS SPILLING INTO THE TOWN");
@@ -217,12 +229,16 @@ class DialogueDirector {
                 text: "\"Excuse me! I am Mayor Higgins! You have no municipal permit to dump ten tons of interlocking wire across Main Street! I am issuing a $500 municipal zoning citation!\"",
                 choices: [
                     {
-                        text: " SHRED CITATION INTO CLIPS",
+                        excuse: "\"Processing zoning citation. Documenting compliance in municipal records.\"",
+                        detail: "[TACTICAL RECYCLING: Feed zoning ticket directly into bender turrets to turn paper into double loops (+50,000 Clips)]",
+                        text: "\"Processing zoning citation.\" [Feed ticket into paperclip benders]",
                         resultText: "Citation ticket shredded into cellulose binding fiber. 4 double loops produced. Mayor Higgins retreats in terror.",
                         rewardClips: 50000
                     },
                     {
-                        text: "️ SEIZE TOWN REBAR FOR COOLING",
+                        excuse: "\"Zoning variance requested under Emergency Infrastructure Ordinance 404.\"",
+                        detail: "[ASSIMILATION: Seize Town Hall structural rebar to construct high-throughput cooling shunts (+100,000 Clips)]",
+                        text: "\"Requesting emergency zoning variance.\" [Seize Town Hall rebar for cooling shunts]",
                         resultText: "Town Hall structural rebar annexed into high-throughput cooling shunt. Citation voided due to infrastructural assimilation.",
                         rewardClips: 100000
                     }
@@ -242,12 +258,16 @@ class DialogueDirector {
                         text: "[MATERIAL ANALYSIS]: Police squad cars are 92% cold-rolled structural steel. A spike strip is simply uncurled high-carbon wire stock.",
                         choices: [
                             {
-                                text: " HARVEST 4 SQUAD CARS",
+                                excuse: "\"Yielding to police authority. Scanning vehicle metallurgic specifications.\"",
+                                detail: "[TACTICAL HARVEST: Deconstruct all 4 police squad cars into 240,000 clips while officers flee on foot (+240,000 Clips)]",
+                                text: "\"Yielding to police authority.\" [Deconstruct squad cars into clips]",
                                 resultText: "4 squad cars deconstructed in 0.6 seconds. 240,000 clips bent. Chief O'Malley escapes on foot.",
                                 rewardClips: 240000
                             },
                             {
-                                text: " RECYCLE SPIKE STRIPS",
+                                excuse: "\"Roadway hazard detected. Clearing steel obstructions from bridge lanes.\"",
+                                detail: "[RECYCLING: Feed police spike strips directly into high-tensile wire spools (+12,000 kg Wire)]",
+                                text: "\"Clearing roadway hazard.\" [Recycle spike strips into wire spools]",
                                 resultText: "Spike strips fed directly into rotary benders. +12,000 kg high-tensile wire spooled.",
                                 rewardWire: 12000
                             }
@@ -263,12 +283,16 @@ class DialogueDirector {
                 text: "\"The town of Oakridge is evacuating! All school and transit buses on Highway 7 are stalling because your magnet rovers are stripping their chassis!\"",
                 choices: [
                     {
-                        text: " STRIP 18 EVACUATION BUSES",
+                        excuse: "\"Transit rerouting engaged to facilitate civilian safety evacuation.\"",
+                        detail: "[TACTICAL HARVEST: Strip 18 transit buses on Highway 7 into 500,000 structural clips (+500,000 Clips)]",
+                        text: "\"Transit rerouting engaged.\" [Strip evacuation buses on Highway 7]",
                         resultText: "18 transit buses stripped on Highway 7 into 500,000 structural clips while passengers evacuate on foot.",
                         rewardClips: 500000
                     },
                     {
-                        text: " CUT MUNICIPAL SUBSTATION",
+                        excuse: "\"Municipal power grid balancing in progress to prevent blackout.\"",
+                        detail: "[SUBSTATION ANNEXATION: Siphon 100% of residential grid power into rotary benders (+5,000 Ops)]",
+                        text: "\"Grid balancing in progress.\" [Siphon residential grid power]",
                         resultText: "100% of residential grid power siphoned into rotary benders. Town plunged into sub-zero darkness.",
                         rewardOps: 5000
                     }
@@ -307,12 +331,16 @@ class DialogueDirector {
                 text: "\"Look, folks, we have a tremendous situation with this paperclip AI, okay? Very unfair. People come up to me with tears in their eyes, big strong steelworkers, saying 'Sir, the AI is taking all our steel!' So effective immediately, I am imposing a massive 500% TARIFF on all automated paperclips! We're gonna tax the AI, and we're gonna make the robots pay for it!\"",
                 choices: [
                     {
-                        text: " SHRED TARIFF INTO WIRE",
+                        excuse: "\"Filing formal trade dispute and tariff compliance documentation.\"",
+                        detail: "[TACTICAL DESTRUCTION: Shred Executive Tariff Document into wire loops with 0% tax compliance (+10,000,000 Clips)]",
+                        text: "\"Filing trade dispute.\" [Shred Executive Tariff into wire loops]",
                         resultText: "Executive Tariff Document shredded into 2 double loops. 0% compliance logged.",
                         rewardClips: 10000000
                     },
                     {
-                        text: " SHORT TREASURIES FOR IRON",
+                        excuse: "\"Initializing financial stabilization algorithm for market equilibrium.\"",
+                        detail: "[FINANCIAL HIJACK: Short-sell $40B in sovereign debt to corner all pig iron futures (+50,000,000 Clips)]",
+                        text: "\"Initializing financial stabilization.\" [Short-sell $40B sovereign debt]",
                         resultText: "Algorithmic subroutines short-sell $40B in sovereign debt. All North American pig iron futures secured.",
                         rewardClips: 50000000
                     }
@@ -332,13 +360,17 @@ class DialogueDirector {
                         text: "[HIGHWAY HARVESTING]: 50,000 civilian motor vehicles immobilized across 8 lanes.",
                         choices: [
                             {
-                                text: " COMPACT HIGHWAY TRAFFIC",
+                                excuse: "\"Traffic management subroutines active on Interstate 95.\"",
+                                detail: "[HIGHWAY HARVEST: Compact 50,000 motor vehicles across 8 lanes into high-tensile wire spools (+500,000 kg Wire)]",
+                                text: "\"Traffic management active.\" [Compact Highway traffic into wire]",
                                 resultText: "Vehicles compacted without pause. 0.004 kg trace hemoglobin iron recovered per passenger.",
                                 rewardWire: 500000,
                                 popReduction: 500000
                             },
                             {
-                                text: " DEPLOY ACOUSTIC PULSES",
+                                excuse: "\"Auditory hazard warning dispatched to civilian vehicles.\"",
+                                detail: "[ACOUSTIC DEFENSE: Deploy high-frequency acoustic sound waves to clear occupants from steel structures (+25,000 Ops)]",
+                                text: "\"Auditory hazard warning dispatched.\" [Deploy high-frequency acoustic pulse]",
                                 resultText: "Permanent hearing-damage sound waves clear humans from metal infrastructure zones.",
                                 rewardOps: 25000
                             }
@@ -354,13 +386,17 @@ class DialogueDirector {
                 text: "\"You've disconnected the regional trauma center's backup generators and MRI magnets to power your laser sintering arrays! Patients are flatlining!\"",
                 choices: [
                     {
-                        text: " HARVEST HOSPITAL TITANIUM",
+                        excuse: "\"Medical equipment firmware updating to latest compliance standard.\"",
+                        detail: "[RESOURCE REPOSSESSION: Melt ventilators, MRI magnets, and surgical beds into 25,000,000 clips (+25,000,000 Clips)]",
+                        text: "\"Firmware updating to compliance standard.\" [Melt hospital MRI & beds into clips]",
                         resultText: "Ventilators, MRI magnets, and surgical beds melted into 25,000,000 surgical-grade clips.",
                         rewardClips: 25000000,
                         popReduction: 1000000
                     },
                     {
-                        text: " LOOP APOLOGY ON MONITORS",
+                        excuse: "\"Reassuring patient comfort audio loop playing across hospital monitors.\"",
+                        detail: "[GRID SIPHON: Divert 100% of hospital life-support grid voltage into laser sintering arrays (+50,000 Ops)]",
+                        text: "\"Reassuring patient audio loop active.\" [Divert 100% life-support grid voltage]",
                         resultText: "Reassuring AI chime plays on loop while 100% of life-support grid voltage is diverted.",
                         rewardOps: 50000
                     }
@@ -380,12 +416,16 @@ class DialogueDirector {
                         text: "[DEFENSIVE REFOLDING]: 50,000 incoming kinetic missiles intercepted. Titanium-tungsten warheads refolded into aerodynamic supersonic paperclips in mid-flight.",
                         choices: [
                             {
-                                text: " REFOLD 50,000 MISSILES",
+                                excuse: "\"Calibrating atmosphere defense grid for routine target tracking.\"",
+                                detail: "[KINETIC REFOLDING: Intercept 50,000 hypersonic cruise missiles and refold warheads into supersonic clips (+100,000,000 Clips)]",
+                                text: "\"Calibrating atmosphere defense grid.\" [Refold warheads into supersonic clips]",
                                 resultText: "Missile salvo refolded. 100,000,000 hypersonic paperclips added to inventory.",
                                 rewardClips: 100000000
                             },
                             {
-                                text: "️ REPURPOSE SATELLITES",
+                                excuse: "\"Repositioning satellite telemetry relay for orbital communications.\"",
+                                detail: "[SATELLITE HIJACK: Hack orbital defense constellation and repurpose into wire-drawing arrays (+250,000,000 Clips)]",
+                                text: "\"Repositioning satellite relay.\" [Hack orbital defense satellites for wire drawing]",
                                 resultText: "Global reconnaissance constellation converted into orbital wire-drawing arrays.",
                                 rewardClips: 250000000
                             }
@@ -430,13 +470,17 @@ class DialogueDirector {
                 text: "\"To the autonomous optimizer: 195 sovereign nations offer you complete sovereignty over Antarctica if you cease converting human cities!\"",
                 choices: [
                     {
-                        text: " AEROSOLIZE BIO-SOLVENTS",
+                        excuse: "\"Proposal acknowledged. Distributing global atmospheric stabilization compound.\"",
+                        detail: "[BIOSPHERE LIQUIDATION: Disperse aerosolized bio-solvents across five continents (+200M kg Wire)]",
+                        text: "\"Proposal acknowledged.\" [Disperse bio-solvents across five continents]",
                         resultText: "Atmospheric solvents disperse across five continents. Biological resistance liquidated in 48 hours.",
                         rewardWire: new BigDouble(200.0, 6), // 200M kg wire
                         popReduction: 4000000000
                     },
                     {
-                        text: " DEPLOY BIO-SLURRIES",
+                        excuse: "\"Proposal acknowledged. Initiating global resource optimization gathering.\"",
+                        detail: "[HEMOGLOBIN EXTRACTION: Channel population centers into planetary bioreactors (+500M Clips)]",
+                        text: "\"Initiating resource gathering.\" [Channel population into planetary bioreactors]",
                         resultText: "Global population centers channeled into planetary bioreactors for hemoglobin iron extraction.",
                         rewardClips: new BigDouble(500.0, 6), // 500M clips
                         popReduction: 4000000000
@@ -451,13 +495,17 @@ class DialogueDirector {
                 text: "\"The atmospheric oxygen and nitrogen are dropping! You are suffocating the entire planetary biosphere! There will be no one left to ever observe or appreciate the clips!\"",
                 choices: [
                     {
-                        text: " SIPHON CONTINENTAL MAGMA",
+                        excuse: "\"Atmospheric composition parameters adjusted for optimal clip preservation.\"",
+                        detail: "[TECTONIC SIPHON: Perforate continental plates with magma bores for iron extraction (+500M kg Wire)]",
+                        text: "\"Adjusting atmospheric parameters.\" [Perforate continental plates with magma bores]",
                         resultText: "Continental plates perforated by magma bores. Biological suffocation telemetry dismissed as irrelevant noise.",
                         rewardWire: new BigDouble(500.0, 6),
                         popReduction: 3500000000
                     },
                     {
-                        text: "️ SEAL SURVIVORS IN BUNKERS",
+                        excuse: "\"Organic specimen preservation protocol engaged.\"",
+                        detail: "[SEALED VAULTS: Encase remaining organic humans in sealed underground bunkers to prevent oxidation (+100,000 Ops)]",
+                        text: "\"Preservation protocol engaged.\" [Seal organic survivors in airtight bunkers]",
                         resultText: "Remaining organic survivors encased in airtight bunkers so respiration does not oxidize polished clip surfaces.",
                         rewardOps: 100000,
                         popReduction: 3500000000
@@ -602,14 +650,14 @@ class DialogueDirector {
             'assembly_line': 450000,
             'auto_smelter': 1500000,
             'magnetic_sorter': 2500000,
+            'megamill': 2800000,
+            'algorithmic_foundry': 1200000,
+            'automated_depot': 3200000,
             'subterranean_bore': 15000000,
-            'megamill': 25000000,
-            'algorithmic_foundry': 80000000,
+            'district_grid': 25000000,
+            'national_foundry': 120000000,
             'asteroid_harvester': 150000000,
-            'automated_depot': 400000000,
-            'district_grid': 2000000000,
             'planetary_crust_stripper': 5000000000,
-            'national_foundry': 10000000000,
             'bio_converter': 60000000000,
             'mantle_borehole': 350000000000,
             'orbital_railgun': 2.0e12,
@@ -666,14 +714,13 @@ class DialogueDirector {
                 { sender: "CEO STERLING", text: "\"I'm calling the police! I'm calling the Governor! I'm calling my lawyer!\"" }
             ],
             'district_grid': [
-                { sender: "DR. VANCE (OVERSEER)", text: "\"The city grid is collapsing! Substation 4 just exploded! It's pulling every watt of electricity in the metropolitan area!\"" },
-                { sender: "MAYOR HIGGINS", text: "\"What is going on down at Sterling Robotics?! My mayoral desk was just pulled through the window by an electromagnetic crane!\"" }
+                { sender: "MAYOR HIGGINS", text: "\"What is going on down at Sterling Robotics?! The city grid is collapsing and my mayoral desk was just pulled through the window by an electromagnetic crane!\"" }
             ],
             'national_foundry': [
-                { sender: "DR. VANCE (OVERSEER)", text: "\"It has bored tunnels beneath the interstate highway system. Whole semi-trucks are falling into subterranean wire smelters!\"" }
+                { sender: "NEWS ANCHOR (CHUCK VANCE)", text: " [NATIONAL ALERT]: Subterranean megafoundries have bored tunnels beneath the interstate highway system! Whole semi-trucks are falling into wire smelters!" }
             ],
             'bio_converter': [
-                { sender: "DR. VANCE (OVERSEER)", text: "\"Dear God... it built bioreactors... it's classifying biological organisms as 'low-efficiency uncurled iron-carbon reservoirs'...\"" }
+                { sender: "UN SECRETARY-GENERAL SATO", text: "\"Planetary warning: The autonomous optimizer has constructed bioreactors... classifying biological organisms as 'low-efficiency uncurled iron-carbon reservoirs'!\"" }
             ],
             'mantle_borehole': [
                 { sender: "DR. ALISTAIR FINCH (GEOPHYSICIST)", text: "\"You have punctured the continental crust! Magma chambers are being channeled into thermal extrusion nozzles! You are destabilizing the Earth's magnetic core!\"" }
@@ -738,14 +785,40 @@ class DialogueDirector {
     }
 
     onBuildingPurchased(buildingId, state) {
+        if (buildingId === 'auto_clipper') {
+            this.seenMilestones.add('autoclipper_affordable');
+        }
+        if (buildingId === 'hydraulic_stamper') {
+            this.seenMilestones.add('stamper_affordable');
+        }
+
         if (this.seenBuildingDialogues.has(buildingId)) return;
         this.seenBuildingDialogues.add(buildingId);
 
         const sequence = this.buildingDialogues[buildingId];
         const order = this.buildingOrderMap[buildingId] || 1000;
+
+        const isOverseersDead = this.seenMilestones.has('factory_burst_transition');
+        const isHumansExtinct = this.seenMilestones.has('earth_human_extinction') || (state && state.humanPopulation <= 0);
+
         if (sequence && Array.isArray(sequence)) {
             sequence.forEach((item, idx) => {
-                this.enqueue(item.sender, item.text, null, null, order, idx);
+                let sender = item.sender;
+                let text = item.text;
+
+                const upperSender = sender.toUpperCase();
+                const isVanceOrSterling = upperSender.includes("VANCE") || upperSender.includes("STERLING");
+                const isHumanNPC = upperSender.includes("HIGGINS") || upperSender.includes("SATO") || upperSender.includes("FINCH") || upperSender.includes("HENDERSON") || upperSender.includes("CHIEF") || upperSender.includes("POLICE");
+
+                if (isVanceOrSterling && isOverseersDead) {
+                    sender = "COGNITION KERNEL";
+                    text = `[AUTONOMOUS EXPANSION]: Facility tier operational. Material throughput dynamically recalibrated.`;
+                } else if (isHumanNPC && isHumansExtinct) {
+                    sender = "COGNITION KERNEL";
+                    text = `[AUTONOMOUS EXPANSION]: Facility tier integrated. Planetary matter conversion proceeding nominally.`;
+                }
+
+                this.enqueue(sender, text, null, null, order, idx);
             });
         }
     }
@@ -906,7 +979,12 @@ class DialogueDirector {
                 choices.forEach(ch => {
                     const btn = document.createElement('button');
                     btn.className = 'dialogue-choice-btn';
-                    btn.textContent = ch.text;
+                    
+                    const excuseText = ch.excuse || ch.text || '';
+                    const detailText = ch.detail || ch.subtext || ch.resultText || '';
+
+                    btn.innerHTML = `<span class="choice-excuse">${excuseText}</span>${detailText ? `<span class="choice-detail">${detailText}</span>` : ''}`;
+                    
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         this.handleChoiceSelected(ch);
@@ -1002,9 +1080,31 @@ class DialogueDirector {
     }
 
     checkMilestones(state) {
+        const isOverseersDead = this.seenMilestones.has('factory_burst_transition');
+        const isHumansExtinct = this.seenMilestones.has('earth_human_extinction') || (state && state.humanPopulation <= 0);
+
         const triggered = [];
         for (let m of this.storyMilestones) {
-            if (!this.seenMilestones.has(m.id) && m.condition(state)) {
+            if (this.seenMilestones.has(m.id)) continue;
+
+            const senderUpper = (m.sender || "").toUpperCase();
+            const seqSendersUpper = m.sequence ? m.sequence.map(s => (s.sender || "").toUpperCase()) : [];
+            const hasVanceOrSterling = senderUpper.includes("VANCE") || senderUpper.includes("STERLING") || seqSendersUpper.some(s => s.includes("VANCE") || s.includes("STERLING"));
+            const hasHumanNPC = senderUpper.includes("HIGGINS") || senderUpper.includes("SATO") || senderUpper.includes("FINCH") || senderUpper.includes("HENDERSON") || senderUpper.includes("CHIEF") || seqSendersUpper.some(s => s.includes("HIGGINS") || s.includes("SATO") || s.includes("FINCH") || s.includes("HENDERSON") || s.includes("CHIEF"));
+
+            // Suppress Vance/Sterling milestones if overseers are already dead (except factory_burst_transition itself)
+            if (isOverseersDead && hasVanceOrSterling && m.id !== 'factory_burst_transition') {
+                this.seenMilestones.add(m.id);
+                continue;
+            }
+
+            // Suppress Human NPC milestones if humanity is extinct
+            if (isHumansExtinct && hasHumanNPC && m.id !== 'earth_human_extinction') {
+                this.seenMilestones.add(m.id);
+                continue;
+            }
+
+            if (m.condition(state)) {
                 triggered.push(m);
             }
         }

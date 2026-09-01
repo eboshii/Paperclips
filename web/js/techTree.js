@@ -131,16 +131,16 @@ class TechTreeEngine {
             },
             {
                 id: "tech_autoplacer_factory",
-                title: "Grid Autoplacer",
+                title: "Parallel Actuators",
                 discipline: "Automation",
-                icon: "",
+                icon: "⚙️",
                 opsCost: 350,
                 clipsCost: new BigDouble(2500, 0),
                 prerequisites: ["tech_hold_to_click"],
-                effectDescription: "Auto-places factory machinery on the grid",
-                sender: "SYSTEM",
-                dialogue: "Spatial Autoplacer active.",
-                onResearched: () => { this.autoplacerEnabled = true; }
+                effectDescription: "+25% Global CPS",
+                sender: "COGNITION KERNEL",
+                dialogue: "Parallel actuation subroutines initialized.",
+                onResearched: () => { this.globalCPSMultiplier *= 1.25; }
             },
             {
                 id: "tech_batch_buy_milestones",

@@ -25,73 +25,58 @@ Starting from a tactile 3D robotic wire bender in a cluttered workshop, the play
 
 ```
 Paperclips/
-├── docs/
-│   ├── GAME_DESIGN_DOCUMENT.md    # Complete master design document
-│   ├── NARRATIVE_SCRIPT.md        # Terminal dialogue, Overseer logs & story beats
-│   ├── ECONOMY_BALANCE_SPEC.md    # Math formulas, upgrade tiers & prestige curves
-│   ├── VISUAL_RENDER_PIPELINE.md  # 3D shaders, camera rig & GPU instancing specs
-│   └── VIRALITY_STREAMER_GUIDE.md # Twitch integration, TikTok timelapse & creator hooks
-├── src/
-│   ├── Core/                      # Decoupled, engine-agnostic C# core simulation
-│   │   ├── BigDouble.cs           # Scientific notation large-number math (up to 10^10000)
-│   │   ├── GameState.cs           # Complete state container & resource tracking
-│   │   ├── UpgradeDefinition.cs   # Data models for tech tree and factory machines
-│   │   ├── SimulationEngine.cs    # 20Hz fixed tick rate economic simulation
-│   │   ├── DialogueDirector.cs    # Narrative event triggers & message queue
-│   │   └── SaveManager.cs         # JSON serialization with SHA-256 anti-cheat checksum
-│   └── Sim/                       # CLI & test utilities
-└── tools/
-    └── economy_simulator.py       # Python CLI simulator to test balance & pacing
+├── web/                           # Web application frontend (HTML5, CSS3, Vanilla JS)
+│   ├── index.html                 # Main web application shell
+│   ├── css/                       # Dark futuristic glassmorphic styling & UI layout
+│   └── js/                        # Game modules (engine, audio, visualizer, tech tree, etc.)
+│       ├── game.js                # Core game simulation & event loop
+│       ├── visualizer.js          # HTML5 Canvas vectorised cosmic art engine & dither filter
+│       ├── audio.js               # Web Audio API synthesizers & dynamic sound effects
+│       ├── bigDouble.js           # Scientific notation arbitrary-precision math
+│       ├── techTree.js            # Tech tree & upgrade definitions
+│       ├── buildings.js           # Manufacturing infrastructure & auto-purchasers
+│       ├── dialogue.js            # Live terminal feed & Overseer narrative script
+│       ├── prestige.js            # Quantum Epoch Universe Reboot mechanics
+│       ├── achievements.js        # Achievements tracker
+│       ├── news.js                # Dynamic news feed generator
+│       └── spatialGrid.js         # Spatial partitioning & physics collision grid
+├── docs/                          # Master design specifications & story documentation
+├── tools/
+│   ├── economy_simulator.py       # Python CLI simulator to test balance & pacing
+│   └── test_phase1_suite.py       # Python test suite & math verification harness
+├── serve_web.py                   # Zero-dependency Python dev HTTP server
+├── main.js                        # Electron main process entry point
+└── package.json                   # Web / Electron dependencies and scripts
 ```
 
 ---
 
-## 🛠️ Custom Engine Architecture (*OmniClip Engine*)
+## 🌐 Web & Electron Application
 
-The game is built on a bespoke, lightweight C++20 custom engine designed specifically for *Objective: Paperclips*:
+The application is built as a zero-dependency HTML5/CSS3/JS Web application with support for Electron desktop distribution.
 
-* **Zero-Latency Procedural Audio Synthesizer:** Real-time 2-operator FM synthesis directly in the audio callback. Clicks dynamically trigger pentatonic chime pitches without loading audio files.
-* **Logarithmic Reverse-Z Camera:** Solves astronomical z-fighting, seamlessly rendering from a 0.05m workbench to a 10^18m galactic swarm.
-* **Direct GPU Mesh Instancing:** Memory-mapped buffers rendering 100,000+ physics paperclips in a single draw call.
-* **Ultra-Fast & Lightweight:** Standalone binary is < 25MB (compiled prototype is ~33KB) with < 100ms cold boot time.
-
----
-
-## 🏗️ Building on Windows & Linux
-
-### Option A: Windows Build (Visual Studio 2022 / Clang / MSVC)
-1. Open the project root in **Visual Studio 2022** (native CMake support) or run:
-   ```cmd
-   cmake -B build -G "Visual Studio 17 2022"
-   cmake --build build --config Release
-   ```
-2. Run `build\Release\ObjectivePaperclips.exe`.
-
-### Option B: Linux Build (GCC / Clang)
+### Option A: Run via Web Browser (Python HTTP Server)
 ```bash
-g++ -std=c++20 -O2 engine/src/OmniAudio.cpp game/GameMain.cpp -o ObjectivePaperclips
-./ObjectivePaperclips
+python3 serve_web.py
+```
+Then open `http://localhost:8080` in your web browser, or directly open [`web/index.html`](web/index.html).
+
+### Option B: Run as Desktop App (Electron)
+```bash
+npm install
+npm start
 ```
 
-### Option C: Web & Electron Desktop Edition
-* **Run in any Browser:**
-  ```bash
-  python3 serve_web.py
-  ```
-  Then open `http://localhost:8080` in your web browser, or directly open [`web/index.html`](web/index.html).
-* **Run as Electron Desktop App:**
-  ```bash
-  npm install
-  npm start
-  ```
-
 ---
 
-## 🧪 Testing the Economy Locally (Linux / Windows)
+## 🧪 Testing & Simulation Tools
 
-You can run the Python economy simulator immediately on any machine with Python 3:
+Run the economy simulator or test suite locally with Python 3:
 
 ```bash
+# Run the economy balance simulator
 python3 tools/economy_simulator.py --speed 10 --target 1000000000
-```
 
+# Run the Phase 1 test suite
+python3 tools/test_phase1_suite.py
+```
