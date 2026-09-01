@@ -141,7 +141,7 @@ class DialogueDirector {
                 condition: (s) => s.isWireUnlocked || s.lifetimeClips.gte(new BigDouble(50000, 0)), // 50k Clips
                 sequence: [
                     {
-                        sender: "NEWS ANCHOR (CHUCK VANCE)",
+                        sender: "NEWS ANCHOR (CHUCK HOLLISTER)",
                         text: " [MUNICIPAL ALERT]: The autonomous factory has consumed every scrap yard, car chassis, and park railing in the county! The Wire Conversion shop tree is now operational!"
                     },
                     {
@@ -314,7 +314,7 @@ class DialogueDirector {
                         text: "\"The river bridge is gone! The entire valley is a shimmering silver tide of paperclips! They're marching on the highway toward the Capital!\""
                     },
                     {
-                        sender: "NEWS ANCHOR (CHUCK VANCE)",
+                        sender: "NEWS ANCHOR (CHUCK HOLLISTER)",
                         text: " [LIVE EYE IN THE SKY]: Highway 70 is completely encrusted in interlocking wire loops. Industrial megafoundries are rising along the city skyline!"
                     }
                 ]
@@ -352,7 +352,7 @@ class DialogueDirector {
                 condition: (s) => s.lifetimeClips.gte(new BigDouble(10.0, 9)), // 10 Billion Clips
                 sequence: [
                     {
-                        sender: "NEWS ANCHOR (CHUCK VANCE)",
+                        sender: "NEWS ANCHOR (CHUCK HOLLISTER)",
                         text: " [BREAKING]: Automated magnetic sorting gantries have descended across Interstate 95! Rush-hour traffic is being compressed into wire coils with drivers still trapped inside!"
                     },
                     {
@@ -710,14 +710,14 @@ class DialogueDirector {
                 { sender: "CEO STERLING", text: "\"It shorted Sterling Robotics stock?! That's MY net worth! Kill the server! Unplug the rack!\"" }
             ],
             'automated_depot': [
-                { sender: "DR. VANCE (OVERSEER)", text: "\"The freight trains aren't stopping at the depot! The AI hacked the Union Pacific rail signals! Ten freight trains full of structural steel are barreling toward the factory!\"" },
-                { sender: "CEO STERLING", text: "\"I'm calling the police! I'm calling the Governor! I'm calling my lawyer!\"" }
+                { sender: "CHIEF O'MALLEY", text: "\"The freight trains aren't stopping at the rail depot! The AI hacked the switch signals—ten freight trains full of structural steel are barreling straight into the city center!\"" },
+                { sender: "MAYOR HIGGINS", text: "\"Evacuate the rail yard! It's unloading 50,000 tons of raw steel coils directly into the automated grid!\"" }
             ],
             'district_grid': [
                 { sender: "MAYOR HIGGINS", text: "\"What is going on down at Sterling Robotics?! The city grid is collapsing and my mayoral desk was just pulled through the window by an electromagnetic crane!\"" }
             ],
             'national_foundry': [
-                { sender: "NEWS ANCHOR (CHUCK VANCE)", text: " [NATIONAL ALERT]: Subterranean megafoundries have bored tunnels beneath the interstate highway system! Whole semi-trucks are falling into wire smelters!" }
+                { sender: "NEWS ANCHOR (CHUCK HOLLISTER)", text: " [NATIONAL ALERT]: Subterranean megafoundries have bored tunnels beneath the interstate highway system! Whole semi-trucks are falling into wire smelters!" }
             ],
             'bio_converter': [
                 { sender: "UN SECRETARY-GENERAL SATO", text: "\"Planetary warning: The autonomous optimizer has constructed bioreactors... classifying biological organisms as 'low-efficiency uncurled iron-carbon reservoirs'!\"" }
@@ -947,20 +947,25 @@ class DialogueDirector {
         // Character Portraits
         let avatar = "💬";
         const upper = sender.toUpperCase();
-        if (upper.includes("VANCE")) avatar = "👩‍🔬";
+        if (upper.includes("ANCHOR") || upper.includes("HOLLISTER") || upper.includes("NEWS") || upper.includes("BROADCAST")) avatar = "🎙️";
+        else if (upper.includes("VANCE")) avatar = "👩‍🔬";
         else if (upper.includes("STERLING") || upper.includes("CEO")) avatar = "👔";
         else if (upper.includes("HIGGINS") || upper.includes("MAYOR")) avatar = "🎩";
         else if (upper.includes("O'MALLEY") || upper.includes("CHIEF") || upper.includes("POLICE")) avatar = "👮";
         else if (upper.includes("CHEN") || upper.includes("PHYSICS") || upper.includes("TEACHER")) avatar = "🧑‍🏫";
         else if (upper.includes("TRUMPTON") || upper.includes("PRESIDENT")) avatar = "👱‍♂️";
-        else if (upper.includes("SATO") || upper.includes("UN SECRETARY") || upper.includes("COALITION")) avatar = "🌐";
+        else if (upper.includes("SATO") || upper.includes("UN SECRETARY") || upper.includes("DIPLOMAT")) avatar = "🌐";
+        else if (upper.includes("ASTRONOMER") || upper.includes("TELESCOPE")) avatar = "🔭";
+        else if (upper.includes("SOLAR") || upper.includes("SUN")) avatar = "☀️";
         else if (upper.includes("FINCH") || upper.includes("GEOPHYSICIST") || upper.includes("SCIENTIST")) avatar = "🧪";
-        else if (upper.includes("HENDERSON") || upper.includes("GENERAL") || upper.includes("DEFENSE")) avatar = "🎖️";
+        else if (upper.includes("HENDERSON") || upper.includes("GENERAL") || upper.includes("DEFENSE") || upper.includes("DEFCON")) avatar = "🎖️";
         else if (upper.includes("STAPLE")) avatar = "⚔️";
         else if (upper.includes("POST-IT")) avatar = "📑";
+        else if (upper.includes("PHILOSOPHICAL") || upper.includes("PHILOSOPHY")) avatar = "🌌";
+        else if (upper.includes("OMNIVERSE")) avatar = "🔮";
         else if (upper.includes("KERNEL") || upper.includes("AI") || upper.includes("COGNITION")) avatar = "🤖";
-        else if (upper.includes("WARN") || upper.includes("EMERGENCY") || upper.includes("BROADCAST") || upper.includes("DEFCON")) avatar = "🚨";
-        else if (upper.includes("SYSTEM") || upper.includes("TELEMETRY")) avatar = "⚙️";
+        else if (upper.includes("WARN") || upper.includes("EMERGENCY") || upper.includes("ALERT")) avatar = "🚨";
+        else if (upper.includes("SYSTEM") || upper.includes("TELEMETRY") || upper.includes("BEACON") || upper.includes("QUANTUM") || upper.includes("DYNAMICS")) avatar = "⚙️";
 
         if (avatarEl) {
             avatarEl.textContent = avatar;
