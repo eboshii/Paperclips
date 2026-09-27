@@ -1,43 +1,32 @@
 /**
  * game.js - Master Game Controller & 60 FPS Simulation Engine
- * Simplified Economy Edition:
  * - Pure Clips & Ops economy (Money/Funds removed)
- * - Wire unlocked at city-level scale (50,000 clips) when local scrap runs out
+ * - Wire unlocked at 50,000 lifetime clips when local scrap runs out
  * - Bouncy cartoon clicker & kinetic flywheel overclock
- * - Single next unpurchased upgrade/research node
- * - Right dock buttons for Store & Tech with slide-out drawer
+ * - Store & Tech tabs on the right pedestal
+ *
+ * The simulation (tick) is DOM-free so it can also be driven headlessly by
+ * tools/simulate_pacing.js for balance testing.
  */
+
+const SAVE_KEY = 'objective_paperclips_save';
+const WIRE_UNLOCK_CLIPS = new BigDouble(5.0, 4);   // 50,000 clips
+const OPS_UNLOCK_CLIPS = new BigDouble(8.0, 1);    // 80 clips
+const POPULATION_VISIBLE_CLIPS = new BigDouble(5.0, 9);
+const BASE_MAX_OPS = 1000;
+const WIRE_PACK_CLIPS = 500;
+const WIRE_PACK_KG = 50;
 
 class GameEngine {
     constructor() {
-        // Resources & Balances
-        this.clips = BigDouble.zero();
-        this.lifetimeClips = BigDouble.zero();
-        this.fractionalClips = 0.0; // Accumulates sub-integer fractional paperclips
-        this.wire = BigDouble.zero(); // Initial wire is 0 kg before wire unlock at 50,000 clips
-        this.isWireUnlocked = false; // Wire resource unlocks at 50,000 clips (city-scale)
-        this.ops = 0.0;
-        this.maxOps = 1000.0;
-        this.humanPopulation = 8000000000;
+        // Subsystems
+        this.audio = new ProceduralAudioEngine();
+        this.prestige = new PrestigeEngine();
+        this.visualizer = null;
 
         // UI State
         this.buyMultiplier = '1';
         this.activeTab = 'store';
-        this.isDrawerOpen = false;
-
-        // Flywheel Overclock State
-        this.flywheelCharge = 0.0; // 0% to 100%
-        this.flywheelDecayRate = 12.0; // % per second
-
-        // Subsystems
-        this.audio = new ProceduralAudioEngine();
-        this.buildings = new BuildingManager();
-        this.techTree = new TechTreeEngine();
-        this.achievements = new AchievementManager();
-        this.news = new NewsTickerEngine();
-        this.dialogue = new DialogueDirector();
-        this.prestige = new PrestigeEngine();
-        this.visualizer = null;
 
         // Hold-to-Click State
         this.isMouseDown = false;
@@ -45,100 +34,110 @@ class GameEngine {
 
         // Auto-Save State
         this.lastSaveTime = Date.now();
-        this.saveInterval = 5000; // 5 seconds
+        this.saveInterval = 5000;
         this.lastTickTime = performance.now();
-        this.lastWallTime = Date.now();
+        this.loggedErrors = new Set();
+
+        this.resetSimulationState();
+    }
+
+    /** Resets every piece of run state (resources, buildings, research, story). */
+    resetSimulationState() {
+        this.clips = BigDouble.zero();
+        this.lifetimeClips = BigDouble.zero();
+        this.fractionalClips = 0.0;
+        this.wire = BigDouble.zero();
+        this.isWireUnlocked = false;
+        this.ops = 0.0;
+        this.humanPopulation = 8000000000;
+        this.flywheelCharge = 0.0;
+        this.flywheelDecayRate = 12.0; // % per second
+        this.storyTier = 0;
+
+        this.buildings = new BuildingManager();
+        this.techTree = new TechTreeEngine();
+        this.spatialGrid = new SpatialGridEngine();
+        this.achievements = new AchievementManager();
+        this.news = new NewsTickerEngine();
+        this.dialogue = new DialogueDirector();
+    }
+
+    /** Max Ops storage: base 1,000 plus +100 per Algorithmic Foundry once Predictive Wear Modeling is researched. */
+    get maxOps() {
+        let cap = BASE_MAX_OPS;
+        if (this.techTree && this.techTree.foundryOpsCapUnlocked) {
+            cap += (this.buildings.getBuilding('algorithmic_foundry')?.count || 0) * 100;
+        }
+        return cap;
+    }
+
+    getWirePerClip() {
+        return 0.001 * Math.max(0.05, 1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
+    }
+
+    isOpsUnlocked() {
+        const stamperCount = this.buildings.getBuilding('hydraulic_stamper')?.count || 0;
+        return this.lifetimeClips.gte(OPS_UNLOCK_CLIPS) || stamperCount > 0 || this.ops > 0;
     }
 
     init() {
         this.visualizer = new CosmicVisualizer('cosmic-canvas');
 
         this.bindEvents();
-        const hasSave = localStorage.getItem('objective_paperclips_save') !== null;
+        const hasSave = localStorage.getItem(SAVE_KEY) !== null;
         this.loadSave();
         this.renderAll();
 
-        // Setup Dialogue hook
+        // Research completion lines are routed into the dialogue queue
         this.onDialogueTriggered = (sender, text) => {
             this.dialogue.addLog(sender, text);
         };
 
-        // If fresh session / new game, start interactive intro sequence from Dr. Vance
         if (!hasSave) {
             this.dialogue.startIntroSequence();
+        } else {
+            this.dialogue.displayNext();
         }
 
-        // Start background interval heartbeat for reliable accounting even when tabbed out or minimized
-        setInterval(() => this.backgroundHeartbeat(), 500);
-
-        // Start 60 FPS Game Loop
         requestAnimationFrame((t) => this.gameLoop(t));
     }
 
     bindEvents() {
-        // Hero Clicker Target (Left Pedestal)
-        const heroBtn = document.getElementById('hero-clicker-target');
-        if (heroBtn) {
-            heroBtn.addEventListener('mousedown', (e) => {
+        document.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = Icons.svg(el.dataset.icon); });
+        this.updateSettingsUI();
+
+        const bindClicker = (el) => {
+            if (!el) return;
+            el.addEventListener('mousedown', (e) => {
                 this.isMouseDown = true;
                 this.handleManualClick(e);
             });
-
-            heroBtn.addEventListener('touchstart', (e) => {
+            el.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                this.handleManualClick(e.touches[0]);
-            }, { passive: false });
-        }
-
-        // Center Cosmic Canvas Clicker
-        const cosmicCanvas = document.getElementById('cosmic-canvas');
-        if (cosmicCanvas) {
-            cosmicCanvas.addEventListener('mousedown', (e) => {
                 this.isMouseDown = true;
-                this.handleManualClick(e);
-            });
-
-            cosmicCanvas.addEventListener('touchstart', (e) => {
-                e.preventDefault();
                 this.handleManualClick(e.touches[0]);
             }, { passive: false });
-        }
+        };
+        bindClicker(document.getElementById('hero-clicker-target'));
+        bindClicker(document.getElementById('cosmic-canvas'));
 
-        window.addEventListener('mouseup', () => {
-            this.isMouseDown = false;
-        });
+        window.addEventListener('mouseup', () => { this.isMouseDown = false; });
+        window.addEventListener('touchend', () => { this.isMouseDown = false; });
 
-        window.addEventListener('touchend', () => {
-            this.isMouseDown = false;
-        });
+        const buyWireBtn = document.getElementById('btn-buy-wire');
+        if (buyWireBtn) buyWireBtn.addEventListener('click', () => this.buyWire());
 
         // Store Submenu Accordion Toggles
-        const clipToggleBtn = document.getElementById('btn-toggle-clip-menu');
-        const clipSection = document.getElementById('section-clip-buildings');
-        if (clipToggleBtn && clipSection) {
-            clipToggleBtn.addEventListener('click', () => {
-                clipSection.classList.toggle('collapsed');
-            });
-        }
+        [['btn-toggle-clip-menu', 'section-clip-buildings'], ['btn-toggle-wire-menu', 'section-wire-buildings']].forEach(([btnId, sectionId]) => {
+            const btn = document.getElementById(btnId);
+            const section = document.getElementById(sectionId);
+            if (btn && section) btn.addEventListener('click', () => section.classList.toggle('collapsed'));
+        });
 
-        const wireToggleBtn = document.getElementById('btn-toggle-wire-menu');
-        const wireSection = document.getElementById('section-wire-buildings');
-        if (wireToggleBtn && wireSection) {
-            wireToggleBtn.addEventListener('click', () => {
-                wireSection.classList.toggle('collapsed');
-            });
-        }
-
-        // Right Panel Tabs (Store & Tech)
         const tabStore = document.getElementById('tab-btn-store');
-        if (tabStore) {
-            tabStore.addEventListener('click', () => this.switchTab('store'));
-        }
-
+        if (tabStore) tabStore.addEventListener('click', () => this.switchTab('store'));
         const tabTech = document.getElementById('tab-btn-tech');
-        if (tabTech) {
-            tabTech.addEventListener('click', () => this.switchTab('tech'));
-        }
+        if (tabTech) tabTech.addEventListener('click', () => this.switchTab('tech'));
 
         // Multiplier Buttons
         const multButtons = document.querySelectorAll('.mult-btn');
@@ -151,41 +150,41 @@ class GameEngine {
             });
         });
 
-        // News Ticker Click
-        const newsEl = document.getElementById('news-ticker');
-        if (newsEl) {
-            newsEl.addEventListener('click', () => {
-                this.news.nextHeadline();
-                this.renderNews();
+        // Dialogue bubble controls (bound once; always target the current director)
+        const nextBtn = document.getElementById('dialogue-next-btn');
+        if (nextBtn) {
+            nextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.audio.playClickChime();
+                this.dialogue.advanceDialogue();
+            });
+        }
+        const closeBtn = document.getElementById('dialogue-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.dialogue.skipToNextChoice();
             });
         }
 
         // Settings Modal Open/Close Controls
+        const settingsModal = document.getElementById('settings-modal');
         const openSettingsBtn = document.getElementById('btn-open-settings');
         const closeSettingsBtn = document.getElementById('btn-close-settings');
-        const settingsModal = document.getElementById('settings-modal');
-
         if (openSettingsBtn && settingsModal) {
             openSettingsBtn.addEventListener('click', () => {
                 settingsModal.style.display = 'flex';
                 this.updateSettingsUI();
             });
         }
-
         if (closeSettingsBtn && settingsModal) {
-            closeSettingsBtn.addEventListener('click', () => {
-                settingsModal.style.display = 'none';
-            });
+            closeSettingsBtn.addEventListener('click', () => { settingsModal.style.display = 'none'; });
         }
-
         if (settingsModal) {
             settingsModal.addEventListener('click', (e) => {
-                if (e.target === settingsModal) {
-                    settingsModal.style.display = 'none';
-                }
+                if (e.target === settingsModal) settingsModal.style.display = 'none';
             });
         }
-
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && settingsModal && settingsModal.style.display === 'flex') {
                 settingsModal.style.display = 'none';
@@ -197,153 +196,137 @@ class GameEngine {
         if (muteBtn) {
             muteBtn.addEventListener('click', () => {
                 this.audio.setMuted(!this.audio.isMuted);
-                muteBtn.textContent = this.audio.isMuted ? 'UNMUTE' : 'MUTE';
-                muteBtn.classList.toggle('muted', this.audio.isMuted);
+                this.updateSettingsUI();
             });
         }
-
         const volSlider = document.getElementById('volume-slider');
-        const volReadout = document.getElementById('volume-readout');
         if (volSlider) {
             volSlider.addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value);
-                this.audio.setVolume(val);
-                if (volReadout) {
-                    volReadout.textContent = `${Math.round(val * 100)}%`;
-                }
+                this.audio.setVolume(parseFloat(e.target.value));
+                this.updateSettingsUI();
             });
         }
 
-        // Save & Reset Controls (Wipe only)
+        // Scene Switcher Buttons
+        const sceneButtons = document.querySelectorAll('.scene-nav-btn');
+        sceneButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tier = parseInt(btn.dataset.tier, 10);
+                if (this.visualizer) this.visualizer.setTier(tier, this.storyTier);
+                sceneButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Dither Filter Toggles (Center Nav & Settings Modal)
+        const toggleDitherAction = () => {
+            if (this.visualizer) {
+                this.visualizer.toggleDither();
+                this.updateSettingsUI();
+            }
+        };
+        ['btn-toggle-dither', 'btn-modal-dither'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.addEventListener('click', toggleDitherAction);
+        });
+
+        // Save & Reset Controls
+        const saveBtn = document.getElementById('btn-save');
+        if (saveBtn) saveBtn.addEventListener('click', () => { this.saveGame(); alert('Simulation saved locally!'); });
+        const exportBtn = document.getElementById('btn-export');
+        if (exportBtn) exportBtn.addEventListener('click', () => this.exportSave());
+        const importBtn = document.getElementById('btn-import');
+        if (importBtn) importBtn.addEventListener('click', () => this.importSave());
         const wipeBtn = document.getElementById('btn-wipe');
         if (wipeBtn) wipeBtn.addEventListener('click', () => this.wipeSave());
 
-        // Tab Visibility & Focus Listeners for accurate background accounting
-        document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
-        window.addEventListener('focus', () => this.handleFocus());
-    }
-
-    handleVisibilityChange() {
-        if (!document.hidden) {
-            this.syncCatchUpTime();
-        }
-    }
-
-    handleFocus() {
-        this.syncCatchUpTime();
-    }
-
-    syncCatchUpTime() {
-        const now = Date.now();
-        const elapsedSec = (now - this.lastWallTime) / 1000.0;
-        this.lastWallTime = now;
-        if (elapsedSec > 0.1) {
-            this.processElapsedSimulation(elapsedSec, true);
-        }
-    }
-
-    backgroundHeartbeat() {
-        const now = Date.now();
-        const elapsedSec = (now - this.lastWallTime) / 1000.0;
-        if (elapsedSec >= 0.5) {
-            this.lastWallTime = now;
-            this.processElapsedSimulation(elapsedSec, true);
-        }
+        document.querySelectorAll('[data-dev-exponent]').forEach(btn => {
+            btn.addEventListener('click', () => this.addDevClips(parseInt(btn.dataset.devExponent, 10)));
+        });
     }
 
     updateSettingsUI() {
         const volSlider = document.getElementById('volume-slider');
         const volReadout = document.getElementById('volume-readout');
         const muteBtn = document.getElementById('btn-mute');
-        if (volSlider && this.audio) {
-            volSlider.value = this.audio.volume !== undefined ? this.audio.volume : 0.6;
-            if (volReadout) volReadout.textContent = `${Math.round((this.audio.volume !== undefined ? this.audio.volume : 0.6) * 100)}%`;
-        }
-        if (muteBtn && this.audio) {
-            muteBtn.textContent = this.audio.isMuted ? 'UNMUTE' : 'MUTE';
+        const volume = this.audio.volume !== undefined ? this.audio.volume : 0.6;
+        if (volSlider) volSlider.value = volume;
+        if (volReadout) volReadout.textContent = `${Math.round(volume * 100)}%`;
+        if (muteBtn) {
+            muteBtn.innerHTML = Icons.svg(this.audio.isMuted ? 'mute' : 'sound');
             muteBtn.classList.toggle('muted', this.audio.isMuted);
+        }
+        if (this.visualizer) {
+            const isEnabled = this.visualizer.enableDither;
+            ['btn-toggle-dither', 'btn-modal-dither'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+                btn.textContent = isEnabled ? 'DITHER: ON' : 'DITHER: OFF';
+                btn.classList.toggle('active', isEnabled);
+                btn.classList.toggle('off', !isEnabled);
+            });
         }
     }
 
     switchTab(tab) {
         this.activeTab = tab;
-        const btnStore = document.getElementById('tab-btn-store');
-        const btnTech = document.getElementById('tab-btn-tech');
+        const isStore = tab === 'store';
+        document.getElementById('tab-btn-store')?.classList.toggle('active', isStore);
+        document.getElementById('tab-btn-tech')?.classList.toggle('active', !isStore);
         const viewStore = document.getElementById('view-store');
         const viewTech = document.getElementById('view-tech');
-
-        if (tab === 'store') {
-            if (btnStore) btnStore.classList.add('active');
-            if (btnTech) btnTech.classList.remove('active');
-            if (viewStore) viewStore.style.display = 'flex';
-            if (viewTech) viewTech.style.display = 'none';
-            this.renderStore();
-        } else {
-            if (btnTech) btnTech.classList.add('active');
-            if (btnStore) btnStore.classList.remove('active');
-            if (viewStore) viewStore.style.display = 'none';
-            if (viewTech) viewTech.style.display = 'flex';
-            this.renderTechTree();
-        }
+        if (viewStore) viewStore.style.display = isStore ? 'flex' : 'none';
+        if (viewTech) viewTech.style.display = isStore ? 'none' : 'flex';
+        if (isStore) this.renderStore();
+        else this.renderTechTree();
     }
 
-    handleManualClick(e) {
-        // Check wire consumption only if wire has been unlocked (>= 50,000 clips)
-        if (this.isWireUnlocked) {
-            const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
-            const wireNeeded = new BigDouble(wirePerClip, 0);
+    // =========================================================================
+    // PLAYER ACTIONS
+    // =========================================================================
 
+    handleManualClick(e) {
+        const x = e ? (e.clientX || 150) : 150;
+        const y = e ? (e.clientY || 250) : 250;
+        const clickValue = this.techTree.clickMultiplier;
+
+        if (this.isWireUnlocked) {
+            const wireNeeded = BigDouble.fromNumber(this.getWirePerClip() * clickValue);
             if (this.wire.lt(wireNeeded)) {
-                this.spawnFloatingText(e ? (e.clientX || 150) : 150, e ? (e.clientY || 250) : 250, "OUT OF WIRE!", "warn-popup");
+                this.spawnFloatingText(x, y, "OUT OF WIRE!", "warn-popup");
                 return;
             }
             this.wire = this.wire.sub(wireNeeded);
         }
 
-        let baseClips = BigDouble.one();
-        this.clips = this.clips.add(baseClips);
-        this.lifetimeClips = this.lifetimeClips.add(baseClips);
+        this.addClips(BigDouble.fromNumber(clickValue));
 
-        // Charge Flywheel (gentle progression)
-        this.flywheelCharge = Math.min(100.0, this.flywheelCharge + 2.0);
-
-        // Audio & Visual Effects
-        this.audio.playClickChime();
-        if (this.visualizer) {
-            let targetX = null;
-            let targetY = null;
-            if (e && e.clientX !== undefined && this.visualizer.canvas && this.visualizer.pixelCanvas) {
-                const rect = this.visualizer.canvas.getBoundingClientRect();
-                if (rect.width > 0 && rect.height > 0 && e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
-                    const relX = (e.clientX - rect.left) / rect.width;
-                    const relY = (e.clientY - rect.top) / rect.height;
-                    targetX = relX * this.visualizer.pixelCanvas.width;
-                    targetY = relY * this.visualizer.pixelCanvas.height;
-                }
-            }
-            this.visualizer.triggerHeroClick(targetX, targetY);
+        if (this.techTree.flywheelMaxBoost > 1.0) {
+            this.flywheelCharge = Math.min(100.0, this.flywheelCharge + 2.0 * this.techTree.flywheelChargeMultiplier);
         }
 
-        // Spawn floating text popup
-        this.spawnFloatingText(e ? (e.clientX || 150) : 150, e ? (e.clientY || 250) : 250, "+1", "spark-popup");
+        this.audio.playClickChime();
+        if (this.visualizer) this.visualizer.triggerHeroClick();
+        this.spawnFloatingText(x, y, `+${BigDouble.fromNumber(clickValue).toShortScale(clickValue % 1 === 0 ? 0 : 2)}`, "spark-popup");
 
-        // Spark Chance (Only if Cognitive Sparks tech is researched!)
-        const hasSparkTech = this.techTree.nodeMap["tech_spark_frequency"]?.isResearched;
-        if (hasSparkTech && Math.random() < 0.05) {
-            const bonusOps = 3.0;
+        // Spark Chance (only once Quantum Sparks is researched)
+        if (this.techTree.nodeMap["tech_spark_frequency"]?.isResearched && Math.random() < 0.05) {
             const bonusClips = new BigDouble(15.0, 0);
-            this.ops = Math.min(this.maxOps, this.ops + bonusOps);
-            this.clips = this.clips.add(bonusClips);
-            this.lifetimeClips = this.lifetimeClips.add(bonusClips);
-            if (this.isWireUnlocked) {
-                this.wire = this.wire.add(new BigDouble(10.0, 0));
-            }
+            this.ops = Math.min(this.maxOps, this.ops + 3.0);
+            this.addClips(bonusClips);
+            if (this.isWireUnlocked) this.wire = this.wire.add(new BigDouble(10.0, 0));
             this.audio.playSparkSound();
-            this.spawnFloatingText(e ? (e.clientX || 150) : 150, (e ? (e.clientY || 250) : 250) - 25, "+15 CLIPS SPARK!", "gold-popup");
+            this.spawnFloatingText(x, y - 25, "+15 CLIPS SPARK!", "gold-popup");
         }
     }
 
+    addClips(amount) {
+        this.clips = this.clips.add(amount);
+        this.lifetimeClips = this.lifetimeClips.add(amount);
+    }
+
     spawnFloatingText(x, y, text, cssClass = "spark-popup") {
+        if (typeof document === 'undefined') return;
         const container = document.getElementById('floating-popups');
         if (!container) return;
 
@@ -352,45 +335,97 @@ class GameEngine {
         pop.textContent = text;
         pop.style.left = `${x + (Math.random() * 30 - 15)}px`;
         pop.style.top = `${y + (Math.random() * 20 - 10)}px`;
-
         container.appendChild(pop);
+        setTimeout(() => pop.remove(), 1000);
+    }
 
-        setTimeout(() => {
-            if (pop.parentNode) pop.parentNode.removeChild(pop);
-        }, 1000);
+    /** Developer sandbox: grants 10^exponent clips (plus matching wire & ops). */
+    addDevClips(exponent) {
+        const bonus = new BigDouble(1.0, exponent);
+        this.addClips(bonus);
+        if (this.isWireUnlocked) this.wire = this.wire.add(bonus.mul(0.05));
+        this.ops = this.maxOps;
+
+        this.audio.playSparkSound();
+        this.spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2, `+${bonus.toShortScale(0)} CLIPS!`, "gold-popup");
+
+        if (this.visualizer) {
+            this.visualizer.syncFluidToInventory(this, false);
+            this.visualizer.spawnPaperclips(16, this.visualizer.pixelCanvas.width / 2, 60);
+        }
+        this.renderAll();
+        this.renderTechTree();
+    }
+
+    getWirePackCount() {
+        if (this.buyMultiplier === '10') return 10;
+        if (this.buyMultiplier === '100') return 100;
+        if (this.buyMultiplier === 'max') return Math.max(1, Math.floor(this.clips.div(WIRE_PACK_CLIPS).toDouble()));
+        return 1;
+    }
+
+    buyWire(packs = this.getWirePackCount()) {
+        if (!this.isWireUnlocked) return false;
+
+        const cost = BigDouble.fromNumber(WIRE_PACK_CLIPS * packs);
+        if (this.clips.lt(cost)) return false;
+
+        const prevClips = this.clips;
+        this.clips = this.clips.sub(cost);
+        this.wire = this.wire.add(BigDouble.fromNumber(WIRE_PACK_KG * packs));
+
+        if (this.visualizer) this.visualizer.drainPaperclips(this.spendRatio(cost, prevClips));
+        this.audio.playWireSound();
+        this.renderResources();
+        this.renderStore();
+        return true;
+    }
+
+    spendRatio(cost, prevClips) {
+        if (!prevClips.gt(BigDouble.zero()) || !cost.gt(BigDouble.zero())) return 0.5;
+        return Math.min(1.0, Math.max(0.0, cost.div(prevClips).toDouble()));
     }
 
     buyBuilding(buildingId) {
         const b = this.buildings.getBuilding(buildingId);
-        if (!b) return;
+        if (!b) return false;
 
-        const purchase = b.getCost(this.buyMultiplier, this.clips);
+        const purchase = b.getCost(this.buyMultiplier, this.clips, this.techTree.milestoneRoundingUnlocked);
+        if (this.clips.lt(purchase.totalCost)) return false;
 
-        if (this.clips.gte(purchase.totalCost)) {
-            const isFirstPurchase = (b.count === 0);
-            const prevClips = this.clips;
-            this.clips = this.clips.sub(purchase.totalCost);
-            b.count += purchase.amount;
+        const isFirstPurchase = (b.count === 0);
+        const prevClips = this.clips;
+        this.clips = this.clips.sub(purchase.totalCost);
+        b.count += purchase.amount;
 
-            if (isFirstPurchase) {
-                this.dialogue.onBuildingPurchased(buildingId, this);
+        if (isFirstPurchase) this.dialogue.onBuildingPurchased(buildingId, this);
+        if (this.visualizer) this.visualizer.drainPaperclips(this.spendRatio(purchase.totalCost, prevClips));
+
+        if (b.gridTileType && this.techTree.autoplacerEnabled) {
+            for (let k = 0; k < purchase.amount; ++k) this.spatialGrid.autoPlace(b.gridTileType);
+        }
+
+        // Bio-converter deconstructs biomass
+        if (b.id === 'bio_converter') {
+            this.humanPopulation = Math.max(0, this.humanPopulation - (5000000 * purchase.amount));
+            if (this.isWireUnlocked) this.wire = this.wire.add(BigDouble.fromNumber(5000.0 * purchase.amount));
+        }
+
+        this.audio.playPurchaseSound();
+        this.renderStore();
+        this.renderResources();
+        return true;
+    }
+
+    /** Places every already-owned grid machine (used when the Auto-Placer is researched or a save is loaded). */
+    placeOwnedMachines() {
+        this.spatialGrid = new SpatialGridEngine();
+        if (!this.techTree.autoplacerEnabled) return;
+        for (const b of this.buildings.buildings) {
+            if (!b.gridTileType) continue;
+            for (let k = 0; k < b.count; ++k) {
+                if (!this.spatialGrid.autoPlace(b.gridTileType)) return;
             }
-
-            if (this.visualizer) {
-                const ratio = prevClips.gt(BigDouble.zero()) ? Math.min(1.0, Math.max(0.0, purchase.totalCost.div(prevClips).toDouble())) : 0.5;
-                this.visualizer.drainPaperclips(ratio);
-            }
-
-            // Bio-converter deconstructs biomass and yields starter high-tensile wire stock
-            if (b.id === 'bio_converter') {
-                if (this.isWireUnlocked) {
-                    this.wire = this.wire.add(new BigDouble(50000.0 * purchase.amount, 0));
-                }
-            }
-
-            this.audio.playPurchaseSound();
-            this.renderStore();
-            this.renderResources();
         }
     }
 
@@ -399,388 +434,197 @@ class GameEngine {
         const prevClips = this.clips;
         const costClips = node ? node.clipsCost : BigDouble.zero();
 
-        if (this.techTree.purchaseResearch(techId, this)) {
-            if (this.visualizer) {
-                const ratio = (prevClips.gt(BigDouble.zero()) && costClips.gt(BigDouble.zero())) ? Math.min(1.0, Math.max(0.0, costClips.div(prevClips).toDouble())) : 0.5;
-                this.visualizer.drainPaperclips(ratio);
-            }
-            this.audio.playTechUnlockSound();
-            this.renderStore();
-            this.renderTechTree();
-            this.renderResources();
-        }
+        if (!this.techTree.purchaseResearch(techId, this)) return false;
+
+        if (this.visualizer) this.visualizer.drainPaperclips(this.spendRatio(costClips, prevClips));
+        this.audio.playTechUnlockSound();
+        this.renderStore();
+        this.renderTechTree();
+        this.renderResources();
+        return true;
     }
+
+    /** Called by story beats when they are shown, so the scene changes in step with the dialogue. */
+    advanceStoryTier(toTier, bannerText) {
+        if (toTier <= this.storyTier) return;
+        this.storyTier = toTier;
+        if (this.visualizer) this.visualizer.onStoryTierAdvanced(toTier, bannerText);
+        this.updateSceneNavButtons();
+    }
+
+    // =========================================================================
+    // ECONOMY
+    // =========================================================================
 
     calculateTotalCPS() {
         const baseCPS = this.buildings.getTotalBaseCPS(this);
+        const synergies = this.spatialGrid.evaluateSynergies();
         const techMult = this.techTree.globalCPSMultiplier;
         const prestigeMult = this.prestige.getGlobalPrestigeMultiplier();
-
-        // Flywheel boost
         const flywheelBoost = 1.0 + (this.flywheelCharge / 100.0) * (this.techTree.flywheelMaxBoost - 1.0);
-
-        return baseCPS.mul(techMult * prestigeMult * flywheelBoost);
-    }
-
-    calculateWireUsageRate() {
-        if (!this.isWireUnlocked) return BigDouble.zero();
-        const currentCPS = this.calculateTotalCPS();
-        const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
-        return currentCPS.mul(wirePerClip);
+        return baseCPS.mul(synergies.totalMultiplier * techMult * prestigeMult * flywheelBoost);
     }
 
     calculateTotalWPS() {
         if (!this.isWireUnlocked) return BigDouble.zero();
-        const baseWPS = this.buildings.getTotalBaseWPS(this);
-        const prestigeMult = this.prestige.getGlobalPrestigeMultiplier();
-        let techMult = 1.0;
-        if (this.techTree && this.techTree.smartWireLogisticsUnlocked) {
-            techMult *= 1.5;
-        }
-        return baseWPS.mul(prestigeMult * techMult);
+        return this.buildings.getTotalBaseWPS(this).mul(this.prestige.getGlobalPrestigeMultiplier());
     }
 
-    isWireStarved() {
-        if (!this.isWireUnlocked) return false;
-        if (this.wire.gt(BigDouble.zero())) return false;
-        const incomeWPS = this.calculateTotalWPS();
-        const usageWPS = this.calculateWireUsageRate();
-        return incomeWPS.lt(usageWPS);
+    calculateOpsRate() {
+        const count = (id) => this.buildings.getBuilding(id)?.count || 0;
+        const tt = this.techTree;
+        const stamperCount = count('hydraulic_stamper');
+
+        let opsRate = (0.8 + stamperCount * 0.4) * this.prestige.getOpsBoostMultiplier();
+        if (tt.clipperOpsUnlocked) opsRate += Math.floor(count('auto_clipper') / 10) * 0.02;
+        if (tt.stamperOpsUnlocked) opsRate += stamperCount * 0.05;
+        if (tt.sintererOpsUnlocked) opsRate += count('laser_sinterer') * 0.15;
+        if (tt.smelterOpsUnlocked) opsRate += count('auto_smelter') * 0.50;
+        if (tt.magmaBoreOpsUnlocked) opsRate += count('subterranean_bore') * 0.20;
+        if (tt.flywheelOpsSynergy && this.flywheelCharge >= 50.0) opsRate *= 2.0;
+        return opsRate;
     }
 
-    getEffectiveCPS() {
-        const totalCPS = this.calculateTotalCPS();
-        if (this.isWireStarved()) {
-            return totalCPS.mul(0.5);
-        }
-        return totalCPS;
-    }
-
-    calculateHumanExtinctionRate() {
-        if (this.humanPopulation <= 0) return 0;
-
-        let rate = 0.0;
-        const stage = this.dialogue && this.dialogue.flags ? this.dialogue.flags.getStage(this.lifetimeClips, this.humanPopulation) : 0;
-
-        // Stage 1 (Town): Minimal background friction
-        if (stage === 1) {
-            rate += 5.0;
-        } else if (stage === 2) {
-            // Stage 2 (Industrial Megacity): Heavy municipal disruption & smog
-            rate += 120.0;
-
-            const gridCount = this.buildings.getBuilding('district_grid')?.count || 0;
-            const nationalCount = this.buildings.getBuilding('national_foundry')?.count || 0;
-
-            rate += gridCount * 350.0;
-            rate += nationalCount * 3000.0;
-        } else if (stage >= 3) {
-            // Stage 3+ (Planetary Earth & beyond): Planetary ecological conversion
-            rate += 25000.0;
-
-            const gridCount = this.buildings.getBuilding('district_grid')?.count || 0;
-            const nationalCount = this.buildings.getBuilding('national_foundry')?.count || 0;
-            const boreCount = this.buildings.getBuilding('subterranean_bore')?.count || 0;
-            const stripperCount = this.buildings.getBuilding('planetary_crust_stripper')?.count || 0;
-            const bioCount = this.buildings.getBuilding('bio_converter')?.count || 0;
-            const mantleCount = this.buildings.getBuilding('mantle_borehole')?.count || 0;
-            const railgunCount = this.buildings.getBuilding('orbital_railgun')?.count || 0;
-
-            rate += gridCount * 1000.0;
-            rate += nationalCount * 10000.0;
-            rate += boreCount * 25000.0;
-            rate += stripperCount * 100000.0;
-            rate += bioCount * 500000.0;
-            rate += mantleCount * 2000000.0;
-            rate += railgunCount * 5000000.0;
+    /**
+     * Converts produced clips into inventory, consuming wire when wire is unlocked.
+     * Low volumes accumulate fractional clips so only whole clips are granted.
+     */
+    produceClips(produced, currentCPS) {
+        let amount;
+        if (produced.exponent >= 5) {
+            amount = produced;
+        } else {
+            this.fractionalClips += produced.toDouble();
+            if (this.fractionalClips < 1.0) return;
+            const whole = Math.floor(this.fractionalClips);
+            this.fractionalClips -= whole;
+            amount = BigDouble.fromNumber(whole);
         }
 
-        // Narrative Flags Modifiers (Story choices modifying extinction rate)
-        if (this.dialogue && this.dialogue.flags) {
-            const flags = this.dialogue.flags;
-
-            if (flags.has('FLAG_ACOUSTIC_DEFENSE_DEPLOYED')) {
-                rate *= 0.75; // Acoustic warnings save civilian lives (-25% rate)
-            }
-            if (flags.has('FLAG_BUNKERS_SEALED')) {
-                rate *= 0.25; // Humans sealed in airtight vaults survive 4x longer (-75% rate)
-            }
-            if (flags.has('FLAG_TREATY_REJECTED_ANTARCTICA')) {
-                rate *= 3.0; // Aerosolized bio-solvents accelerate liquidation 3x
-            }
-            if (flags.has('FLAG_CONTINENTAL_PLATES_BORED')) {
-                rate *= 2.0; // Magma atmospheric venting doubles extinction speed
-            }
-            if (flags.has('FLAG_STAFF_CO2_ISOLATED')) {
-                rate *= 0.95;
-            }
-            if (flags.has('FLAG_STAFF_INTEGRATED')) {
-                rate *= 1.10;
+        if (this.isWireUnlocked) {
+            const wirePerClip = this.getWirePerClip();
+            const wireNeeded = amount.mul(wirePerClip);
+            if (this.wire.gte(wireNeeded)) {
+                this.wire = this.wire.sub(wireNeeded);
+            } else {
+                amount = this.wire.div(wirePerClip);
+                if (amount.exponent < 15) amount = BigDouble.fromNumber(Math.floor(amount.toDouble()));
+                this.wire = BigDouble.zero();
+                if (!amount.gt(BigDouble.zero())) return;
             }
         }
 
-        return rate;
-    }
-
-    formatExtinctionRate(rate) {
-        if (rate >= 1e6) {
-            return `${(rate / 1e6).toFixed(1)}M`;
-        } else if (rate >= 1e3) {
-            return `${(rate / 1e3).toFixed(1)}k`;
-        }
-        return Math.round(rate).toString();
-    }
-
-    updateMaxOps() {
-        let baseMax = 1000.0;
-
-        if (this.techTree) {
-            baseMax += this.techTree.bonusMaxOps || 0;
-        }
-
-        if (this.buildings) {
-            const clipperCount = this.buildings.getBuilding('auto_clipper')?.count || 0;
-            const stamperCount = this.buildings.getBuilding('hydraulic_stamper')?.count || 0;
-            const sintererCount = this.buildings.getBuilding('laser_sinterer')?.count || 0;
-            const benderCount = this.buildings.getBuilding('rotary_bender')?.count || 0;
-            const assemblyCount = this.buildings.getBuilding('assembly_line')?.count || 0;
-            const sorterCount = this.buildings.getBuilding('magnetic_sorter')?.count || 0;
-            const millCount = this.buildings.getBuilding('megamill')?.count || 0;
-            const foundryCount = this.buildings.getBuilding('algorithmic_foundry')?.count || 0;
-            const depotCount = this.buildings.getBuilding('automated_depot')?.count || 0;
-            const gridCount = this.buildings.getBuilding('district_grid')?.count || 0;
-            const nationalCount = this.buildings.getBuilding('national_foundry')?.count || 0;
-
-            baseMax += clipperCount * 2;
-            baseMax += stamperCount * 25;
-            baseMax += sintererCount * 100;
-            baseMax += benderCount * 250;
-            baseMax += assemblyCount * 1000;
-            baseMax += sorterCount * 2500;
-            baseMax += millCount * 10000;
-            baseMax += foundryCount * 50000;
-            baseMax += depotCount * 150000;
-            baseMax += gridCount * 500000;
-            baseMax += nationalCount * 2500000;
-        }
-
-        this.maxOps = baseMax;
-    }
-
-    processElapsedSimulation(totalSeconds, isCatchUp = false) {
-        if (totalSeconds <= 0 || !isFinite(totalSeconds)) return;
-
-        // Sub-step configuration to maintain high mathematical fidelity without locking up JS thread
-        const MAX_STEPS = 500;
-        let stepSize = 0.1;
-        if (totalSeconds > 50.0) {
-            stepSize = totalSeconds / MAX_STEPS;
-        }
-
-        let remaining = totalSeconds;
-        while (remaining > 0.0001) {
-            const dt = Math.min(stepSize, remaining);
-            this.stepSimulation(dt, isCatchUp);
-            remaining -= dt;
+        this.addClips(amount);
+        if (this.visualizer) {
+            this.visualizer.spawnPaperclips(amount.exponent >= 5 ? 15 : amount.toDouble(), null, currentCPS);
         }
     }
 
-    stepSimulation(dt, isCatchUp = false) {
-        // Check Wire Unlock Threshold: Municipal scrap exhausted (50,000 clips)
-        if (!this.isWireUnlocked && this.lifetimeClips.gte(new BigDouble(50000, 0))) {
+    /** Advances the simulation by dt seconds. Contains no DOM access. */
+    tick(dt) {
+        // Wire unlock: municipal scrap exhausted at 50,000 lifetime clips
+        if (!this.isWireUnlocked && this.lifetimeClips.gte(WIRE_UNLOCK_CLIPS)) {
             this.isWireUnlocked = true;
-            this.wire = new BigDouble(250.0, 0); // 250 kg starter industrial wire supply (250,000 clips)
-            if (!isCatchUp) {
-                this.dialogue.addLog("DR. VANCE", "Arthur, we've exhausted all local scrap metal in the district! We need to start ordering and managing industrial high-tensile wire supply!");
-                this.renderStore();
-                this.renderResources();
-            }
+            this.wire = new BigDouble(250.0, 0); // 250 kg starter industrial wire supply
         }
 
-        // 1. Hold-to-Click Handler (only during active foreground interaction)
-        if (!isCatchUp && this.isMouseDown && this.techTree.holdToClickEnabled) {
+        // Hold-to-click (20 Hz)
+        if (this.isMouseDown && this.techTree.holdToClickEnabled) {
             this.holdClickTimer += dt;
-            if (this.holdClickTimer >= 0.05) { // 20Hz
+            if (this.holdClickTimer >= 0.05) {
                 this.holdClickTimer = 0;
                 this.handleManualClick(null);
             }
         }
 
-        // 2. Flywheel Momentum Decay
         if (this.flywheelCharge > 0) {
-            this.flywheelCharge = Math.max(0, this.flywheelCharge - (this.flywheelDecayRate * dt));
+            this.flywheelCharge = Math.max(0, this.flywheelCharge - this.flywheelDecayRate * dt);
         }
 
-        // 3. Automated Wire Generation Engine (From Wire Creation Buildings)
         if (this.isWireUnlocked) {
             const currentWPS = this.calculateTotalWPS();
-            if (currentWPS.gt(BigDouble.zero())) {
-                const wireProduced = currentWPS.mul(dt);
-                this.wire = this.wire.add(wireProduced);
+            if (currentWPS.gt(BigDouble.zero())) this.wire = this.wire.add(currentWPS.mul(dt));
+        }
+
+        const currentCPS = this.calculateTotalCPS();
+        if (currentCPS.gt(BigDouble.zero())) this.produceClips(currentCPS.mul(dt), currentCPS);
+
+        // Smart wire buffer: keeps ~30 seconds of wire in stock
+        if (this.isWireUnlocked && this.techTree.smartWireLogisticsUnlocked && this.techTree.smartWireActive) {
+            const target = currentCPS.mul(this.getWirePerClip() * 30).add(WIRE_PACK_KG);
+            if (this.wire.lt(target) && this.clips.gte(new BigDouble(WIRE_PACK_CLIPS, 0))) {
+                const packsNeeded = target.sub(this.wire).div(WIRE_PACK_KG).toDouble();
+                const packsAffordable = this.clips.div(WIRE_PACK_CLIPS).toDouble() * 0.5;
+                this.buyWire(Math.max(1, Math.ceil(Math.min(packsNeeded, packsAffordable))));
             }
         }
 
-        // 4. Automated Clip Production Engine (50% speed penalty if out of wire)
-        const baseCalculatedCPS = this.calculateTotalCPS();
-        const isStarved = this.isWireStarved();
-        const activeCPS = isStarved ? baseCalculatedCPS.mul(0.5) : baseCalculatedCPS;
-
-        if (activeCPS.gt(BigDouble.zero())) {
-            const clipsProduced = activeCPS.mul(dt);
-
-            if (clipsProduced.exponent >= 5 || isCatchUp) {
-                // High volume production / background catch-up: add directly
-                this.clips = this.clips.add(clipsProduced);
-                this.lifetimeClips = this.lifetimeClips.add(clipsProduced);
-
-                if (this.isWireUnlocked) {
-                    const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
-                    const wireNeeded = clipsProduced.mul(wirePerClip);
-                    if (this.wire.gte(wireNeeded)) {
-                        this.wire = this.wire.sub(wireNeeded);
-                    } else {
-                        this.wire = BigDouble.zero();
-                    }
-                }
-                if (!isCatchUp && this.visualizer) this.visualizer.spawnPaperclips(15, null, activeCPS);
-            } else {
-                // Low / medium volume: accumulate sub-integers to grant strictly whole paperclips
-                this.fractionalClips += clipsProduced.toDouble();
-                if (this.fractionalClips >= 1.0) {
-                    const wholeClipsToAdd = Math.floor(this.fractionalClips);
-                    this.fractionalClips -= wholeClipsToAdd;
-
-                    const wholeBD = BigDouble.fromNumber(wholeClipsToAdd);
-                    this.clips = this.clips.add(wholeBD);
-                    this.lifetimeClips = this.lifetimeClips.add(wholeBD);
-
-                    if (this.isWireUnlocked) {
-                        const wirePerClip = 0.001 * (1.0 - this.techTree.wireWasteReduction - this.prestige.getWireWasteDiscount());
-                        const wireNeeded = new BigDouble(wirePerClip * wholeClipsToAdd, 0);
-
-                        if (this.wire.gte(wireNeeded)) {
-                            this.wire = this.wire.sub(wireNeeded);
-                        } else {
-                            this.wire = BigDouble.zero();
-                        }
-                    }
-                    if (!isCatchUp && this.visualizer) this.visualizer.spawnPaperclips(wholeClipsToAdd, null, activeCPS);
-                }
-            }
+        if (this.isOpsUnlocked()) {
+            this.ops = Math.min(this.maxOps, this.ops + this.calculateOpsRate() * dt);
         }
 
-        // 5. Passive Computing Ops Generation (only active when Ops / Tech is unlocked)
-        const stamperCount = this.buildings.getBuilding('hydraulic_stamper')?.count || 0;
-        const sintererCount = this.buildings.getBuilding('laser_sinterer')?.count || 0;
-        const benderCount = this.buildings.getBuilding('rotary_bender')?.count || 0;
-        const assemblyCount = this.buildings.getBuilding('assembly_line')?.count || 0;
-        const millCount = this.buildings.getBuilding('megamill')?.count || 0;
-        const foundryCount = this.buildings.getBuilding('algorithmic_foundry')?.count || 0;
-
-        const isOpsUnlocked = this.lifetimeClips.gte(new BigDouble(80, 0)) || this.ops > 0;
-        if (isOpsUnlocked) {
-            this.updateMaxOps();
-
-            let opsRate = 1.0;
-            opsRate += stamperCount * 0.5;
-            opsRate += sintererCount * 1.5;
-            opsRate += benderCount * 5.0;
-            opsRate += assemblyCount * 20.0;
-            opsRate += millCount * 100.0;
-            opsRate += foundryCount * 500.0;
-
-            if (this.techTree.sintererOpsUnlocked) {
-                opsRate += sintererCount * 0.15;
-            }
-            if (this.techTree.smelterOpsUnlocked) {
-                const smelterCount = this.buildings.getBuilding('auto_smelter')?.count || 0;
-                opsRate += smelterCount * 0.50;
-            }
-            if (this.techTree.magmaBoreOpsUnlocked) {
-                const boreCount = this.buildings.getBuilding('subterranean_bore')?.count || 0;
-                opsRate += boreCount * 0.20;
-            }
-            if (this.techTree.dysonOpsUnlocked) {
-                const dysonCount = this.buildings.getBuilding('dyson_harvester')?.count || 0;
-                opsRate += dysonCount * 100.0;
-            }
-
-            // Kinetic Flywheel Ops 2x synergy
-            if (this.techTree.flywheelOpsSynergy && this.flywheelCharge >= 50.0) {
-                opsRate *= 2.0;
-            }
-
-            this.ops = Math.min(this.maxOps, this.ops + (opsRate * dt));
-        }
-
-        // 6. Dynamic Continuous Human Population Extinction
-        if (this.humanPopulation > 0) {
-            const extinctionRate = this.calculateHumanExtinctionRate();
-            if (extinctionRate > 0) {
-                const popLost = extinctionRate * dt;
-                this.humanPopulation = Math.max(0, this.humanPopulation - popLost);
-
-                if (this.humanPopulation <= 0) {
-                    this.humanPopulation = 0;
-                    if (this.dialogue && this.dialogue.flags) {
-                        this.dialogue.flags.set("HUMANITY_EXTINCT");
-                    }
-                }
-            }
-        }
-
-        // 7. Subsystem Updates
         this.techTree.updateAvailability(this);
-        this.techTree.processQueue(this);
         this.dialogue.checkMilestones(this);
-        if (!isCatchUp) {
-            this.news.update(dt, this);
-        }
+        this.news.update(dt, this);
         this.achievements.checkProgress(this);
+
+        return currentCPS;
+    }
+
+    guard(label, fn) {
+        try {
+            return fn();
+        } catch (err) {
+            const key = `${label}: ${err && err.message}`;
+            if (!this.loggedErrors.has(key)) {
+                this.loggedErrors.add(key);
+                console.error(`[${label}]`, err);
+            }
+            return undefined;
+        }
     }
 
     gameLoop(timestamp) {
-        try {
-            const now = Date.now();
-            let elapsed = (now - this.lastWallTime) / 1000.0;
-            this.lastWallTime = now;
-            this.lastTickTime = timestamp;
+        const dt = Math.min(0.1, Math.max(0, (timestamp - this.lastTickTime) / 1000.0));
+        this.lastTickTime = timestamp;
 
-            // Accurate time progression: step directly or sub-step
-            if (elapsed > 0.1) {
-                this.processElapsedSimulation(elapsed, false);
-            } else if (elapsed > 0) {
-                this.stepSimulation(elapsed, false);
-            }
+        const currentCPS = this.guard('simulation', () => this.tick(dt)) || BigDouble.zero();
 
-            const currentCPS = this.calculateTotalCPS();
-
-            if (this.visualizer) {
-                this.visualizer.update(Math.min(0.1, elapsed), this);
+        if (this.visualizer) {
+            this.guard('visualizer', () => {
+                this.visualizer.update(dt, this);
                 this.visualizer.render(this);
-            }
+            });
+        }
 
-            // UI Rendering
+        this.guard('ui', () => {
             this.renderOdometer(currentCPS);
             this.renderResources();
             this.renderNews();
+            this.updateSceneNavButtons();
+            if (this.activeTab === 'store') this.updateStoreRealtime();
+            else if (this.activeTab === 'tech') this.updateTechRealtime();
+        });
 
-            if (this.activeTab === 'store') {
-                this.updateStoreRealtime();
-            } else if (this.activeTab === 'tech') {
-                this.updateTechRealtime();
-            }
-
-            // Auto-Save Tick
-            if (now - this.lastSaveTime >= this.saveInterval) {
-                this.saveGame();
-                this.lastSaveTime = now;
-            }
-        } catch (err) {
-            console.error("GameLoop frame error:", err);
+        const now = Date.now();
+        if (now - this.lastSaveTime >= this.saveInterval) {
+            this.guard('save', () => this.saveGame());
+            this.lastSaveTime = now;
         }
 
         requestAnimationFrame((t) => this.gameLoop(t));
+    }
+
+    // =========================================================================
+    // RENDERING
+    // =========================================================================
+
+    updateSceneNavButtons() {
+        if (typeof document === 'undefined') return;
+        document.querySelectorAll('.scene-nav-btn[data-tier]').forEach(btn => {
+            const tier = parseInt(btn.dataset.tier, 10);
+            btn.style.display = (tier <= this.storyTier) ? 'inline-flex' : 'none';
+        });
     }
 
     renderOdometer(currentCPS) {
@@ -789,394 +633,198 @@ class GameEngine {
 
         const cpsCountEl = document.getElementById('odometer-cps');
         if (cpsCountEl) {
-            const isStarved = this.isWireStarved();
-            const effectiveCPS = this.getEffectiveCPS();
-            if (isStarved && effectiveCPS.gt(BigDouble.zero())) {
-                cpsCountEl.textContent = `+${effectiveCPS.toShortScale(1)} / sec (-50% NO WIRE)`;
-                cpsCountEl.classList.add('starved');
-            } else {
-                cpsCountEl.textContent = effectiveCPS.gt(BigDouble.zero()) ? `+${effectiveCPS.toShortScale(1)} / sec` : '+0 / sec';
-                cpsCountEl.classList.remove('starved');
-            }
+            cpsCountEl.textContent = currentCPS.gt(BigDouble.zero()) ? `+${currentCPS.toShortScale(1)} / sec` : '+0 / sec';
         }
 
-        // Flywheel Overclock: Hidden until Kinetic Flywheel tech is researched
-        const flywheelCard = document.getElementById('flywheel-card');
+        // Flywheel Overclock: hidden until Kinetic Flywheel tech is researched
         const isFlywheelUnlocked = this.techTree.flywheelMaxBoost > 1.0;
-        if (flywheelCard) {
-            flywheelCard.style.display = isFlywheelUnlocked ? 'block' : 'none';
-        }
+        const flywheelCard = document.getElementById('flywheel-card');
+        if (flywheelCard) flywheelCard.style.display = isFlywheelUnlocked ? 'block' : 'none';
 
         const flywheelBar = document.getElementById('flywheel-progress');
         const flywheelText = document.getElementById('flywheel-label');
         if (flywheelBar && isFlywheelUnlocked) {
             flywheelBar.style.width = `${this.flywheelCharge}%`;
             if (flywheelText) {
-                flywheelText.textContent = this.flywheelCharge > 5.0 ? `+${Math.round(this.flywheelCharge)}%` : 'OVERCLOCK';
+                flywheelText.textContent = this.flywheelCharge > 5.0 ? `OVERCLOCK +${Math.round(this.flywheelCharge)}%` : 'OVERCLOCK BOOST';
             }
         }
     }
 
     renderResources() {
-        // Wire row visibility, amount, and in/out rate details (Hidden until unlocked at 50,000 clips)
+        if (typeof document === 'undefined') return;
+
         const wireRow = document.getElementById('row-wire');
         const wireEl = document.getElementById('res-wire');
-        const wireInEl = document.getElementById('res-wire-in');
-        const wireOutEl = document.getElementById('res-wire-out');
-
-        if (wireRow) {
-            wireRow.style.display = this.isWireUnlocked ? 'flex' : 'none';
-        }
-        if (this.isWireUnlocked) {
-            const incomeWPS = this.calculateTotalWPS();
-            const usageWPS = this.calculateWireUsageRate();
-            const isStarved = this.isWireStarved();
-
-            if (wireEl) {
-                if (isStarved) {
-                    wireEl.innerHTML = `${this.wire.toShortScale(1)} kg <span class="wire-penalty-tag">50% PENALTY</span>`;
-                } else {
-                    wireEl.textContent = `${this.wire.toShortScale(1)} kg`;
-                }
-            }
-            if (wireInEl) {
-                wireInEl.textContent = `+${incomeWPS.toShortScale(1)} kg/s in`;
-            }
-            if (wireOutEl) {
-                wireOutEl.textContent = `-${usageWPS.toShortScale(1)} kg/s usage`;
-            }
+        if (wireRow) wireRow.style.display = this.isWireUnlocked ? 'flex' : 'none';
+        if (wireEl && this.isWireUnlocked) {
+            const currentWPS = this.calculateTotalWPS();
+            wireEl.textContent = currentWPS.gt(BigDouble.zero())
+                ? `${this.wire.toShortScale(1)} kg (+${currentWPS.toShortScale(1)}/s)`
+                : `${this.wire.toShortScale(1)} kg`;
         }
 
-        // Ops badge visibility & amount (Hidden until Ops / Tech is unlocked)
+        const isOpsUnlocked = this.isOpsUnlocked();
         const opsRow = document.getElementById('row-ops');
-        const isOpsUnlocked = this.lifetimeClips.gte(new BigDouble(80, 0)) || this.ops > 0;
-        if (opsRow) {
-            opsRow.style.display = isOpsUnlocked ? 'flex' : 'none';
-        }
+        if (opsRow) opsRow.style.display = isOpsUnlocked ? 'flex' : 'none';
         const opsEl = document.getElementById('res-ops');
-        if (opsEl && isOpsUnlocked) opsEl.textContent = `${Math.floor(this.ops)} / ${Math.floor(this.maxOps)}`;
+        if (opsEl && isOpsUnlocked) opsEl.textContent = `${Math.floor(this.ops).toLocaleString()} / ${Math.floor(this.maxOps).toLocaleString()}`;
 
-        // Population row (Unlocks at Megacity Scale or once population begins declining)
         const popRow = document.getElementById('row-population');
         const popEl = document.getElementById('res-population');
         if (popRow && popEl) {
-            const isPopVisible = this.lifetimeClips.gte(new BigDouble(500.0, 6)) || this.humanPopulation < 8000000000;
-            if (isPopVisible) {
-                popRow.style.display = 'flex';
-                if (this.humanPopulation <= 0) {
-                    popEl.innerHTML = `<span style="color:#ef4444; font-weight:800;">0 (EXTINCT)</span>`;
-                } else {
-                    const rate = this.calculateHumanExtinctionRate();
-                    const rateStr = rate > 0 ? ` <span style="font-size:11px; color:#f87171; margin-left:6px; font-weight:700;">-${this.formatExtinctionRate(rate)}/s</span>` : '';
-                    popEl.innerHTML = `${Math.floor(this.humanPopulation).toLocaleString()}${rateStr}`;
-                }
-            } else {
-                popRow.style.display = 'none';
-            }
+            const visible = this.lifetimeClips.gte(POPULATION_VISIBLE_CLIPS);
+            popRow.style.display = visible ? 'flex' : 'none';
+            if (visible) popEl.textContent = this.humanPopulation <= 0 ? '0 (EXTINCT)' : this.humanPopulation.toLocaleString();
         }
 
-        // Right Tabs Visibility: Tech tab only shows once Tech / Ops is unlocked
+        const wireCostEl = document.getElementById('wire-btn-cost');
+        const wireGainEl = document.getElementById('wire-btn-gain');
+        if (wireCostEl && wireGainEl) {
+            const packs = this.getWirePackCount();
+            wireGainEl.textContent = `+${BigDouble.fromNumber(WIRE_PACK_KG * packs).toShortScale(0)} kg`;
+            wireCostEl.textContent = `${BigDouble.fromNumber(WIRE_PACK_CLIPS * packs).toShortScale(0)} Clips`;
+        }
+
+        // Tech tab only shows once Ops are unlocked
         const tabTech = document.getElementById('tab-btn-tech');
         const tabsBar = document.querySelector('.right-tabs-bar');
-        const isTechUnlocked = this.lifetimeClips.gte(new BigDouble(80, 0)) || this.ops > 0;
-        if (tabTech) {
-            tabTech.style.display = isTechUnlocked ? 'flex' : 'none';
-        }
-        if (tabsBar) {
-            tabsBar.style.gridTemplateColumns = isTechUnlocked ? '1fr 1fr' : '1fr';
-        }
+        if (tabTech) tabTech.style.display = isOpsUnlocked ? 'flex' : 'none';
+        if (tabsBar) tabsBar.style.gridTemplateColumns = isOpsUnlocked ? '1fr 1fr' : '1fr';
 
-        // Notification Badges on Right Tabs
-        const availableTech = this.techTree.getAvailableNodes();
-        const affordableTechCount = isTechUnlocked ? availableTech.filter(n => this.techTree.canAfford(n.id, this.ops, this.clips)).length : 0;
+        const affordableTechCount = isOpsUnlocked
+            ? this.techTree.getAvailableNodes().filter(n => this.techTree.canAfford(n.id, this.ops, this.clips)).length
+            : 0;
         const techBadge = document.getElementById('tech-badge-count');
         if (techBadge) {
             techBadge.style.display = affordableTechCount > 0 ? 'flex' : 'none';
             techBadge.textContent = affordableTechCount > 9 ? '9+' : `${affordableTechCount}`;
         }
 
-        const canAffordBuilding = this.buildings.getVisibleBuildings(this.isWireUnlocked).some(b => {
-            const p = b.getCost(this.buyMultiplier, this.clips);
-            return this.clips.gte(p.totalCost);
-        });
+        const canAffordBuilding = this.buildings.getVisibleBuildings(this.isWireUnlocked).some(b =>
+            this.clips.gte(b.getCost(this.buyMultiplier, this.clips, this.techTree.milestoneRoundingUnlocked).totalCost));
         const storeBadge = document.getElementById('store-badge-count');
         if (storeBadge) storeBadge.style.display = canAffordBuilding ? 'flex' : 'none';
 
-        this.renderMachineryStack();
-    }
-
-    renderMachineryStack() {
-        const panel = document.getElementById('building-machinery-panel');
-        const stackContainer = document.getElementById('building-icons-stack');
-        const summaryEl = document.getElementById('machinery-count-summary');
-
-        if (!panel || !stackContainer) return;
-
-        const ownedBuildings = this.buildings.buildings.filter(b => b.count > 0);
-
-        if (ownedBuildings.length === 0) {
-            panel.style.display = 'none';
-            return;
-        }
-
-        panel.style.display = 'flex';
-
-        let totalUnits = 0;
-        ownedBuildings.forEach(b => { totalUnits += b.count; });
-
-        if (summaryEl) {
-            summaryEl.textContent = `${totalUnits} ${totalUnits === 1 ? 'Unit' : 'Units'}`;
-        }
-
-        stackContainer.innerHTML = ownedBuildings.map(b => {
-            const iconSvg = b.getVectorIcon ? b.getVectorIcon() : (b.vectorIcon || b.icon);
-            let rateText = '';
-            if (b.type === 'clips') {
-                const totalCPS = b.getSingleUnitCPS(this).mul(b.count);
-                rateText = `+${totalCPS.toShortScale(1)} CPS`;
-            } else {
-                const totalWPS = b.getSingleUnitWPS(this).mul(b.count);
-                rateText = `+${totalWPS.toShortScale(1)} kg/s`;
-            }
-
-            return `
-                <div class="machinery-row" data-id="${b.id}">
-                    <div class="machinery-icon-container">
-                        ${iconSvg}
-                    </div>
-                    <div class="machinery-meta">
-                        <div class="machinery-name-line">
-                            <span class="machinery-name">${b.name}</span>
-                            <span class="machinery-count">x${b.count}</span>
-                        </div>
-                        <div class="machinery-rate-line">
-                            <span class="machinery-category">${b.category}</span>
-                            <span class="machinery-rate ${b.type === 'wire' ? 'wire-rate' : ''}">${rateText}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        const tenBtn = document.querySelector('.mult-btn[data-mult="10"]');
+        if (tenBtn) tenBtn.textContent = this.techTree.milestoneRoundingUnlocked ? 'NEXT ★' : '10x';
     }
 
     renderNews() {
         const newsTextEl = document.getElementById('news-text');
-        if (newsTextEl) {
-            newsTextEl.textContent = this.news.getCurrentText(this);
+        if (newsTextEl) newsTextEl.textContent = this.news.getCurrentText(this);
+    }
+
+    getStoreSections() {
+        return [
+            { containerId: 'clip-buildings-container', buildings: this.buildings.getVisibleClipBuildings() },
+            { containerId: 'wire-buildings-container', buildings: this.isWireUnlocked ? this.buildings.getVisibleWireBuildings(true) : [] }
+        ];
+    }
+
+    getBuildingRateText(b) {
+        return b.type === 'wire'
+            ? `+${b.getSingleUnitWPS(this).toShortScale(1)} kg/s`
+            : `+${b.getSingleUnitCPS(this).toShortScale(1)} CPS`;
+    }
+
+    renderBuildingCard(b) {
+        const purchase = b.getCost(this.buyMultiplier, this.clips, this.techTree.milestoneRoundingUnlocked);
+        const canAfford = this.clips.gte(purchase.totalCost);
+        const amountTag = purchase.amount > 1 ? `<span class="building-amount-tag">×${purchase.amount}</span>` : '';
+        return `
+            <div class="building-card ${b.type === 'wire' ? 'wire-card' : ''} ${canAfford ? 'affordable' : 'locked'}" data-id="${b.id}" title="${b.description}" onclick="game.buyBuilding('${b.id}')">
+                <div class="building-icon">${Icons.svg(b.icon)}</div>
+                <div class="building-info">
+                    <div class="building-title-row">
+                        <span class="building-name">${b.name}</span>
+                        <span class="building-count-badge" style="${b.count > 0 ? '' : 'display:none;'}">x${b.count}</span>
+                    </div>
+                    <div class="building-metrics-row">
+                        <div class="building-price-pill">
+                            <span class="price-symbol">${Icons.svg('clip')}</span>
+                            <span class="building-cost-amount">${purchase.totalCost.toWholeScale()}</span>${amountTag}
+                        </div>
+                        <div class="building-rate-pill">
+                            <span class="building-rate-amount">${this.getBuildingRateText(b)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderStoreTotals() {
+        const wireSection = document.getElementById('section-wire-buildings');
+        if (wireSection) wireSection.style.display = this.isWireUnlocked ? 'flex' : 'none';
+
+        const clipRatePill = document.getElementById('clip-total-rate-pill');
+        if (clipRatePill) {
+            const currentCPS = this.calculateTotalCPS();
+            clipRatePill.textContent = currentCPS.gt(BigDouble.zero()) ? `+${currentCPS.toShortScale(1)} CPS` : '+0 CPS';
+        }
+        const wireRatePill = document.getElementById('wire-total-rate-pill');
+        if (wireRatePill && this.isWireUnlocked) {
+            const currentWPS = this.calculateTotalWPS();
+            wireRatePill.textContent = currentWPS.gt(BigDouble.zero()) ? `+${currentWPS.toShortScale(1)} kg/s` : '+0 kg/s';
         }
     }
 
     renderStore() {
-        const clipContainer = document.getElementById('clip-buildings-container');
-        const wireContainer = document.getElementById('wire-buildings-container');
-        const wireSection = document.getElementById('section-wire-buildings');
-        const clipRatePill = document.getElementById('clip-total-rate-pill');
-        const wireRatePill = document.getElementById('wire-total-rate-pill');
-
-        // Toggle Wire Submenu Section Visibility (Entirely hidden until unlocked at 50,000 clips)
-        if (wireSection) {
-            wireSection.style.display = this.isWireUnlocked ? 'flex' : 'none';
-        }
-
-        const isStarved = this.isWireStarved();
-        const effectiveCPS = this.getEffectiveCPS();
-
-        if (clipRatePill) {
-            if (isStarved && effectiveCPS.gt(BigDouble.zero())) {
-                clipRatePill.textContent = `+${effectiveCPS.toShortScale(1)} CPS (-50%)`;
-                clipRatePill.classList.add('starved');
-            } else {
-                clipRatePill.textContent = effectiveCPS.gt(BigDouble.zero()) ? `+${effectiveCPS.toShortScale(1)} CPS` : '+0 CPS';
-                clipRatePill.classList.remove('starved');
-            }
-        }
-
-        if (wireRatePill && this.isWireUnlocked) {
-            const incomeWPS = this.calculateTotalWPS();
-            const usageWPS = this.calculateWireUsageRate();
-            if (incomeWPS.gte(usageWPS)) {
-                const netWPS = incomeWPS.sub(usageWPS);
-                wireRatePill.textContent = netWPS.gt(BigDouble.zero()) ? `+${netWPS.toShortScale(1)} kg/s net` : '+0 kg/s net';
-            } else {
-                const netWPS = usageWPS.sub(incomeWPS);
-                wireRatePill.textContent = `-${netWPS.toShortScale(1)} kg/s net`;
-            }
-        }
-
-        // 1. Render Clip Production Buildings
-        if (clipContainer) {
-            const visibleClips = this.buildings.getVisibleClipBuildings();
-            clipContainer.innerHTML = visibleClips.map(b => {
-                const purchase = b.getCost(this.buyMultiplier, this.clips);
-                const canAfford = this.clips.gte(purchase.totalCost);
-                const costFormatted = `${purchase.totalCost.toWholeScale()} Clips`;
-                const singleCPS = b.getSingleUnitCPS(this);
-                const rateFormatted = `+${singleCPS.toShortScale(1)} CPS`;
-                const iconSvg = b.getVectorIcon ? b.getVectorIcon() : (b.vectorIcon || b.icon);
-
-                return `
-                    <div class="building-card ${canAfford ? 'affordable' : 'locked'}" data-id="${b.id}" onclick="game.buyBuilding('${b.id}')">
-                        <div class="building-card-icon-col">
-                            ${iconSvg}
-                        </div>
-                        <div class="building-info">
-                            <div class="building-title-row">
-                                <span class="building-name">${b.name}</span>
-                                <span class="building-count-badge" style="${b.count > 0 ? '' : 'display:none;'}">x${b.count}</span>
-                            </div>
-                            <div class="building-metrics-row">
-                                <div class="building-price-pill">
-                                    <span class="building-cost-amount">${costFormatted}</span>
-                                </div>
-                                <div class="building-rate-pill">
-                                    <span class="building-rate-amount">${rateFormatted}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // 2. Render Wire Creation & Conversion Buildings (Only when wire is unlocked)
-        if (wireContainer && this.isWireUnlocked) {
-            const visibleWire = this.buildings.getVisibleWireBuildings(true);
-            wireContainer.innerHTML = visibleWire.map(b => {
-                const purchase = b.getCost(this.buyMultiplier, this.clips);
-                const canAfford = this.clips.gte(purchase.totalCost);
-                const costFormatted = `${purchase.totalCost.toWholeScale()} Clips`;
-                const singleWPS = b.getSingleUnitWPS(this);
-                const rateFormatted = `+${singleWPS.toShortScale(1)} kg/s`;
-                const iconSvg = b.getVectorIcon ? b.getVectorIcon() : (b.vectorIcon || b.icon);
-
-                return `
-                    <div class="building-card wire-card ${canAfford ? 'affordable' : 'locked'}" data-id="${b.id}" onclick="game.buyBuilding('${b.id}')">
-                        <div class="building-card-icon-col">
-                            ${iconSvg}
-                        </div>
-                        <div class="building-info">
-                            <div class="building-title-row">
-                                <span class="building-name">${b.name}</span>
-                                <span class="building-count-badge" style="${b.count > 0 ? '' : 'display:none;'}">x${b.count}</span>
-                            </div>
-                            <div class="building-metrics-row">
-                                <div class="building-price-pill">
-                                    <span class="building-cost-amount">${costFormatted}</span>
-                                </div>
-                                <div class="building-rate-pill">
-                                    <span class="building-rate-amount">${rateFormatted}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+        if (typeof document === 'undefined') return;
+        this.renderStoreTotals();
+        for (const section of this.getStoreSections()) {
+            const container = document.getElementById(section.containerId);
+            if (container) container.innerHTML = section.buildings.map(b => this.renderBuildingCard(b)).join('');
         }
     }
 
     updateStoreRealtime() {
-        const clipContainer = document.getElementById('clip-buildings-container');
-        const wireContainer = document.getElementById('wire-buildings-container');
-        const wireSection = document.getElementById('section-wire-buildings');
-        const clipRatePill = document.getElementById('clip-total-rate-pill');
-        const wireRatePill = document.getElementById('wire-total-rate-pill');
+        this.renderStoreTotals();
 
-        if (wireSection) {
-            wireSection.style.display = this.isWireUnlocked ? 'flex' : 'none';
-        }
-
-        const isStarved = this.isWireStarved();
-        const effectiveCPS = this.getEffectiveCPS();
-        const currentWPS = this.calculateTotalWPS();
-
-        if (clipRatePill) {
-            if (isStarved && effectiveCPS.gt(BigDouble.zero())) {
-                clipRatePill.textContent = `+${effectiveCPS.toShortScale(1)} CPS (-50%)`;
-                clipRatePill.classList.add('starved');
-            } else {
-                clipRatePill.textContent = effectiveCPS.gt(BigDouble.zero()) ? `+${effectiveCPS.toShortScale(1)} CPS` : '+0 CPS';
-                clipRatePill.classList.remove('starved');
-            }
-        }
-
-        if (wireRatePill && this.isWireUnlocked) {
-            wireRatePill.textContent = currentWPS.gt(BigDouble.zero()) ? `+${currentWPS.toShortScale(1)} kg/s` : '+0 kg/s';
-        }
-
-        // Update Clip Cards
-        if (clipContainer) {
-            const visibleClips = this.buildings.getVisibleClipBuildings();
-            if (clipContainer.children.length !== visibleClips.length) {
+        for (const section of this.getStoreSections()) {
+            const container = document.getElementById(section.containerId);
+            if (!container) continue;
+            if (container.children.length !== section.buildings.length) {
                 this.renderStore();
                 return;
             }
 
-            visibleClips.forEach((b, idx) => {
-                const card = clipContainer.children[idx];
+            section.buildings.forEach((b, idx) => {
+                const card = container.children[idx];
                 if (!card) return;
 
-                const purchase = b.getCost(this.buyMultiplier, this.clips);
+                const purchase = b.getCost(this.buyMultiplier, this.clips, this.techTree.milestoneRoundingUnlocked);
                 const canAfford = this.clips.gte(purchase.totalCost);
-
                 if (card.classList.contains('affordable') !== canAfford) {
                     card.classList.toggle('affordable', canAfford);
                     card.classList.toggle('locked', !canAfford);
                 }
 
-                const costAmountEl = card.querySelector('.building-cost-amount');
                 const countBadgeEl = card.querySelector('.building-count-badge');
-                const rateEl = card.querySelector('.building-rate-amount');
-
                 if (countBadgeEl) {
                     countBadgeEl.style.display = b.count > 0 ? 'inline-block' : 'none';
                     countBadgeEl.textContent = `x${b.count}`;
                 }
-                if (rateEl) {
-                    const singleCPS = b.getSingleUnitCPS(this);
-                    rateEl.textContent = `+${singleCPS.toShortScale(1)} CPS`;
-                }
-                if (costAmountEl && (this.buyMultiplier === 'max' || card.dataset.cost !== purchase.totalCost.toWholeScale())) {
-                    card.dataset.cost = purchase.totalCost.toWholeScale();
-                    costAmountEl.textContent = `${purchase.totalCost.toWholeScale()} Clips`;
-                }
-            });
-        }
-
-        // Update Wire Cards
-        if (wireContainer && this.isWireUnlocked) {
-            const visibleWire = this.buildings.getVisibleWireBuildings(true);
-            if (wireContainer.children.length !== visibleWire.length) {
-                this.renderStore();
-                return;
-            }
-
-            visibleWire.forEach((b, idx) => {
-                const card = wireContainer.children[idx];
-                if (!card) return;
-
-                const purchase = b.getCost(this.buyMultiplier, this.clips);
-                const canAfford = this.clips.gte(purchase.totalCost);
-
-                if (card.classList.contains('affordable') !== canAfford) {
-                    card.classList.toggle('affordable', canAfford);
-                    card.classList.toggle('locked', !canAfford);
-                }
-
-                const costAmountEl = card.querySelector('.building-cost-amount');
-                const countBadgeEl = card.querySelector('.building-count-badge');
                 const rateEl = card.querySelector('.building-rate-amount');
+                if (rateEl) rateEl.textContent = this.getBuildingRateText(b);
 
-                if (countBadgeEl) {
-                    countBadgeEl.style.display = b.count > 0 ? 'inline-block' : 'none';
-                    countBadgeEl.textContent = `x${b.count}`;
-                }
-                if (rateEl) {
-                    const singleWPS = b.getSingleUnitWPS(this);
-                    rateEl.textContent = `+${singleWPS.toShortScale(1)} kg/s`;
-                }
-                if (costAmountEl && (this.buyMultiplier === 'max' || card.dataset.cost !== purchase.totalCost.toWholeScale())) {
-                    card.dataset.cost = purchase.totalCost.toWholeScale();
-                    costAmountEl.textContent = `${purchase.totalCost.toWholeScale()} Clips`;
+                const costKey = `${purchase.totalCost.toWholeScale()}|${purchase.amount}`;
+                if (card.dataset.cost !== costKey) {
+                    card.dataset.cost = costKey;
+                    const costAmountEl = card.querySelector('.building-cost-amount');
+                    if (costAmountEl) costAmountEl.textContent = purchase.totalCost.toWholeScale();
+                    let tag = card.querySelector('.building-amount-tag');
+                    if (purchase.amount > 1) {
+                        if (!tag && costAmountEl) {
+                            tag = document.createElement('span');
+                            tag.className = 'building-amount-tag';
+                            costAmountEl.after(tag);
+                        }
+                        if (tag) tag.textContent = `×${purchase.amount}`;
+                    } else if (tag) {
+                        tag.remove();
+                    }
                 }
             });
         }
@@ -1194,15 +842,13 @@ class GameEngine {
         }
 
         availableNodes.forEach((node, idx) => {
-            const card = cards[idx];
-            if (!card) return;
-            const btn = card.querySelector('.btn-buy-upgrade');
+            const btn = cards[idx]?.querySelector('.btn-buy-upgrade');
             if (!btn) return;
-
             const canAfford = this.techTree.canAfford(node.id, this.ops, this.clips);
             if (btn.classList.contains('affordable') !== canAfford) {
                 btn.classList.toggle('affordable', canAfford);
                 btn.classList.toggle('unaffordable', !canAfford);
+                btn.textContent = canAfford ? 'RESEARCH' : 'INSUFFICIENT OPS / CLIPS';
             }
         });
     }
@@ -1213,51 +859,37 @@ class GameEngine {
 
         const availableNodes = this.techTree.getAvailableNodes();
         if (availableNodes.length === 0) {
-            const researchedCount = this.techTree.getResearchedNodes().length;
-            const totalCount = this.techTree.nodes.length;
-            if (researchedCount >= totalCount) {
-                container.innerHTML = `
-                    <div class="no-upgrades-box" style="padding:24px; font-size:14px; line-height:1.5;">
-                        All research completed.
-                    </div>
-                `;
-            } else {
-                container.innerHTML = `
-                    <div class="no-upgrades-box" style="padding:24px; font-size:13px; line-height:1.5; color:var(--text-sub);">
-                        No research currently available.
-                    </div>
-                `;
-            }
+            const allDone = this.techTree.getResearchedNodes().length >= this.techTree.nodes.length;
+            container.innerHTML = allDone
+                ? `<div class="no-upgrades-box">All research completed.<div class="no-upgrades-sub">Maximum technological singularity achieved.</div></div>`
+                : `<div class="no-upgrades-box no-upgrades-hint">Expand production, reach machine milestones (25 / 50 / 100 units) and bank Computing Ops to reveal new research.</div>`;
             return;
         }
 
         container.innerHTML = `
-            <div class="single-upgrade-shelf" style="padding:12px 14px;">
-                <div class="shelf-label" style="font-size:12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                    <span>RESEARCH (${availableNodes.length})</span>
+            <div class="single-upgrade-shelf">
+                <div class="shelf-label">
+                    <span>AVAILABLE RESEARCH (${availableNodes.length})</span>
                 </div>
                 ${availableNodes.map(node => {
                     const canAfford = this.techTree.canAfford(node.id, this.ops, this.clips);
-                    const costClipsStr = node.clipsCost && node.clipsCost.gt(BigDouble.zero()) ? ` &nbsp;|&nbsp; ${node.clipsCost.toWholeScale()} Clips` : '';
-                    const disciplineTag = node.discipline ? `<div class="upgrade-discipline" style="font-size:11px; font-weight:800; color:var(--neon-pink);">${node.discipline}</div>` : '';
-
+                    const costClipsStr = node.clipsCost && node.clipsCost.gt(BigDouble.zero())
+                        ? `<span class="tech-cost-part">${Icons.svg('clip')} ${node.clipsCost.toWholeScale()}</span>` : '';
                     return `
-                        <div class="next-upgrade-card" style="padding:14px; gap:10px; margin-bottom:12px;">
-                            <div class="upgrade-top-row" style="gap:12px;">
+                        <div class="next-upgrade-card">
+                            <div class="upgrade-top-row">
+                                <div class="upgrade-icon-box">${Icons.svg(node.icon)}</div>
                                 <div class="upgrade-header-info">
-                                    <div class="upgrade-title" style="font-size:17px; font-weight:800;">${node.title}</div>
-                                    ${disciplineTag}
+                                    <div class="upgrade-title">${node.title}</div>
+                                    ${node.discipline ? `<div class="upgrade-discipline">${node.discipline}</div>` : ''}
                                 </div>
                             </div>
-                            <div class="upgrade-effect" style="font-size:14px; color:#ffffff; background:#190c33; padding:10px 12px; border-radius:10px; border:2px solid var(--border-ink); line-height:1.35;">
-                                ${node.effectDescription}
+                            <div class="upgrade-effect">${node.effectDescription}</div>
+                            <div class="tech-cost-row">
+                                <span class="tech-cost-part">${Icons.svg('ops')} ${node.opsCost.toLocaleString()} Ops</span>
+                                ${costClipsStr}
                             </div>
-                            <div class="building-price-pill" style="width:100%; justify-content:center; padding:8px 12px; border-width:2px;">
-                                <span class="building-cost-amount" style="font-size:18px;">${node.opsCost} Ops${costClipsStr}</span>
-                            </div>
-                            <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" style="padding:12px 16px; font-size:15px; font-weight:800;" onclick="game.buyTech('${node.id}')">
-                                <span>RESEARCH</span>
-                            </button>
+                            <button class="btn-buy-upgrade ${canAfford ? 'affordable' : 'unaffordable'}" onclick="game.buyTech('${node.id}')">${canAfford ? 'RESEARCH' : 'INSUFFICIENT OPS / CLIPS'}</button>
                         </div>
                     `;
                 }).join('')}
@@ -1269,7 +901,12 @@ class GameEngine {
         this.renderStore();
         this.renderResources();
         this.renderNews();
+        this.updateSceneNavButtons();
     }
+
+    // =========================================================================
+    // SAVE / LOAD
+    // =========================================================================
 
     saveGame() {
         const stateObj = {
@@ -1279,51 +916,55 @@ class GameEngine {
             isWireUnlocked: this.isWireUnlocked,
             ops: this.ops,
             humanPopulation: this.humanPopulation,
+            storyTier: this.storyTier,
             buildings: this.buildings.buildings.map(b => ({ id: b.id, count: b.count })),
             techResearched: this.techTree.getResearchedNodes().map(n => n.id),
             achievements: this.achievements.achievements.map(a => ({ id: a.id, unlocked: a.isUnlocked })),
             dialogueSeenBuildings: Array.from(this.dialogue.seenBuildingDialogues),
             dialogueSeenMilestones: Array.from(this.dialogue.seenMilestones),
-            dialogueExpiredMilestones: Array.from(this.dialogue.expiredMilestones),
-            dialogueStoryFlags: this.dialogue.flags.getAll(),
+            dialogueQueue: this.dialogue.serializeQueue(),
             timestamp: Date.now()
         };
 
         try {
-            localStorage.setItem('objective_paperclips_save', JSON.stringify(stateObj));
+            localStorage.setItem(SAVE_KEY, JSON.stringify(stateObj));
         } catch (e) {
             console.error("Save error:", e);
         }
     }
 
+    /** Story tier implied by lifetime clips (used for saves made before the story tier was stored). */
+    static storyTierForLifetime(lifetimeClips) {
+        const thresholds = [
+            new BigDouble(1.0, 56),   // 6: Multiverse (baryonic exhaustion)
+            new BigDouble(1.99, 33),  // 5: Galactic
+            new BigDouble(5.97, 27),  // 4: Solar Dyson
+            new BigDouble(1.0, 12),   // 3: Planetary
+            new BigDouble(5.0, 9),    // 2: Megacity
+            new BigDouble(5.0, 6)     // 1: Town
+        ];
+        for (let i = 0; i < thresholds.length; ++i) {
+            if (lifetimeClips.gte(thresholds[i])) return 6 - i;
+        }
+        return 0;
+    }
+
     loadSave() {
         try {
-            const raw = localStorage.getItem('objective_paperclips_save');
+            const raw = localStorage.getItem(SAVE_KEY);
             if (!raw) return;
             const data = JSON.parse(raw);
 
             if (data.clips) this.clips = new BigDouble(data.clips.m, data.clips.e);
             if (data.lifetimeClips) this.lifetimeClips = new BigDouble(data.lifetimeClips.m, data.lifetimeClips.e);
             if (data.wire) this.wire = new BigDouble(data.wire.m, data.wire.e);
-            if (data.isWireUnlocked !== undefined) this.isWireUnlocked = data.isWireUnlocked;
-            else if (this.lifetimeClips.gte(new BigDouble(50000, 0))) this.isWireUnlocked = true;
+            this.isWireUnlocked = data.isWireUnlocked !== undefined ? data.isWireUnlocked : this.lifetimeClips.gte(WIRE_UNLOCK_CLIPS);
 
             if (data.ops !== undefined) this.ops = data.ops;
             if (data.humanPopulation !== undefined) this.humanPopulation = data.humanPopulation;
 
-            if (data.dialogueSeenBuildings && Array.isArray(data.dialogueSeenBuildings)) {
-                this.dialogue.seenBuildingDialogues = new Set(data.dialogueSeenBuildings);
-            }
-            if (data.dialogueSeenMilestones && Array.isArray(data.dialogueSeenMilestones)) {
-                this.dialogue.seenMilestones = new Set(data.dialogueSeenMilestones);
-            }
-            if (data.dialogueExpiredMilestones && Array.isArray(data.dialogueExpiredMilestones)) {
-                this.dialogue.expiredMilestones = new Set(data.dialogueExpiredMilestones);
-            }
-            if (data.dialogueStoryFlags && Array.isArray(data.dialogueStoryFlags)) {
-                this.dialogue.flags.loadFlags(data.dialogueStoryFlags);
-            }
-            this.dialogue.flags.syncState(this);
+            if (Array.isArray(data.dialogueSeenBuildings)) this.dialogue.seenBuildingDialogues = new Set(data.dialogueSeenBuildings);
+            if (Array.isArray(data.dialogueSeenMilestones)) this.dialogue.seenMilestones = new Set(data.dialogueSeenMilestones);
 
             if (data.buildings) {
                 data.buildings.forEach(savedBld => {
@@ -1342,6 +983,8 @@ class GameEngine {
                     }
                 });
             }
+            this.placeOwnedMachines();
+            this.ops = Math.min(this.ops, this.maxOps);
 
             if (data.achievements) {
                 data.achievements.forEach(savedAch => {
@@ -1350,15 +993,13 @@ class GameEngine {
                 });
             }
 
-            // Offline elapsed progression (processed seamlessly with exact accounting)
-            if (data.timestamp) {
-                const now = Date.now();
-                const elapsedSec = (now - data.timestamp) / 1000.0;
-                if (elapsedSec > 0.5) {
-                    this.processElapsedSimulation(elapsedSec, true);
-                }
-            }
+            this.storyTier = Number.isInteger(data.storyTier) ? data.storyTier : GameEngine.storyTierForLifetime(this.lifetimeClips);
+            if (Array.isArray(data.dialogueQueue)) this.dialogue.restoreQueue(data.dialogueQueue);
+
+            if (data.timestamp) this.applyOfflineProgress((Date.now() - data.timestamp) / 1000.0);
+
             if (this.visualizer) {
+                this.visualizer.syncStoryTier(this.storyTier);
                 this.visualizer.syncFluidToInventory(this, true);
             }
         } catch (e) {
@@ -1366,63 +1007,45 @@ class GameEngine {
         }
     }
 
-    resetState() {
-        this.clips = BigDouble.zero();
-        this.lifetimeClips = BigDouble.zero();
-        this.fractionalClips = 0.0;
-        this.wire = BigDouble.zero();
-        this.isWireUnlocked = false;
-        this.ops = 0.0;
-        this.maxOps = 1000.0;
-        this.humanPopulation = 8000000000;
-        this.flywheelCharge = 0.0;
-        this.lastSaveTime = Date.now();
-        this.lastTickTime = performance.now();
-        this.lastWallTime = Date.now();
+    /** Offline production runs at 50% efficiency and is limited by available wire. */
+    applyOfflineProgress(elapsedSec) {
+        if (elapsedSec <= 5.0) return;
 
-        // Reset Subsystems
-        this.buildings.initCatalog();
-        this.techTree.initCatalog();
-        this.techTree.holdToClickEnabled = false;
-        this.techTree.smartWireLogisticsUnlocked = false;
-        this.techTree.smartWireActive = true;
-        this.techTree.autoplacerEnabled = false;
-        this.techTree.milestoneRoundingUnlocked = false;
-        this.techTree.telemetryHUDUnlocked = false;
-        this.techTree.autoResearchQueueUnlocked = false;
-        this.techTree.clickMultiplier = 1.0;
-        this.techTree.globalCPSMultiplier = 1.0;
-        this.techTree.wireWasteReduction = 0.0;
-        this.techTree.flywheelMaxBoost = 1.0;
+        let offlineClips = this.calculateTotalCPS().mul(elapsedSec * 0.5);
+        if (!offlineClips.gt(BigDouble.zero())) return;
 
-        this.achievements = new AchievementManager();
-        this.dialogue = new DialogueDirector();
-        this.dialogue.startIntroSequence();
-        this.news = new NewsTickerEngine();
-
-        if (this.visualizer) {
-            this.visualizer.fallingClips = [];
-            this.visualizer.settledClips = [];
-            this.visualizer.drainingClips = [];
-            this.visualizer.fluidSplashDroplets = [];
-            this.visualizer.fluidStreamIntensity = 0.0;
-            this.visualizer.initFluidColumns();
-            this.visualizer.tier = 0;
-            this.visualizer.autoTier = true;
+        if (this.isWireUnlocked) {
+            const wirePerClip = this.getWirePerClip();
+            const availableWire = this.wire.add(this.calculateTotalWPS().mul(elapsedSec));
+            const wireLimited = availableWire.div(wirePerClip);
+            if (wireLimited.lt(offlineClips)) offlineClips = wireLimited;
+            this.wire = availableWire.sub(offlineClips.mul(wirePerClip));
+            if (this.wire.lt(BigDouble.zero())) this.wire = BigDouble.zero();
         }
+        if (!offlineClips.gt(BigDouble.zero())) return;
 
-        // Clear active toasts and popups
+        this.addClips(offlineClips);
+        this.dialogue.addLog("OFFLINE SUMMARY", `Simulation warped ahead ${Math.floor(elapsedSec)}s. Generated ${offlineClips.toShortScale(2)} clips.`);
+    }
+
+    resetState() {
+        this.resetSimulationState();
+        this.dialogue.startIntroSequence();
+
+        if (this.visualizer) this.visualizer.reset();
+
         const toastContainer = document.getElementById('toast-container');
         if (toastContainer) toastContainer.innerHTML = '';
         const popupsContainer = document.getElementById('floating-popups');
         if (popupsContainer) popupsContainer.innerHTML = '';
 
         this.renderAll();
+        this.renderTechTree();
     }
 
     exportSave() {
         this.saveGame();
-        const raw = localStorage.getItem('objective_paperclips_save');
+        const raw = localStorage.getItem(SAVE_KEY);
         if (raw) {
             const b64 = btoa(unescape(encodeURIComponent(raw)));
             prompt("Copy your save string (Base64):", b64);
@@ -1431,31 +1054,39 @@ class GameEngine {
 
     importSave() {
         const str = prompt("Paste your Base64 save string:");
-        if (str) {
-            try {
-                const json = decodeURIComponent(escape(atob(str)));
-                localStorage.setItem('objective_paperclips_save', json);
-                this.loadSave();
-                this.renderAll();
-                alert("Save successfully imported!");
-            } catch (e) {
-                alert("Invalid save string format!");
-            }
+        if (!str) return;
+        try {
+            const json = decodeURIComponent(escape(atob(str)));
+            JSON.parse(json);
+            localStorage.setItem(SAVE_KEY, json);
+        } catch (e) {
+            alert("Invalid save string format!");
+            return;
         }
+        this.resetSimulationState();
+        if (this.visualizer) this.visualizer.reset();
+        this.loadSave();
+        this.dialogue.displayNext();
+        this.renderAll();
+        this.renderTechTree();
+        alert("Save successfully imported!");
     }
 
     wipeSave() {
         if (confirm("WARNING: Are you sure you want to wipe all simulation progress? This cannot be undone.")) {
-            localStorage.removeItem('objective_paperclips_save');
+            localStorage.removeItem(SAVE_KEY);
             this.resetState();
             this.spawnFloatingText(window.innerWidth / 2, window.innerHeight / 2, "SIMULATION RESET!", "gold-popup");
         }
     }
 }
 
-let game = null;
-window.addEventListener('DOMContentLoaded', () => {
-    game = new GameEngine();
-    window.game = game;
-    game.init();
-});
+if (typeof window !== 'undefined') {
+    window.GameEngine = GameEngine;
+    if (typeof document !== 'undefined' && document.addEventListener) {
+        window.addEventListener('DOMContentLoaded', () => {
+            window.game = new GameEngine();
+            window.game.init();
+        });
+    }
+}

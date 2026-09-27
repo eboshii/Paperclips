@@ -1,103 +1,170 @@
 /**
- * visualizer.js - Vectorised Cosmic Art Engine with Neutral Monochrome Backgrounds & Dither Filter
- * Features:
- * - 7 Progressive Vectorised Scene Backgrounds with Neutral/Monochrome Palettes for Maximum Foreground Pop:
- *     0: Factory Interior (Dark slate/brick walls, timber trusses, misty monochrome arched windows, pendant lamps)
- *     1: Factory in Town (Monochrome dusk skyline, silhouette hills, town houses, standalone factory, smokestacks)
- *     2: Industrial Megacity (Noir/blueprint skyscraper silhouettes, cooling towers, monorail, highway light trails)
- *     3: Planetary Earth & Orbital Ring (Deep space void, muted navy/slate globe, glowing cyan cyber-fissures)
- *     4: Solar Dyson Swarm & Star Siphon (Deep void, amber-charcoal solar corona, concentric golden rings)
- *     5: Galactic Penrose Dynamo (Sagittarius A* black hole, Doppler accretion swirl, violet relativistic jets)
- *     6: 11D Multiverse Quantum Foam (Muted translucent bubble universes, central chrome reality, 4D tesseract)
- * - Hero Paperclip High-Contrast Shadow Halo for Crystal-Clear Visibility Against Windows and Walls
- * - Authentic 8x8 Bayer Matrix Ordered Dithering & Color Quantization Filter Pass
- * - Dynamic fluid paperclip mountain & granular slumping physics synchronized with inventory
- * - Tumbling falling paperclips, sink suction drain physics, and particle sparks
- * - Crisp nearest-neighbor pixel buffer upscaling for retro pixel-art aesthetic
+ * visualizer.js - Stylised pixel-art scene renderer for the centre arena.
+ *
+ * Seven scenes follow the story (workshop → town → metropolis → orbit → Dyson swarm →
+ * galaxy → multiverse). Each scene is painted into a low-resolution buffer with a
+ * hand-picked 16 colour palette, then mapped onto that palette with an ordered (Bayer)
+ * dither for a cohesive retro look. Scene details react to progress inside the scene
+ * (the town empties, Earth turns to chrome, the swarm encloses the Sun...).
+ *
+ * Foreground systems: the paperclip "sea" that tracks the clip inventory, tumbling clips,
+ * draining vortex when spending, production waterfalls at high CPS and click sparks.
+ * All particle physics is time based (independent of frame rate).
  */
+
+const SCENE_PALETTES = [
+    // 0: Workshop at night — ink shadows, brick & brass, lamp amber, moonlight blue
+    ['#0d0b14', '#1a1626', '#2a2238', '#3d2f48', '#5a3f3a', '#7a4f3a', '#a06a3c', '#d9953f',
+     '#ffd27a', '#fff4d6', '#26344f', '#3f5f86', '#7fa6c9', '#c9dcec', '#8a8f99', '#d7dce3'],
+    // 1: Town at dusk — violet sky into a rose/orange horizon, blue-grey hills
+    ['#120d1c', '#231a33', '#3b2748', '#5e3456', '#8c3f5a', '#c4545a', '#ec8052', '#ffb65c',
+     '#ffe3a3', '#2c2f4a', '#454a6b', '#6b6f8f', '#1c2226', '#343d3f', '#9aa0ad', '#e8ebf0'],
+    // 2: Metropolis at night — navy, neon magenta haze, amber windows, cyan machine light
+    ['#07080f', '#0e1224', '#172040', '#22305c', '#2f4a7a', '#3d6aa0', '#5aa0c8', '#9ad4e6',
+     '#e8f4f6', '#3a1f3f', '#7a2f5a', '#d44a7a', '#ffb347', '#ffe08a', '#8a93a6', '#cfd6e0'],
+    // 3: Orbit — deep space, ocean blues, land greens/ochre, chrome, city lights
+    ['#03040a', '#0a0f22', '#12204a', '#1a3a7a', '#2a66a8', '#62a8d8', '#b8e6ff', '#1f3b2a',
+     '#3f6b3a', '#8a7a4a', '#f4f1e6', '#5a6070', '#a7b0c0', '#e6ecf5', '#ff8a3a', '#ffd070'],
+    // 4: Dyson swarm — ember blacks, solar oranges, gold collectors
+    ['#050308', '#140812', '#2a0e14', '#4a1410', '#7a220e', '#b23a0c', '#e2641a', '#ff9a2e',
+     '#ffc861', '#fff0b8', '#ffffff', '#3a2a1a', '#7a5a2a', '#c9a24a', '#f2d27a', '#8a8f99'],
+    // 5: Galaxy — violet void, blue arms, warm core
+    ['#030208', '#0a0718', '#160f32', '#24184f', '#3a2474', '#5a3499', '#8a4fc2', '#c07ae0',
+     '#f0c4ff', '#1a2f5a', '#2f5aa0', '#5aa0e0', '#aee6ff', '#ffe0a0', '#ff9a5a', '#ffffff'],
+    // 6: Multiverse — teal-black foam, mint and orchid iridescence
+    ['#040507', '#0b0f14', '#121c22', '#1a2e33', '#22464a', '#2f6a66', '#4a9a8a', '#8ad4b4',
+     '#e0fff0', '#2a1a3a', '#5a2f6a', '#9a4fa0', '#e07ac0', '#ffd0e8', '#c0c8d0', '#ffffff']
+];
+
+// Colours used for paperclips in each scene: [deep shadow, shadow, body, highlight, accent]
+const SCENE_CLIP_COLORS = [
+    ['#1a1626', '#3d2f48', '#8a8f99', '#d7dce3', '#d9953f'],
+    ['#231a33', '#454a6b', '#9aa0ad', '#e8ebf0', '#ffb65c'],
+    ['#0e1224', '#22305c', '#8a93a6', '#cfd6e0', '#9ad4e6'],
+    ['#0a0f22', '#5a6070', '#a7b0c0', '#e6ecf5', '#62a8d8'],
+    ['#140812', '#7a5a2a', '#c9a24a', '#fff0b8', '#ff9a2e'],
+    ['#0a0718', '#3a2474', '#8a4fc2', '#f0c4ff', '#aee6ff'],
+    ['#0b0f14', '#22464a', '#8ad4b4', '#e0fff0', '#e07ac0']
+];
+
+// Lifetime-clip ranges (log10) covered by each scene, used for in-scene progress.
+const SCENE_LOG_RANGES = [[0, 6.7], [6.7, 9.7], [9.7, 12], [12, 27.78], [27.78, 33.3], [33.3, 56], [56, 64]];
+
+const BAYER_8X8 = [
+    [0, 32, 8, 40, 2, 34, 10, 42],
+    [48, 16, 56, 24, 50, 18, 58, 26],
+    [12, 44, 4, 36, 14, 46, 6, 38],
+    [60, 28, 52, 20, 62, 30, 54, 22],
+    [3, 35, 11, 43, 1, 33, 9, 41],
+    [51, 19, 59, 27, 49, 17, 57, 25],
+    [15, 47, 7, 39, 13, 45, 5, 37],
+    [63, 31, 55, 23, 61, 29, 53, 21]
+];
+
+/** Deterministic hash → [0, 1). */
+function hash01(a, b = 0, c = 0) {
+    let h = ((a * 374761393 + b * 668265263 + c * 1013904223) ^ 0x5bf03635) >>> 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+/** Smooth 3D value noise in [0, 1]. */
+function valueNoise3(x, y, z) {
+    const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+    const xf = x - xi, yf = y - yi, zf = z - zi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf), w = zf * zf * (3 - 2 * zf);
+    const h = (a, b, c) => hash01(xi + a + 1000, yi + b + 1000, zi + c + 1000);
+    const lerp = (a, b, k) => a + (b - a) * k;
+    return lerp(
+        lerp(lerp(h(0, 0, 0), h(1, 0, 0), u), lerp(h(0, 1, 0), h(1, 1, 0), u), v),
+        lerp(lerp(h(0, 0, 1), h(1, 0, 1), u), lerp(h(0, 1, 1), h(1, 1, 1), u), v), w);
+}
+
+/** Fractal (octave-summed) value noise in [0, 1]. */
+function fbm3(x, y, z, octaves = 4) {
+    let sum = 0, amp = 0.5, norm = 0;
+    for (let o = 0; o < octaves; ++o) {
+        sum += valueNoise3(x, y, z) * amp;
+        norm += amp;
+        x *= 2.03; y *= 2.03; z *= 2.03;
+        amp *= 0.5;
+    }
+    return sum / norm;
+}
+
+function hexToRgb(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
 
 class CosmicVisualizer {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
 
-        // Internal Low-Res Pixelation Buffer Pass
+        // Low-resolution paint buffer
         this.pixelCanvas = document.createElement('canvas');
-        this.pixelCtx = this.pixelCanvas.getContext('2d');
+        this.pixelCtx = this.pixelCanvas.getContext('2d', { willReadFrequently: true });
+        this.fadeCanvas = document.createElement('canvas');
+        this.fadeCtx = this.fadeCanvas.getContext('2d');
+        this.fadeTimer = 0;
 
-        // Scene / Tier Management (0 to 6)
         this.tier = 0;
         this.autoTier = true;
         this.enableDither = true;
-        this.ditherIntensity = 1.0;
+        this.paletteLUTs = [];
+        this.clipPatterns = {};
 
-        // Camera Orbit State
+        // Drag-to-orbit for the space scenes
         this.camYaw = 0.0;
-        this.camPitch = 0.4;
-        this.camZoom = 1.0;
         this.isDragging = false;
         this.lastMouseX = 0;
-        this.lastMouseY = 0;
 
-        // Visual Effects State
-        this.cosmicRotation = 0;
-        this.sparks = [];
+        this.time = 0;
         this.heroRecoil = 1.0;
         this.heroRotation = 0;
-
-        // Falling Paperclips Simulation
-        this.fallingClips = [];
-        this.settledClips = [];
-        this.drainingClips = [];
-        this.maxFallingClips = 300;
-        this.maxSettledClips = 90;
-        this.maxDrainingClips = 80;
-
-        // Dynamic Fluid & Granular Slumping Pile Simulation
-        this.numColumns = 54;
-        this.pileHeights = new Float32Array(this.numColumns);
-        this.waveOffsets = new Float32Array(this.numColumns);
-        this.waveVelocities = new Float32Array(this.numColumns);
-        this.internalFlowPhase = 0.0;
-        this.internalFlowVelocity = 0.0;
-        this.drainFlowPhase = 0.0;
-        this.drainFlowIntensity = 0.0;
-        this.initFluidColumns();
-
-        // Falling Fluid Cascade Streams Simulation (Drifts in at high CPS scales)
-        this.fluidStreamIntensity = 0.0;
-        this.fluidStreamPhase = 0.0;
-        this.fluidStreamChannels = [
-            { relX: 0.18, width: 14, speed: 1.15, phaseOffset: 0.0, waveAmp: 3.2, waveFreq: 0.045, colorScheme: 0 },
-            { relX: 0.32, width: 18, speed: 1.35, phaseOffset: 1.4, waveAmp: 4.0, waveFreq: 0.040, colorScheme: 1 },
-            { relX: 0.50, width: 24, speed: 1.55, phaseOffset: 2.8, waveAmp: 4.8, waveFreq: 0.035, colorScheme: 2 },
-            { relX: 0.68, width: 18, speed: 1.30, phaseOffset: 4.2, waveAmp: 4.0, waveFreq: 0.040, colorScheme: 1 },
-            { relX: 0.82, width: 14, speed: 1.20, phaseOffset: 5.6, waveAmp: 3.2, waveFreq: 0.045, colorScheme: 0 }
-        ];
-        this.fluidSplashDroplets = [];
-        this.maxSplashDroplets = 50;
-
-        // Background Stars for space scenes
-        this.stars = [];
-        this.initStars(60);
-
-        // Pre-compute 8x8 Bayer Dithering Matrix for the Dither Filter Pass
-        this.bayer8x8 = [
-            [ 0, 32,  8, 40,  2, 34, 10, 42],
-            [48, 16, 56, 24, 50, 18, 58, 26],
-            [12, 44,  4, 36, 14, 46,  6, 38],
-            [60, 28, 52, 20, 62, 30, 54, 22],
-            [ 3, 35, 11, 43,  1, 33,  9, 41],
-            [51, 19, 59, 27, 49, 17, 57, 25],
-            [15, 47,  7, 39, 13, 45,  5, 37],
-            [63, 31, 55, 23, 61, 29, 53, 21]
-        ];
-
-        // Screen Shake & Scene Transition Animation State
         this.shakeTimer = 0.0;
         this.shakeIntensity = 0.0;
         this.transitionBanner = null;
         this.transitionBannerTimer = 0.0;
+
+        // Particles
+        this.sparks = [];
+        this.fallingClips = [];
+        this.drainingClips = [];
+        this.fluidSplashDroplets = [];
+        this.maxFallingClips = 260;
+        this.maxDrainingClips = 80;
+        this.maxSplashDroplets = 50;
+        this.maxSparks = 240;
+
+        // Paperclip sea (tracks the clip inventory)
+        this.numColumns = 54;
+        this.initFluidColumns();
+        this.internalFlowPhase = 0.0;
+        this.internalFlowVelocity = 0.0;
+        this.drainFlowIntensity = 0.0;
+
+        // Production waterfalls (fade in at high CPS)
+        this.fluidStreamIntensity = 0.0;
+        this.fluidStreamPhase = 0.0;
+        this.fluidStreamChannels = [
+            { relX: 0.18, width: 12, speed: 1.15, phaseOffset: 0.0, waveAmp: 3.0, waveFreq: 0.045 },
+            { relX: 0.34, width: 15, speed: 1.35, phaseOffset: 1.4, waveAmp: 3.6, waveFreq: 0.040 },
+            { relX: 0.50, width: 20, speed: 1.55, phaseOffset: 2.8, waveAmp: 4.4, waveFreq: 0.035 },
+            { relX: 0.66, width: 15, speed: 1.30, phaseOffset: 4.2, waveAmp: 3.6, waveFreq: 0.040 },
+            { relX: 0.82, width: 12, speed: 1.20, phaseOffset: 5.6, waveAmp: 3.0, waveFreq: 0.045 }
+        ];
+
+        // Pre-generated scene geometry
+        this.stars = Array.from({ length: 140 }, (_, i) => ({
+            x: hash01(i, 1), y: hash01(i, 2), size: hash01(i, 3) > 0.9 ? 2 : 1,
+            tw: 0.6 + hash01(i, 4) * 2.4, ph: hash01(i, 5) * 6.283, tone: hash01(i, 6)
+        }));
+        this.bubbles = Array.from({ length: 7 }, (_, i) => ({
+            x: 0.12 + (i % 4) * 0.25 + (hash01(i, 21) - 0.5) * 0.12, y: 0.16 + Math.floor(i / 4) * 0.4 + (hash01(i, 22) - 0.5) * 0.14,
+            r: 0.05 + hash01(i, 23) * 0.09, drift: 0.2 + hash01(i, 24), ph: hash01(i, 25) * 6.283, conv: hash01(i, 26)
+        }));
 
         this.initEvents();
     }
@@ -106,197 +173,107 @@ class CosmicVisualizer {
         this.pileHeights = new Float32Array(this.numColumns);
         this.waveOffsets = new Float32Array(this.numColumns);
         this.waveVelocities = new Float32Array(this.numColumns);
-        for (let i = 0; i < this.numColumns; ++i) {
-            this.pileHeights[i] = 0.0;
-            this.waveOffsets[i] = 0.0;
-            this.waveVelocities[i] = 0.0;
-        }
-    }
-
-    initStars(count) {
-        this.stars = [];
-        for (let i = 0; i < count; ++i) {
-            this.stars.push({
-                x: Math.random(),
-                y: Math.random() * 0.75,
-                size: Math.random() > 0.8 ? 2 : 1,
-                color: Math.random() > 0.5 ? '#8da2b8' : (Math.random() > 0.5 ? '#b0c4de' : '#6b7c96'),
-                twinkleSpeed: 0.8 + Math.random() * 2.2,
-                phase: Math.random() * Math.PI * 2
-            });
-        }
     }
 
     initEvents() {
         if (!this.canvas) return;
-
         this.canvas.addEventListener('mousedown', (e) => {
             this.isDragging = true;
             this.lastMouseX = e.clientX;
-            this.lastMouseY = e.clientY;
         });
-
         window.addEventListener('mousemove', (e) => {
             if (!this.isDragging) return;
-            const dx = e.clientX - this.lastMouseX;
-            const dy = e.clientY - this.lastMouseY;
-            this.camYaw += dx * 0.008;
-            this.camPitch = Math.max(0.1, Math.min(1.4, this.camPitch + dy * 0.008));
+            this.camYaw += (e.clientX - this.lastMouseX) * 0.006;
             this.lastMouseX = e.clientX;
-            this.lastMouseY = e.clientY;
         });
-
-        window.addEventListener('mouseup', () => {
-            this.isDragging = false;
-        });
+        window.addEventListener('mouseup', () => { this.isDragging = false; });
     }
 
-    getHeroPosition(w = null, h = null) {
-        const pw = w || (this.pixelCanvas ? this.pixelCanvas.width : 240) || 240;
-        const ph = h || (this.pixelCanvas ? this.pixelCanvas.height : 150) || 150;
-        let heroY;
-        switch (this.tier) {
-            case 0:
-                heroY = ph * 0.42;
-                break;
-            case 1:
-                heroY = ph * 0.28;
-                break;
-            case 2:
-                heroY = ph * 0.32;
-                break;
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-            default:
-                heroY = ph * 0.45;
-                break;
-        }
-        return { x: pw / 2, y: heroY };
+    reset() {
+        this.fallingClips = [];
+        this.drainingClips = [];
+        this.fluidSplashDroplets = [];
+        this.sparks = [];
+        this.fluidStreamIntensity = 0.0;
+        this.transitionBanner = null;
+        this.transitionBannerTimer = 0.0;
+        this.initFluidColumns();
+        this.tier = 0;
+        this.autoTier = true;
     }
 
-    triggerHeroClick(targetX = null, targetY = null) {
+    // =========================================================================
+    // EVENTS FROM THE GAME
+    // =========================================================================
+
+    triggerHeroClick() {
         this.heroRecoil = 0.7;
         this.heroRotation += 0.35;
-        const heroPos = this.getHeroPosition();
-        const emitX = (targetX !== null && targetX !== undefined) ? targetX : heroPos.x;
-        const emitY = (targetY !== null && targetY !== undefined) ? targetY : heroPos.y;
-        this.emitClickSparks(emitX, emitY, 16);
-        this.spawnPaperclips(1, emitX, 0);
+        const pw = this.pixelCanvas.width;
+        if (pw > 0) this.emitClickSparks(pw / 2, this.pixelCanvas.height * 0.35, 10);
+        this.spawnPaperclips(1, pw / 2, 0);
     }
 
     spawnPaperclips(count = 1, preferredX = null, cps = 0) {
         const pw = this.pixelCanvas.width || 240;
-        const centerX = pw / 2;
-        const colors = ['#ffffff', '#00f0ff', '#d0e8ff', '#ffe600', '#7fe0ff', '#ff66aa'];
-
-        // When fluid stream intensity is high, throttle discrete falling clips so they act as sparkling accents
-        // while the bulk mass of falling paperclips is smoothly rendered by the fluid cascade simulation.
         const maxSpawn = Math.max(1, Math.round(16 * (1.0 - this.fluidStreamIntensity * 0.85)));
         const spawnCount = Math.min(count, maxSpawn);
-
         const cpsNum = (typeof cps === 'object' && cps !== null) ? cps.toDouble() : (Number(cps) || 0);
-        const spreadFactor = Math.min(1.0, cpsNum / 35.0);
-        const minSpread = 15.0;
-        const maxSpread = (pw - 24) / 2;
-        const currentSpread = minSpread + spreadFactor * (maxSpread - minSpread);
+        const spread = 15 + Math.min(1.0, cpsNum / 35.0) * ((pw - 24) / 2 - 15);
+        const cap = Math.round(this.maxFallingClips * (1.0 - this.fluidStreamIntensity * 0.75));
 
-        const currentMaxFalling = Math.round(this.maxFallingClips * (1.0 - this.fluidStreamIntensity * 0.75));
-
-        for (let i = 0; i < spawnCount; ++i) {
-            if (this.fallingClips.length >= currentMaxFalling) break;
-
-            let x;
-            if (preferredX !== null && count <= 3) {
-                x = preferredX + (Math.random() - 0.5) * (12 + spreadFactor * 24);
-            } else {
-                x = centerX + (Math.random() - 0.5) * (currentSpread * 2);
-            }
+        for (let i = 0; i < spawnCount && this.fallingClips.length < cap; ++i) {
+            let x = (preferredX !== null && count <= 3)
+                ? preferredX + (Math.random() - 0.5) * 16
+                : pw / 2 + (Math.random() - 0.5) * spread * 2;
             x = Math.max(6, Math.min(pw - 6, x));
-
-            const vx = (Math.random() - 0.5) * 1.2;
-            const vy = 0.9 + Math.random() * 2.2;
-            const rot = Math.random() * Math.PI * 2;
-            const vRot = (Math.random() - 0.5) * 0.35;
-            const color = colors[Math.floor(Math.random() * colors.length)];
-
             this.fallingClips.push({
-                x: x,
-                y: -6 - Math.random() * 12,
-                vx: vx,
-                vy: vy,
-                rot: rot,
-                vRot: vRot,
-                color: color,
-                size: 5 + Math.random() * 2.5,
-                bounces: 0,
-                settled: false,
+                x, y: -6 - Math.random() * 12,
+                vx: (Math.random() - 0.5) * 70, vy: 55 + Math.random() * 130,
+                rot: Math.random() * Math.PI * 2, vRot: (Math.random() - 0.5) * 20,
+                size: 5 + Math.random() * 2.5, tone: Math.random() < 0.15 ? 4 : (Math.random() < 0.5 ? 3 : 2),
                 life: 8.0
             });
         }
-
         this.internalFlowVelocity = Math.min(2.0, this.internalFlowVelocity + Math.min(count, 6) * 0.12);
     }
 
     drainPaperclips(ratio = 0.5) {
-        const clampedRatio = Math.max(0.1, Math.min(1.0, ratio));
-        // Boost drain flow vortex intensity for visual swirl / whirlpool effect
-        this.drainFlowIntensity = Math.min(3.0, this.drainFlowIntensity + clampedRatio * 2.2);
+        const r = Math.max(0.1, Math.min(1.0, ratio));
+        this.drainFlowIntensity = Math.min(3.0, this.drainFlowIntensity + r * 2.2);
 
         const pw = this.pixelCanvas.width || 240;
-        const ph = this.pixelCanvas.height || 150;
-        const floorY = ph - 2;
-
-        // Spawn draining paperclips that get sucked into the central sink
-        const spawnDrainCount = Math.min(24, Math.floor(6 + clampedRatio * 18));
-        const colors = ['#00f0ff', '#ffe600', '#ffffff', '#ff2a85', '#00ff88', '#ff7700', '#a855f7', '#38bdf8'];
+        const floorY = (this.pixelCanvas.height || 150) - 2;
         const colWidth = pw / (this.numColumns - 1);
-
-        for (let k = 0; k < spawnDrainCount; ++k) {
-            if (this.drainingClips.length >= this.maxDrainingClips) break;
-
+        const count = Math.min(24, Math.floor(6 + r * 18));
+        for (let k = 0; k < count && this.drainingClips.length < this.maxDrainingClips; ++k) {
             const colIdx = Math.floor(Math.random() * this.numColumns);
             const moundH = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
             if (moundH < 0.8) continue;
-
             const x = colIdx * colWidth + (Math.random() - 0.5) * 6;
             const y = floorY - moundH + Math.random() * moundH * 0.4;
-
-            const dx = (pw / 2) - x;
+            const dx = pw / 2 - x;
             const dy = floorY - y;
-            const dist = Math.sqrt(dx * dx + dy * dy) + 1.0;
-            const speed = 1.2 + Math.random() * 2.0;
-
+            const dist = Math.hypot(dx, dy) + 1.0;
+            const speed = 70 + Math.random() * 120;
             this.drainingClips.push({
-                x: x,
-                y: y,
-                vx: (dx / dist) * speed,
-                vy: Math.max(0.4, (dy / dist) * speed * 0.8),
-                rot: Math.random() * Math.PI * 2,
-                vRot: (Math.random() - 0.5) * 0.4 + (dx > 0 ? 0.15 : -0.15),
-                size: 3.5 + Math.random() * 2.0,
-                color: colors[Math.floor(Math.random() * colors.length)],
-                life: 1.8 + Math.random() * 1.2,
-                maxLife: 2.5,
-                alpha: 0.9
+                x, y, vx: (dx / dist) * speed, vy: Math.max(25, (dy / dist) * speed * 0.8),
+                rot: Math.random() * Math.PI * 2, vRot: (Math.random() - 0.5) * 24 + (dx > 0 ? 9 : -9),
+                size: 3.5 + Math.random() * 2.0, tone: Math.random() < 0.2 ? 4 : 3,
+                life: 1.8 + Math.random() * 1.2, maxLife: 2.5
             });
         }
     }
 
     emitClickSparks(x, y, count = 16) {
         for (let i = 0; i < count; ++i) {
+            if (this.sparks.length >= this.maxSparks) this.sparks.shift();
             const angle = Math.random() * Math.PI * 2;
-            const speed = 1.5 + Math.random() * 3.5;
+            const speed = 90 + Math.random() * 210;
             this.sparks.push({
-                x: x,
-                y: y,
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed - 1.0,
-                life: 1.0,
-                decay: 0.03 + Math.random() * 0.04,
-                size: Math.random() > 0.5 ? 2 : 3,
-                color: Math.random() > 0.4 ? '#ffe600' : (Math.random() > 0.5 ? '#00f0ff' : '#ffffff')
+                x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 60,
+                life: 1.0, decay: 1.8 + Math.random() * 2.4, size: Math.random() > 0.5 ? 1 : 2,
+                tone: Math.random() > 0.4 ? 4 : 3
             });
         }
     }
@@ -305,154 +282,107 @@ class CosmicVisualizer {
         this.emitClickSparks(x, y, count);
     }
 
+    // =========================================================================
+    // SCENE / TIER MANAGEMENT
+    // =========================================================================
+
     getTierScale(tier = this.tier) {
-        const scales = [1.0, 0.72, 0.52, 0.38, 0.28, 0.20, 0.15];
-        return scales[Math.max(0, Math.min(6, tier))] || 1.0;
+        return [1.0, 0.8, 0.65, 0.55, 0.48, 0.42, 0.38][Math.max(0, Math.min(6, tier))];
     }
 
+    getTierName(tier) {
+        return ["Factory Interior", "Factory in Town", "Industrial Metropolis", "Planetary Orbit",
+            "Solar Dyson Swarm", "Galactic Penrose Engine", "11D Multiverse"][tier] || "Factory";
+    }
+
+    /** Progress (0..1) through the currently displayed scene, from lifetime clips. */
+    getSceneProgress(state) {
+        if (!state || !state.lifetimeClips) return 0;
+        if ((state.storyTier || 0) > this.tier) return 1;
+        const [lo, hi] = SCENE_LOG_RANGES[this.tier];
+        const l = state.lifetimeClips.log10();
+        return Math.max(0, Math.min(1, (l - lo) / (hi - lo)));
+    }
+
+    /** Height of the paperclip sea, from the current clip inventory relative to the scene's scale. */
     computeTargetCapacity(state, ph) {
-        if (!state || !state.clips) return 0.0;
-        let cLog = 0;
-        let numVal = 0;
-        if (state.clips instanceof BigDouble) {
-            if (state.clips.mantissa <= 0) return 0.0;
-            cLog = state.clips.exponent + Math.log10(Math.max(1e-9, state.clips.mantissa));
-            if (state.clips.exponent < 6) numVal = state.clips.toDouble();
+        if (!state || !state.clips || !(state.clips.mantissa > 0)) return 0.0;
+        const cLog = state.clips.log10();
+        const maxFillHeight = ph * 0.42;
+        let fill;
+        if (this.tier === 0) {
+            const logMax = Math.log10(5000000.0);
+            fill = cLog <= 2 ? (Math.pow(10, cLog) / 100.0) * 0.05 : 0.05 + 0.95 * Math.min(1.0, (cLog - 2) / (logMax - 2));
         } else {
-            numVal = Number(state.clips) || 0;
-            if (numVal <= 0) return 0.0;
-            cLog = Math.log10(numVal);
+            const [lo, hi] = SCENE_LOG_RANGES[this.tier];
+            fill = cLog <= lo
+                ? Math.max(0, Math.min(1, Math.pow(10, cLog - lo))) * 0.06
+                : 0.06 + 0.94 * Math.min(1.0, (cLog - lo) / (hi - lo));
         }
-
-        const tier = (this.tier !== undefined) ? this.tier : 0;
-        const maxFillHeight = ph * 0.65;
-
-        let fillFraction = 0.0;
-
-        if (tier === 0) {
-            // Tier 0: 0 to 5,000,000 clips (5 Metric Tons)
-            const logMax = Math.log10(5000000.0); // ~6.69897 (burst threshold: 5 Million clips)
-            if (numVal > 0 && numVal <= 100.0) {
-                fillFraction = (numVal / 100.0) * 0.05;
-            } else if (cLog > Math.log10(100.0)) {
-                const logMin = Math.log10(100.0);
-                const progress = Math.min(1.0, (cLog - logMin) / (logMax - logMin));
-                fillFraction = 0.05 + progress * 0.95;
-            }
-        } else {
-            let logMin = 6.699;
-            let logMax = 8.699;
-            if (tier === 1) {
-                logMin = 6.699;    // 5M (Town entry)
-                logMax = 8.699;    // 500M (Town submerged)
-            } else if (tier === 2) {
-                logMin = 8.699;    // 500M (Megacity entry)
-                logMax = 12.000;   // 1T (Metropolis submerged)
-            } else if (tier === 3) {
-                logMin = 12.000;   // 1T (Planetary Earth entry)
-                logMax = 27.776;   // 5.97e27 (5.97e24 kg Earth mass converted)
-            } else if (tier === 4) {
-                logMin = 27.776;   // 5.97e27 (Solar Dyson entry)
-                logMax = 33.298;   // 1.99e33 (1.989e30 kg Solar mass converted)
-            } else if (tier === 5) {
-                logMin = 33.298;   // 1.99e33 (Galactic Penrose entry)
-                logMax = 45.000;   // 1e45 (Milky Way matter)
-            } else if (tier === 6) {
-                logMin = 45.000;   // 1e45 (11D Multiverse entry)
-                logMax = 150.000;  // 1e150 (Multiverse quantum foam)
-            }
-
-            if (cLog <= logMin) {
-                const subRatio = Math.max(0.0, Math.min(1.0, Math.pow(10, cLog - logMin)));
-                fillFraction = subRatio * 0.06;
-            } else {
-                const progress = Math.min(1.0, (cLog - logMin) / (logMax - logMin));
-                fillFraction = 0.06 + progress * 0.94;
-            }
-        }
-
-        fillFraction = Math.max(0.0, Math.min(1.0, fillFraction));
-        return fillFraction * maxFillHeight;
+        return Math.max(0, Math.min(1, fill)) * maxFillHeight;
     }
 
     syncFluidToInventory(state, instant = false) {
         if (!state || !state.clips) return;
-        const ph = this.pixelCanvas.height || 150;
-        const targetCapacity = this.computeTargetCapacity(state, ph);
-
-        for (let i = 0; i < this.numColumns; ++i) {
-            const centerFactor = 0.65 + 0.35 * Math.sin(Math.PI * (i / (this.numColumns - 1)));
-            const targetH = targetCapacity * centerFactor;
-            if (instant) {
-                this.pileHeights[i] = targetH;
+        const target = this.computeTargetCapacity(state, this.pixelCanvas.height || 150);
+        if (instant) {
+            for (let i = 0; i < this.numColumns; ++i) {
+                this.pileHeights[i] = target * (0.65 + 0.35 * Math.sin(Math.PI * (i / (this.numColumns - 1))));
                 this.waveOffsets[i] = 0.0;
                 this.waveVelocities[i] = 0.0;
             }
-        }
-        if (!instant) {
+        } else {
             this.internalFlowVelocity = Math.min(2.5, this.internalFlowVelocity + 0.4);
         }
     }
 
-    determineAutoTier(lifetimeClips) {
-        if (!lifetimeClips) return 0;
-        if (lifetimeClips.gte(new BigDouble(1.0, 45))) return 6; // Multiverse
-        if (lifetimeClips.gte(new BigDouble(1.99, 33))) return 5; // Galactic Penrose (Dyson complete)
-        if (lifetimeClips.gte(new BigDouble(5.97, 27))) return 4; // Solar Dyson (Earth complete)
-        if (lifetimeClips.gte(new BigDouble(1.0, 12)))  return 3; // Planetary Earth (1 Trillion)
-        if (lifetimeClips.gte(new BigDouble(5.0, 8)))   return 2; // Industrial Megacity (500 Million)
-        if (lifetimeClips.gte(new BigDouble(5.0, 6)))   return 1; // Factory in Town (5 Million)
-        return 0; // Factory Interior (0 to 5 Million)
-    }
-
-    getTierName(tier) {
-        switch (tier) {
-            case 0: return "Factory Interior (Wood & Brick Warehouse)";
-            case 1: return "Factory in Town (Industrial Suburb)";
-            case 2: return "Industrial Megacity (Metropolis)";
-            case 3: return "Planetary Earth & Orbital Ring";
-            case 4: return "Solar Dyson Swarm & Star Siphon";
-            case 5: return "Galactic Penrose Dynamo";
-            case 6: return "11D Multiverse Quantum Foam";
-            default: return "Factory Assembly";
-        }
-    }
-
-    triggerTransition(fromTier, toTier, bannerText) {
-        if (this.autoTier) {
-            this.tier = Math.max(0, Math.min(6, toTier));
-        }
+    /** Called when a story beat advancing the scene is displayed. */
+    onStoryTierAdvanced(toTier, bannerText) {
+        if (!this.autoTier) return; // Player is viewing a scene manually; don't yank the view or flash banners.
+        this.changeTier(toTier);
         this.shakeTimer = 1.2;
-        this.shakeIntensity = 12.0;
+        this.shakeIntensity = 5.0;
         this.transitionBanner = bannerText || `ENTERING ${this.getTierName(toTier).toUpperCase()}`;
-        this.transitionBannerTimer = 4.0;
-        
-        // Spawn eruption of falling clips and sparks
-        for (let i = 0; i < 90; ++i) {
+        this.transitionBannerTimer = 4.5;
+
+        const pw = this.pixelCanvas.width || 240;
+        for (let i = 0; i < 60; ++i) {
             this.fallingClips.push({
-                x: Math.random() * 240,
-                y: -Math.random() * 80,
-                vx: (Math.random() - 0.5) * 55,
-                vy: 50 + Math.random() * 110,
-                rot: Math.random() * Math.PI * 2,
-                vrot: (Math.random() - 0.5) * 16,
-                size: 2.5 + Math.random() * 2.5,
-                colorScheme: Math.floor(Math.random() * 3)
+                x: Math.random() * pw, y: -Math.random() * 60,
+                vx: (Math.random() - 0.5) * 80, vy: 60 + Math.random() * 120,
+                rot: Math.random() * Math.PI * 2, vRot: (Math.random() - 0.5) * 16,
+                size: 4 + Math.random() * 3, tone: Math.random() < 0.3 ? 4 : 3, life: 6.0
             });
         }
-        this.spawnSparks(120, 75, 50);
-
-        if (window.game && window.game.audio) {
-            window.game.audio.playTechUnlockSound();
-        }
+        this.spawnSparks(pw / 2, (this.pixelCanvas.height || 150) * 0.4, 40);
+        if (window.game && window.game.audio) window.game.audio.playTechUnlockSound();
     }
 
-    setTier(tierIndex) {
+    /** Switches scene with a short cross-fade from the previous frame. */
+    changeTier(tier) {
+        tier = Math.max(0, Math.min(6, tier));
+        if (tier === this.tier) return;
+        if (this.pixelCanvas.width > 0) {
+            this.fadeCanvas.width = this.pixelCanvas.width;
+            this.fadeCanvas.height = this.pixelCanvas.height;
+            this.fadeCtx.drawImage(this.pixelCanvas, 0, 0);
+            this.fadeTimer = 1.0;
+        }
+        this.tier = tier;
+    }
+
+    /** Snaps the displayed scene to the saved story tier (no banner). */
+    syncStoryTier(storyTier) {
+        if (this.autoTier) this.tier = Math.max(0, Math.min(6, storyTier));
+    }
+
+    setTier(tierIndex, storyTier = 0) {
         if (tierIndex === -1) {
             this.autoTier = true;
+            this.changeTier(storyTier);
         } else {
             this.autoTier = false;
-            this.tier = Math.max(0, Math.min(6, tierIndex));
+            this.changeTier(tierIndex);
         }
     }
 
@@ -461,233 +391,161 @@ class CosmicVisualizer {
         return this.enableDither;
     }
 
+    // =========================================================================
+    // SIMULATION
+    // =========================================================================
+
     update(dt, state) {
         const safeDt = Math.min(0.1, Math.max(0.001, dt));
+        if (this.autoTier && state && (state.storyTier || 0) !== this.tier) this.changeTier(state.storyTier || 0);
 
-        if (this.autoTier && state) {
-            this.tier = this.determineAutoTier(state.lifetimeClips);
-        }
-
-        if (this.shakeTimer > 0) {
-            this.shakeTimer = Math.max(0, this.shakeTimer - safeDt);
-        }
+        this.time += safeDt;
+        this.shakeTimer = Math.max(0, this.shakeTimer - safeDt);
+        this.fadeTimer = Math.max(0, this.fadeTimer - safeDt);
         if (this.transitionBannerTimer > 0) {
             this.transitionBannerTimer = Math.max(0, this.transitionBannerTimer - safeDt);
             if (this.transitionBannerTimer <= 0) this.transitionBanner = null;
         }
-
-        this.cosmicRotation += safeDt * 0.8;
-        this.heroRecoil += (1.0 - this.heroRecoil) * (safeDt * 10.0);
-
+        this.heroRecoil += (1.0 - this.heroRecoil) * Math.min(1, safeDt * 10.0);
         this.internalFlowPhase += this.internalFlowVelocity * safeDt * 0.6;
         this.internalFlowVelocity = Math.max(0, this.internalFlowVelocity - safeDt * 0.85);
-
-        this.drainFlowPhase += this.drainFlowIntensity * safeDt * 2.2;
         this.drainFlowIntensity = Math.max(0, this.drainFlowIntensity - safeDt * 0.85);
 
-        // 1. Calculate fluid cascade intensity: Drifts towards fluid waterfall at high production scales
-        let targetStreamIntensity = 0.0;
+        // Waterfall intensity drifts toward a target based on production
+        let targetStream = 0.0;
         if (state && typeof state.calculateTotalCPS === 'function') {
             const cps = state.calculateTotalCPS();
-            if (cps && cps.gt(BigDouble.zero())) {
-                let logCPS = 0;
-                if (cps.exponent >= 1) {
-                    logCPS = cps.exponent + Math.log10(Math.max(1e-9, cps.mantissa));
-                } else {
-                    const num = cps.toDouble();
-                    if (num > 0) logCPS = Math.log10(num);
-                }
-                if (logCPS > 0.7) {
-                    targetStreamIntensity = Math.min(1.0, (logCPS - 0.7) / 2.3);
-                }
-            }
+            if (cps && cps.mantissa > 0) targetStream = Math.max(0, Math.min(1.0, (cps.log10() - 0.7) / 2.3));
         }
-        // Smoothly drift towards the target fluid stream intensity
-        this.fluidStreamIntensity += (targetStreamIntensity - this.fluidStreamIntensity) * (1.0 - Math.exp(-safeDt * 2.2));
-
-        // Advance fluid waterfall flow phase
+        this.fluidStreamIntensity += (targetStream - this.fluidStreamIntensity) * (1.0 - Math.exp(-safeDt * 2.2));
         this.fluidStreamPhase += (2.6 + this.fluidStreamIntensity * 3.8) * safeDt;
 
         const pw = this.pixelCanvas.width || 240;
         const ph = this.pixelCanvas.height || 150;
         const floorY = ph - 2;
+        const surfaceAt = (x) => {
+            const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((x / pw) * this.numColumns)));
+            return { colIdx, y: floorY - Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]) };
+        };
 
-        // 2. Fluid Waterfall Impact Physics on the surface of the bottom fluid sea
+        // Waterfall splashes
         if (this.fluidStreamIntensity > 0.02) {
-            for (let c = 0; c < this.fluidStreamChannels.length; ++c) {
-                const ch = this.fluidStreamChannels[c];
-                const streamCenterX = ch.relX * pw;
-                const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((streamCenterX / pw) * this.numColumns)));
-                const moundH = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
-                const impactY = floorY - moundH;
-
-                // Gentle surface agitation from the pouring fluid torrent
-                const agitation = 0.06 * this.fluidStreamIntensity * Math.sin(this.fluidStreamPhase * 2.0 + ch.phaseOffset);
-                this.waveOffsets[colIdx] += agitation;
-
-                // Spawn splash droplets at impact zone
+            for (const ch of this.fluidStreamChannels) {
+                const sx = ch.relX * pw;
+                const { colIdx, y } = surfaceAt(sx);
+                this.waveOffsets[colIdx] += 0.06 * this.fluidStreamIntensity * Math.sin(this.fluidStreamPhase * 2.0 + ch.phaseOffset);
                 if (Math.random() < this.fluidStreamIntensity * 0.45 && this.fluidSplashDroplets.length < this.maxSplashDroplets) {
-                    const splashAngle = -Math.PI / 2 + (Math.random() - 0.5) * 1.4;
-                    const splashSpeed = 1.2 + Math.random() * 2.2 * this.fluidStreamIntensity;
-                    const splashColors = ['#ffffff', '#00f0ff', '#70e2ff', '#ffe600'];
+                    const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.4;
+                    const sp = 70 + Math.random() * 130 * this.fluidStreamIntensity;
                     this.fluidSplashDroplets.push({
-                        x: streamCenterX + (Math.random() - 0.5) * (ch.width * 0.7),
-                        y: impactY,
-                        vx: Math.cos(splashAngle) * splashSpeed,
-                        vy: Math.sin(splashAngle) * splashSpeed,
-                        life: 0.4 + Math.random() * 0.35,
-                        maxLife: 0.75,
-                        size: Math.random() > 0.6 ? 2 : 1,
-                        color: splashColors[Math.floor(Math.random() * splashColors.length)]
+                        x: sx + (Math.random() - 0.5) * ch.width * 0.7, y,
+                        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+                        life: 0.4 + Math.random() * 0.35, maxLife: 0.75, size: Math.random() > 0.6 ? 2 : 1
                     });
                 }
             }
         }
-
-        // Update Splash Droplets
         for (let i = this.fluidSplashDroplets.length - 1; i >= 0; --i) {
             const d = this.fluidSplashDroplets[i];
-            d.x += d.vx;
-            d.y += d.vy;
-            d.vy += 0.16; // gravity
+            d.x += d.vx * safeDt;
+            d.y += d.vy * safeDt;
+            d.vy += 580 * safeDt;
             d.life -= safeDt;
-            if (d.life <= 0 || d.y > ph + 5) {
-                this.fluidSplashDroplets.splice(i, 1);
-            }
+            if (d.life <= 0 || d.y > ph + 5) this.fluidSplashDroplets.splice(i, 1);
         }
 
-        // 3. Update Falling Paperclips (Discrete accent clips)
+        // Falling clips land on the sea surface
         for (let i = this.fallingClips.length - 1; i >= 0; --i) {
             const p = this.fallingClips[i];
-            p.x += p.vx;
-            p.y += p.vy;
-            p.rot += p.vRot;
-            p.vy += 0.22;
+            p.x += p.vx * safeDt;
+            p.y += p.vy * safeDt;
+            p.rot += p.vRot * safeDt;
+            p.vy += 790 * safeDt;
             p.life -= safeDt;
-
-            const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((p.x / pw) * this.numColumns)));
-            const currentMound = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
-            const surfaceY = floorY - currentMound;
-
-            if (p.y >= surfaceY) {
-                p.y = surfaceY;
-                // Subtle fluid surface ripple (viscous dissipation, no rubber bounce)
+            const { colIdx, y } = surfaceAt(p.x);
+            if (p.y >= y) {
                 this.waveOffsets[colIdx] += 0.12;
                 this.waveVelocities[colIdx] += 0.18;
                 if (colIdx > 0) this.waveVelocities[colIdx - 1] += 0.09;
                 if (colIdx < this.numColumns - 1) this.waveVelocities[colIdx + 1] += 0.09;
-
-                p.settled = true;
                 this.fallingClips.splice(i, 1);
-            } else if (p.life <= 0 || p.y > ph + 20) {
+            } else if (p.life <= 0 || p.y > ph + 20 || p.x < -20 || p.x > pw + 20) {
                 this.fallingClips.splice(i, 1);
             }
         }
 
-        // 4. Update Draining Paperclips (Vortex Suction towards Center Floor Drain)
-        const drainTargetX = pw / 2;
-        const drainTargetY = floorY + 4;
+        // Draining clips spiral into the central drain
+        const drainX = pw / 2;
+        const drainY = floorY + 4;
         for (let i = this.drainingClips.length - 1; i >= 0; --i) {
             const p = this.drainingClips[i];
-            const dx = drainTargetX - p.x;
-            const dy = drainTargetY - p.y;
-            const dist = Math.sqrt(dx * dx + dy * dy) + 0.1;
-
-            const suctionAcc = 3.5 + this.drainFlowIntensity * 2.5;
-            p.vx += (dx / dist) * suctionAcc * safeDt;
-            p.vy += Math.max(0.6, (dy / dist) * suctionAcc * safeDt);
-
-            // Tangential swirl (vortex whirlpool effect)
-            const tanX = -dy / dist;
-            const tanY = dx / dist;
-            p.vx += tanX * 1.8 * safeDt;
-            p.vy += tanY * 0.6 * safeDt;
-
-            // Fluid drag
-            p.vx *= 0.95;
-            p.vy *= 0.95;
-            p.x += p.vx;
-            p.y += p.vy;
-            p.rot += p.vRot;
-
+            const dx = drainX - p.x;
+            const dy = drainY - p.y;
+            const dist = Math.hypot(dx, dy) + 0.1;
+            const suction = (3.5 + this.drainFlowIntensity * 2.5) * 60;
+            p.vx += ((dx / dist) * suction + (-dy / dist) * 108) * safeDt;
+            p.vy += (Math.max(36, (dy / dist) * suction) + (dx / dist) * 36) * safeDt;
+            const drag = Math.pow(0.95, safeDt * 60);
+            p.vx *= drag;
+            p.vy *= drag;
+            p.x += p.vx * safeDt;
+            p.y += p.vy * safeDt;
+            p.rot += p.vRot * safeDt;
             p.life -= safeDt;
-            p.alpha = Math.max(0, p.life / p.maxLife);
-
-            if (p.life <= 0 || p.y > ph + 10 || dist < 3.0) {
-                this.drainingClips.splice(i, 1);
-            }
+            if (p.life <= 0 || p.y > ph + 10 || dist < 3.0) this.drainingClips.splice(i, 1);
         }
 
-        // 5. Dynamic Fluid Simulation - Smooth slow drain over a few seconds, zero spring bounce
-        const targetCapacity = this.computeTargetCapacity(state, ph);
-
+        // Paperclip sea: fills/drains smoothly toward the inventory level with damped ripples
+        const target = this.computeTargetCapacity(state, ph);
         for (let i = 0; i < this.numColumns; ++i) {
-            const centerFactor = 0.65 + 0.35 * Math.sin(Math.PI * (i / (this.numColumns - 1)));
-            const targetH = targetCapacity * centerFactor;
+            const targetH = target * (0.65 + 0.35 * Math.sin(Math.PI * (i / (this.numColumns - 1))));
             const diff = targetH - this.pileHeights[i];
+            const rate = diff < 0 ? 1.2 * (1.0 + this.drainFlowIntensity * 0.35) : 3.5;
+            this.pileHeights[i] += diff * (1.0 - Math.exp(-safeDt * rate));
 
-            if (diff < 0) {
-                // Spending / Draining: Slow, smooth viscous drain over 2.5 - 3.5 seconds
-                const baseDrainRate = 1.2;
-                const drainSpeed = baseDrainRate * (1.0 + this.drainFlowIntensity * 0.35);
-                const drainFactor = 1.0 - Math.exp(-safeDt * drainSpeed);
-                this.pileHeights[i] += diff * drainFactor;
-            } else if (diff > 0) {
-                // Producing / Filling: Smooth fill
-                const fillRate = 3.5;
-                const fillFactor = 1.0 - Math.exp(-safeDt * fillRate);
-                this.pileHeights[i] += diff * fillFactor;
-            }
-
-            // Surface ripples: Overdamped / critically damped viscous relaxation (Zero bounce)
-            const rippleDamping = 10.0;
-            const rippleRestoring = 16.0;
-            const accel = -rippleRestoring * this.waveOffsets[i] - rippleDamping * this.waveVelocities[i];
+            const accel = -16.0 * this.waveOffsets[i] - 10.0 * this.waveVelocities[i];
             this.waveVelocities[i] += accel * safeDt;
             this.waveOffsets[i] += this.waveVelocities[i] * safeDt;
-
             this.waveOffsets[i] *= Math.exp(-safeDt * 4.0);
             this.waveVelocities[i] *= Math.exp(-safeDt * 6.0);
         }
-
-        // Viscous lateral diffusion smoothing pass
-        const waveSpread = 0.15;
         for (let pass = 0; pass < 2; ++pass) {
-            for (let i = 0; i < this.numColumns; ++i) {
-                if (i > 0) {
-                    const d = waveSpread * (this.waveOffsets[i] - this.waveOffsets[i - 1]);
-                    this.waveOffsets[i - 1] += d;
-                    this.waveOffsets[i] -= d;
-                }
-                if (i < this.numColumns - 1) {
-                    const d = waveSpread * (this.waveOffsets[i] - this.waveOffsets[i + 1]);
-                    this.waveOffsets[i + 1] += d;
-                    this.waveOffsets[i] -= d;
-                }
+            for (let i = 1; i < this.numColumns; ++i) {
+                const d = 0.15 * (this.waveOffsets[i] - this.waveOffsets[i - 1]);
+                this.waveOffsets[i - 1] += d;
+                this.waveOffsets[i] -= d;
             }
         }
 
-        // 6. Update Sparks
+        // Sparks
         for (let i = this.sparks.length - 1; i >= 0; --i) {
             const p = this.sparks[i];
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.12;
-            p.life -= p.decay;
+            p.x += p.vx * safeDt;
+            p.y += p.vy * safeDt;
+            p.vy += 430 * safeDt;
+            p.life -= p.decay * safeDt;
+            if (p.life <= 0) this.sparks.splice(i, 1);
         }
     }
 
+    // =========================================================================
+    // FRAME
+    // =========================================================================
+
     render(state) {
         if (!this.ctx || !this.canvas) return;
-        const displayW = this.canvas.width = this.canvas.clientWidth;
-        const displayH = this.canvas.height = this.canvas.clientHeight;
+        const displayW = this.canvas.clientWidth;
+        const displayH = this.canvas.clientHeight;
         if (displayW <= 0 || displayH <= 0) return;
+        if (this.canvas.width !== displayW || this.canvas.height !== displayH) {
+            this.canvas.width = displayW;
+            this.canvas.height = displayH;
+        }
 
-        // Internal render resolution (~2.2x pixelation ratio)
-        const pixelScale = 2.2;
-        const pw = Math.max(160, Math.floor(displayW / pixelScale));
-        const ph = Math.max(100, Math.floor(displayH / pixelScale));
-
+        // Keep a consistent chunky pixel size (~360-480 buffer pixels wide) at any window size
+        const pixelScale = Math.max(2, Math.round(displayW / 420));
+        const pw = Math.max(160, Math.ceil(displayW / pixelScale));
+        const ph = Math.max(100, Math.ceil(displayH / pixelScale));
         if (this.pixelCanvas.width !== pw || this.pixelCanvas.height !== ph) {
             this.pixelCanvas.width = pw;
             this.pixelCanvas.height = ph;
@@ -695,1232 +553,197 @@ class CosmicVisualizer {
 
         const pctx = this.pixelCtx;
         pctx.imageSmoothingEnabled = false;
+        pctx.save();
+        this.renderScene(pctx, pw, ph, state);
+        pctx.restore();
 
-        // 1. Render Progressive Neutral/Monochrome Vector Background Scene
-        this.renderSceneVector(pctx, pw, ph, state);
-
-        // 2. Render Falling Fluid Streams & Cascade Torrent (when CPS is high)
-        this.renderFallingFluidStreams(pctx, pw, ph);
-
-        // 3. Render Spilling Fluid Paperclip Mountains & Flowing Terrain
-        this.renderFlowingPaperclipSea(pctx, pw, ph);
-
-        // 4. Render Fluid Waterfall Impact Splashes
-        this.renderFluidImpactSplashes(pctx);
-
-        // 5. Render Draining / Sinking Paperclips
-        this.renderDrainingPaperclips(pctx);
-
-        // 6. Render Falling Tumbling Clips (Discrete foreground accents)
-        this.renderFallingPaperclips(pctx);
-
-        // 7. Render Pixel Sparks
-        this.renderSparks(pctx);
-
-        // 8. Apply Bayer Ordered Dithering & Color Filter Pass
-        if (this.enableDither) {
-            this.applyDitherFilter(pctx, pw, ph);
+        if (this.fadeTimer > 0 && this.fadeCanvas.width === pw && this.fadeCanvas.height === ph) {
+            pctx.globalAlpha = this.fadeTimer;
+            pctx.drawImage(this.fadeCanvas, 0, 0);
+            pctx.globalAlpha = 1.0;
         }
 
-        // 9. Crisp Nearest-Neighbor Upscale Blit to Main Display Canvas with Screen Shake
-        this.ctx.imageSmoothingEnabled = false;
-        this.ctx.clearRect(0, 0, displayW, displayH);
+        this.renderFallingFluidStreams(pctx, pw, ph);
+        this.renderPaperclipSea(pctx, pw, ph);
+        this.renderSplashes(pctx);
+        this.renderDrainingPaperclips(pctx);
+        this.renderFallingPaperclips(pctx);
+        this.renderSparks(pctx);
 
+        if (this.enableDither) this.applyPaletteDither(pctx, pw, ph);
+
+        const ctx = this.ctx;
+        ctx.imageSmoothingEnabled = false;
+        ctx.fillStyle = SCENE_PALETTES[this.tier][0];
+        ctx.fillRect(0, 0, displayW, displayH);
         let shakeX = 0;
         let shakeY = 0;
         if (this.shakeTimer > 0) {
-            const mag = this.shakeIntensity * (this.shakeTimer / 1.2);
-            shakeX = (Math.random() - 0.5) * mag * pixelScale;
-            shakeY = (Math.random() - 0.5) * mag * pixelScale;
+            const mag = this.shakeIntensity * (this.shakeTimer / 1.2) * pixelScale;
+            shakeX = Math.round((Math.random() - 0.5) * mag);
+            shakeY = Math.round((Math.random() - 0.5) * mag);
         }
+        ctx.drawImage(this.pixelCanvas, 0, 0, pw, ph, shakeX, shakeY, pw * pixelScale, ph * pixelScale);
 
-        this.ctx.drawImage(this.pixelCanvas, 0, 0, pw, ph, shakeX, shakeY, displayW, displayH);
-
-        // 10. Render Transition Banner if active
         if (this.transitionBanner && this.transitionBannerTimer > 0) {
-            this.renderTransitionBannerOverlay(this.ctx, displayW, displayH);
+            this.renderTransitionBannerOverlay(ctx, displayW, displayH);
         }
     }
 
     renderTransitionBannerOverlay(ctx, w, h) {
+        const t = this.transitionBannerTimer;
+        const alpha = Math.min(1.0, t > 0.6 ? Math.min(1, (4.5 - t) * 3) : t * 1.6);
+        const fontSize = Math.max(11, Math.min(16, w / 48));
         ctx.save();
-        const bannerH = 44;
-        const bannerY = h * 0.14;
-        const alpha = Math.min(1.0, this.transitionBannerTimer > 0.6 ? 1.0 : this.transitionBannerTimer * 1.6);
-
         ctx.globalAlpha = alpha;
-        ctx.fillStyle = 'rgba(15, 8, 30, 0.90)';
-        ctx.strokeStyle = '#00f0ff';
-        ctx.lineWidth = 3;
-
-        ctx.fillRect(16, bannerY, w - 32, bannerH);
-        ctx.strokeRect(16, bannerY, w - 32, bannerH);
-
-        ctx.font = "800 15px 'Fredoka', sans-serif";
+        ctx.font = `600 ${fontSize}px 'Space Grotesk', 'Segoe UI', sans-serif`;
+        const text = this.transitionBanner;
+        const textW = Math.min(w - 48, ctx.measureText(text).width + 48);
+        const bannerH = fontSize * 2.6;
+        const x = (w - textW) / 2;
+        const y = h * 0.1;
+        ctx.fillStyle = 'rgba(8, 9, 14, 0.82)';
+        ctx.fillRect(x, y, textW, bannerH);
+        ctx.fillStyle = '#e8b85c';
+        ctx.fillRect(x, y, textW, 2);
+        ctx.fillRect(x, y + bannerH - 2, textW, 2);
+        ctx.fillStyle = '#f3efe6';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#ffe600';
-        ctx.shadowColor = '#ff2a85';
-        ctx.shadowBlur = 10;
-        ctx.fillText(this.transitionBanner, w / 2, bannerY + bannerH / 2);
+        ctx.fillText(text, w / 2, y + bannerH / 2, textW - 24);
         ctx.restore();
     }
 
     // =========================================================================
-    // 8x8 BAYER MATRIX ORDERED DITHERING & PIXEL FILTER PASS
+    // PALETTE DITHER
     // =========================================================================
-    applyDitherFilter(ctx, width, height) {
-        const imgData = ctx.getImageData(0, 0, width, height);
-        const data = imgData.data;
-        const matrix = this.bayer8x8;
-        const spread = 24.0 * this.ditherIntensity;
-        const quantLevels = 24.0;
 
-        for (let y = 0; y < height; ++y) {
-            const matRow = matrix[y & 7];
-            const rowOffset = y * width * 4;
-            for (let x = 0; x < width; ++x) {
-                const idx = rowOffset + (x << 2);
-                const dither = (matRow[x & 7] / 64.0 - 0.5) * spread;
-
-                // Red channel
-                let r = data[idx] + dither;
-                r = Math.floor(Math.max(0, Math.min(255, r)) / quantLevels) * quantLevels;
-                data[idx] = r;
-
-                // Green channel
-                let g = data[idx + 1] + dither;
-                g = Math.floor(Math.max(0, Math.min(255, g)) / quantLevels) * quantLevels;
-                data[idx + 1] = g;
-
-                // Blue channel
-                let b = data[idx + 2] + dither;
-                b = Math.floor(Math.max(0, Math.min(255, b)) / quantLevels) * quantLevels;
-                data[idx + 2] = b;
-            }
-        }
-        ctx.putImageData(imgData, 0, 0);
-    }
-
-    // =========================================================================
-    // MASTER SCENE ROUTER
-    // =========================================================================
-    renderSceneVector(ctx, w, h, state) {
-        const time = this.cosmicRotation;
-
-        switch (this.tier) {
-            case 0:
-                this.renderFactoryInteriorVector(ctx, w, h, time, state);
-                break;
-            case 1:
-                this.renderFactoryTownVector(ctx, w, h, time, state);
-                break;
-            case 2:
-                this.renderCityMetropolisVector(ctx, w, h, time, state);
-                break;
-            case 3:
-                this.renderPlanetaryEarthVector(ctx, w, h, time, state);
-                break;
-            case 4:
-                this.renderSolarDysonVector(ctx, w, h, time, state);
-                break;
-            case 5:
-                this.renderGalacticPenroseVector(ctx, w, h, time, state);
-                break;
-            case 6:
-            default:
-                this.render11DMultiverseVector(ctx, w, h, time, state);
-                break;
-        }
-    }
-
-    // =========================================================================
-    // SCENE 0: FACTORY INTERIOR (Neutral Slate/Charcoal Brick Warehouse & Muted Windows)
-    // =========================================================================
-    renderFactoryInteriorVector(ctx, w, h, time, state) {
-        // 1. Neutral Dark Slate/Charcoal Brick Wall Background
-        const wallGrad = ctx.createLinearGradient(0, 0, 0, h);
-        wallGrad.addColorStop(0, '#14161a');
-        wallGrad.addColorStop(0.5, '#1e2126');
-        wallGrad.addColorStop(1, '#111316');
-        ctx.fillStyle = wallGrad;
-        ctx.fillRect(0, 0, w, h);
-
-        // Subtle Muted Brick Coursing Pattern
-        ctx.strokeStyle = 'rgba(10, 12, 16, 0.40)';
-        ctx.lineWidth = 1;
-        const brickH = 7;
-        const brickW = 16;
-        for (let y = 0; y < h; y += brickH) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(w, y);
-            ctx.stroke();
-
-            const offset = (Math.floor(y / brickH) % 2) * (brickW / 2);
-            for (let x = offset; x < w; x += brickW) {
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-                ctx.lineTo(x, y + brickH);
-                ctx.stroke();
-            }
-        }
-
-        // 2. Large Arched Warehouse Windows (Neutral, Moody Monochrome Glass - Never Blinding!)
-        const windowPositions = [w * 0.22, w * 0.50, w * 0.78];
-        const winW = w * 0.18;
-        const winH = h * 0.48;
-        const winTop = h * 0.12;
-
-        windowPositions.forEach(winX => {
-            const left = winX - winW / 2;
-            const right = winX + winW / 2;
-            const archR = winW / 2;
-
-            // Neutral Muted Foggy/Overcast Window Pane Interior
-            ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(left, winTop + archR);
-            ctx.arc(winX, winTop + archR, archR, Math.PI, 0, false);
-            ctx.lineTo(right, winTop + winH);
-            ctx.lineTo(left, winTop + winH);
-            ctx.closePath();
-            ctx.clip();
-
-            const winGrad = ctx.createLinearGradient(0, winTop, 0, winTop + winH);
-            winGrad.addColorStop(0, '#2b323c');
-            winGrad.addColorStop(0.5, '#20262e');
-            winGrad.addColorStop(1, '#161a20');
-            ctx.fillStyle = winGrad;
-            ctx.fillRect(left - 4, winTop, winW + 8, winH + 4);
-
-            // Subtle dark silhouette of distant factory roof outside
-            ctx.fillStyle = '#14181f';
-            ctx.fillRect(left, winTop + winH - 12, winW, 12);
-            ctx.restore();
-
-            // Heavy Iron Window Frame & Mullions (Dark Charcoal)
-            ctx.strokeStyle = '#0a0c0f';
-            ctx.lineWidth = 2.5;
-            ctx.beginPath();
-            ctx.moveTo(left, winTop + archR);
-            ctx.arc(winX, winTop + archR, archR, Math.PI, 0, false);
-            ctx.lineTo(right, winTop + winH);
-            ctx.lineTo(left, winTop + winH);
-            ctx.closePath();
-            ctx.stroke();
-
-            // Panes grid (2 vertical mullions, 4 horizontal)
-            ctx.lineWidth = 1.0;
-            ctx.strokeStyle = '#0e1115';
-            const colStep = winW / 3;
-            for (let c = 1; c < 3; ++c) {
-                ctx.beginPath();
-                ctx.moveTo(left + c * colStep, winTop + 4);
-                ctx.lineTo(left + c * colStep, winTop + winH);
-                ctx.stroke();
-            }
-            const rowStep = winH / 5;
-            for (let r = 1; r < 5; ++r) {
-                ctx.beginPath();
-                ctx.moveTo(left, winTop + r * rowStep);
-                ctx.lineTo(right, winTop + r * rowStep);
-                ctx.stroke();
-            }
-
-            // Extremely Subtle & Gentle Atmospheric Light Shaft (Does not blow out foreground)
-            const beamGrad = ctx.createLinearGradient(winX, winTop + archR, winX + 35, winTop + winH + 45);
-            beamGrad.addColorStop(0, 'rgba(180, 200, 225, 0.05)');
-            beamGrad.addColorStop(1, 'rgba(180, 200, 225, 0.0)');
-            ctx.fillStyle = beamGrad;
-            ctx.beginPath();
-            ctx.moveTo(left, winTop + archR);
-            ctx.lineTo(right, winTop + archR);
-            ctx.lineTo(right + 35, winTop + winH + 45);
-            ctx.lineTo(left + 20, winTop + winH + 45);
-            ctx.closePath();
-            ctx.fill();
-        });
-
-        // 3. Vaulted Wooden/Steel Roof Trusses & Structural Columns (Dark Charcoal/Graphite)
-        ctx.fillStyle = '#0f1114';
-        // Massive vertical timber support posts
-        ctx.fillRect(0, 0, 16, h);
-        ctx.fillRect(w - 16, 0, 16, h);
-
-        // Horizontal structural tie beams
-        ctx.fillStyle = '#16191f';
-        ctx.fillRect(0, h * 0.08, w, 9);
-        ctx.fillRect(0, h * 0.02, w, 7);
-
-        // Angled timber rafters & cross-struts
-        ctx.strokeStyle = '#1b1f26';
-        ctx.lineWidth = 3.5;
-        ctx.beginPath();
-        ctx.moveTo(0, h * 0.08); ctx.lineTo(w * 0.25, 0); ctx.lineTo(w * 0.5, h * 0.08);
-        ctx.moveTo(w * 0.5, h * 0.08); ctx.lineTo(w * 0.75, 0); ctx.lineTo(w, h * 0.08);
-        ctx.moveTo(w * 0.25, 0); ctx.lineTo(w * 0.25, h * 0.08);
-        ctx.moveTo(w * 0.75, 0); ctx.lineTo(w * 0.75, h * 0.08);
-        ctx.stroke();
-
-        // 4. Exposed Industrial Pipes & Wall Conduits (Muted Slate / Gunmetal)
-        // Muted Coolant Pipe
-        ctx.fillStyle = '#1e3848';
-        ctx.fillRect(0, h * 0.58, w, 3);
-        ctx.fillStyle = '#2d536b';
-        ctx.fillRect(0, h * 0.58, w, 1);
-        // Muted Steam Pipe
-        ctx.fillStyle = '#3a2024';
-        ctx.fillRect(0, h * 0.64, w, 3.5);
-
-        // 5. Hanging Pendant Dome Lamps & Soft Subtle Light Cones
-        const lampPositions = [
-            { x: w * 0.35, y: h * 0.24 },
-            { x: w * 0.65, y: h * 0.24 }
-        ];
-
-        lampPositions.forEach(lamp => {
-            // Cord
-            ctx.strokeStyle = '#08090c';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(lamp.x, h * 0.08);
-            ctx.lineTo(lamp.x, lamp.y);
-            ctx.stroke();
-
-            // Lamp Dome Fixture (Dark Slate Enamel)
-            ctx.fillStyle = '#13181d';
-            ctx.beginPath();
-            ctx.arc(lamp.x, lamp.y + 4, 9, Math.PI, 0, false);
-            ctx.closePath();
-            ctx.fill();
-
-            // Subtle Dim Filament Bulb
-            ctx.fillStyle = '#e2d499';
-            ctx.beginPath();
-            ctx.arc(lamp.x, lamp.y + 5, 3, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Soft Ambient Conical Light Pool
-            const coneGrad = ctx.createRadialGradient(lamp.x, lamp.y + 6, 4, lamp.x, lamp.y + 45, 60);
-            coneGrad.addColorStop(0, 'rgba(230, 215, 160, 0.08)');
-            coneGrad.addColorStop(0.6, 'rgba(200, 180, 120, 0.03)');
-            coneGrad.addColorStop(1, 'rgba(150, 140, 100, 0.0)');
-            ctx.fillStyle = coneGrad;
-            ctx.beginPath();
-            ctx.moveTo(lamp.x - 6, lamp.y + 6);
-            ctx.lineTo(lamp.x + 6, lamp.y + 6);
-            ctx.lineTo(lamp.x + 45, h);
-            ctx.lineTo(lamp.x - 45, h);
-            ctx.closePath();
-            ctx.fill();
-        });
-
-        // 6. Overfill Emergency Alarm & Bulging Paperclips if high production (2.5 Million clips / 2.5 Tons)
-        if (state && state.lifetimeClips && state.lifetimeClips.gte(new BigDouble(2.5, 6))) {
-            // Flashing Red Emergency Siren on Center Tie-Beam
-            const sirenFlash = Math.sin(time * 12) > 0;
-            ctx.fillStyle = sirenFlash ? '#ff0033' : '#4a0515';
-            ctx.fillRect(w * 0.5 - 4, h * 0.08 - 7, 8, 7);
-
-            if (sirenFlash) {
-                const sirenGrad = ctx.createRadialGradient(w * 0.5, h * 0.08 - 4, 2, w * 0.5, h * 0.08 + 30, 70);
-                sirenGrad.addColorStop(0, 'rgba(255, 0, 50, 0.35)');
-                sirenGrad.addColorStop(1, 'rgba(255, 0, 50, 0.0)');
-                ctx.fillStyle = sirenGrad;
-                ctx.beginPath();
-                ctx.arc(w * 0.5, h * 0.08 + 15, 60, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            // Piles of overflowing paperclip wire bulging in the corners
-            ctx.fillStyle = '#64748b';
-            ctx.beginPath();
-            ctx.moveTo(0, h);
-            ctx.quadraticCurveTo(w * 0.12, h - 25, w * 0.22, h);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.moveTo(w * 0.78, h);
-            ctx.quadraticCurveTo(w * 0.88, h - 28, w, h);
-            ctx.closePath();
-            ctx.fill();
-        }
-
-        // 7. Workshop Machinery / Isometric Floor Overlay
-        this.renderFactoryFloor(ctx, state);
-    }
-
-    // =========================================================================
-    // SCENE 1: FACTORY IN TOWN (Muted Slate/Monochrome Dusk Townscape with Blown Doors)
-    // =========================================================================
-    renderFactoryTownVector(ctx, w, h, time, state) {
-        // 1. Dark Muted Slate Sky
-        const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.75);
-        skyGrad.addColorStop(0, '#0e1117');
-        skyGrad.addColorStop(0.5, '#181d26');
-        skyGrad.addColorStop(1, '#252d3b');
-        ctx.fillStyle = skyGrad;
-        ctx.fillRect(0, 0, w, h);
-
-        // Distant Mountain Ridges (Dark Graphite Silhouettes)
-        ctx.fillStyle = '#141820';
-        ctx.beginPath();
-        ctx.moveTo(0, h * 0.52);
-        ctx.lineTo(w * 0.15, h * 0.44);
-        ctx.lineTo(w * 0.32, h * 0.50);
-        ctx.lineTo(w * 0.55, h * 0.42);
-        ctx.lineTo(w * 0.78, h * 0.49);
-        ctx.lineTo(w, h * 0.43);
-        ctx.lineTo(w, h);
-        ctx.lineTo(0, h);
-        ctx.closePath();
-        ctx.fill();
-
-        // 2. Rolling Hills (Muted Dark Slate/Green)
-        ctx.fillStyle = '#131c19';
-        ctx.beginPath();
-        ctx.moveTo(0, h * 0.56);
-        ctx.quadraticCurveTo(w * 0.25, h * 0.50, w * 0.55, h * 0.58);
-        ctx.quadraticCurveTo(w * 0.8, h * 0.65, w, h * 0.54);
-        ctx.lineTo(w, h);
-        ctx.lineTo(0, h);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.fillStyle = '#1a2420';
-        ctx.beginPath();
-        ctx.moveTo(0, h * 0.64);
-        ctx.quadraticCurveTo(w * 0.35, h * 0.58, w * 0.7, h * 0.67);
-        ctx.quadraticCurveTo(w * 0.88, h * 0.72, w, h * 0.63);
-        ctx.lineTo(w, h);
-        ctx.lineTo(0, h);
-        ctx.closePath();
-        ctx.fill();
-
-        // Pine Tree Silhouettes
-        ctx.fillStyle = '#0f1714';
-        for (let tx = 8; tx < w * 0.35; tx += 9) {
-            ctx.beginPath();
-            ctx.moveTo(tx, h * 0.58);
-            ctx.lineTo(tx + 4, h * 0.58 - 10);
-            ctx.lineTo(tx + 8, h * 0.58);
-            ctx.closePath();
-            ctx.fill();
-        }
-
-        // 3. Quaint Townscape & Mayor Higgins' Town Hall (Left & Center)
-        const townX = w * 0.06;
-        const townY = h * 0.56;
-
-        // Mayor Higgins' Town Hall with Clock Tower
-        ctx.fillStyle = '#121720';
-        ctx.fillRect(townX + 2, townY - 28, 26, 28);
-        ctx.fillStyle = '#1c2432';
-        ctx.fillRect(townX + 8, townY - 42, 14, 14);
-        // Clock face
-        ctx.fillStyle = '#ffe600';
-        ctx.beginPath();
-        ctx.arc(townX + 15, townY - 35, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-        // Zoning Citation Sign
-        ctx.fillStyle = '#ff2a85';
-        ctx.fillRect(townX - 2, townY - 14, 6, 8);
-
-        // Church Spire
-        ctx.fillStyle = '#10141a';
-        ctx.fillRect(townX + 38, townY - 24, 10, 24);
-        ctx.beginPath();
-        ctx.moveTo(townX + 37, townY - 24);
-        ctx.lineTo(townX + 43, townY - 42);
-        ctx.lineTo(townX + 49, townY - 24);
-        ctx.closePath();
-        ctx.fill();
-
-        // Cottages & Houses
-        for (let i = 0; i < 3; ++i) {
-            const hx = townX + 54 + i * 16;
-            const hy = townY + (i % 2) * 4;
-            const hw = 13;
-            const hh = 12;
-
-            ctx.fillStyle = '#151921';
-            ctx.fillRect(hx, hy - hh, hw, hh);
-
-            // Pitched Roof
-            ctx.fillStyle = '#1d232e';
-            ctx.beginPath();
-            ctx.moveTo(hx - 2, hy - hh);
-            ctx.lineTo(hx + hw / 2, hy - hh - 6);
-            ctx.lineTo(hx + hw + 2, hy - hh);
-            ctx.closePath();
-            ctx.fill();
-
-            // Subtle Dim Window
-            ctx.fillStyle = '#cbb87a';
-            ctx.fillRect(hx + 3, hy - hh + 4, 3, 3);
-        }
-
-        // Chief O'Malley's Police Cruiser Blockade
-        const copX = w * 0.44;
-        const copY = h * 0.72;
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(copX, copY, 18, 7);
-        ctx.fillStyle = '#334155';
-        ctx.fillRect(copX + 3, copY - 4, 12, 4);
-        // Flashing Emergency Lightbar (Red Left, Blue Right)
-        const copFlash = Math.sin(time * 10) > 0;
-        ctx.fillStyle = copFlash ? '#ff0033' : '#1e3a8a';
-        ctx.fillRect(copX + 4, copY - 6, 4, 2);
-        ctx.fillStyle = copFlash ? '#1e3a8a' : '#00f0ff';
-        ctx.fillRect(copX + 10, copY - 6, 4, 2);
-
-        // 4. Standalone Factory Complex with Blown Open Double Doors
-        const facX = w * 0.55;
-        const facY = h * 0.52;
-        const facW = w * 0.42;
-        const facH = h * 0.32;
-
-        ctx.fillStyle = '#26282e';
-        ctx.fillRect(facX, facY, facW, facH);
-
-        // Saw-Tooth Roof
-        ctx.fillStyle = '#1b1d22';
-        const teeth = 3;
-        const toothW = facW / teeth;
-        for (let t = 0; t < teeth; ++t) {
-            const tx = facX + t * toothW;
-            ctx.beginPath();
-            ctx.moveTo(tx, facY);
-            ctx.lineTo(tx + toothW * 0.85, facY - 14);
-            ctx.lineTo(tx + toothW, facY);
-            ctx.closePath();
-            ctx.fill();
-
-            // Muted skylight
-            ctx.fillStyle = '#313a48';
-            ctx.beginPath();
-            ctx.moveTo(tx + toothW * 0.15, facY);
-            ctx.lineTo(tx + toothW * 0.80, facY - 12);
-            ctx.lineTo(tx + toothW * 0.85, facY);
-            ctx.closePath();
-            ctx.fill();
-            ctx.fillStyle = '#1b1d22';
-        }
-
-        // Factory Windows (Dim amber)
-        ctx.fillStyle = '#cbb87a';
-        for (let wy = facY + 8; wy < facY + facH - 18; wy += 10) {
-            for (let wx = facX + 8; wx < facX + facW - 12; wx += 14) {
-                ctx.fillRect(wx, wy, 8, 5);
-            }
-        }
-
-        // Blown-Open Factory Doors & Silver Paperclip Spillage Torrent
-        const doorX = facX + 10;
-        const doorY = facY + facH - 18;
-        const doorW = 20;
-        const doorH = 18;
-
-        // Dark gaping doorway interior
-        ctx.fillStyle = '#06080c';
-        ctx.fillRect(doorX, doorY, doorW, doorH);
-
-        // Bent/blown open door panels dangling outward
-        ctx.fillStyle = '#475569';
-        ctx.save();
-        ctx.translate(doorX - 2, doorY + doorH);
-        ctx.rotate(-0.4);
-        ctx.fillRect(0, -doorH, 4, doorH);
-        ctx.restore();
-
-        ctx.save();
-        ctx.translate(doorX + doorW + 2, doorY + doorH);
-        ctx.rotate(0.4);
-        ctx.fillRect(-4, -doorH, 4, doorH);
-        ctx.restore();
-
-        // Gleaming River / Cascade of Paperclips pouring from the factory into the town road
-        const streamGrad = ctx.createLinearGradient(doorX + 10, doorY + 6, w * 0.1, h);
-        streamGrad.addColorStop(0, '#e2e8f0');
-        streamGrad.addColorStop(0.3, '#94a3b8');
-        streamGrad.addColorStop(1, '#475569');
-        ctx.fillStyle = streamGrad;
-        ctx.beginPath();
-        ctx.moveTo(doorX + 2, doorY + 8);
-        ctx.lineTo(doorX + doorW - 2, doorY + 8);
-        ctx.quadraticCurveTo(doorX - 20, h * 0.75, 0, h * 0.88);
-        ctx.lineTo(0, h);
-        ctx.lineTo(doorX + 40, h);
-        ctx.quadraticCurveTo(doorX + 15, h * 0.80, doorX + doorW - 2, doorY + 8);
-        ctx.closePath();
-        ctx.fill();
-
-        // Smokestacks
-        const st1X = facX + facW * 0.35;
-        const st2X = facX + facW * 0.75;
-        ctx.fillStyle = '#1d1f24';
-        ctx.fillRect(st1X - 5, facY - 38, 10, 38);
-        ctx.fillRect(st2X - 4, facY - 26, 8, 26);
-        ctx.fillStyle = '#0f1114';
-        ctx.fillRect(st1X - 7, facY - 40, 14, 3);
-        ctx.fillRect(st2X - 5, facY - 28, 10, 3);
-
-        // Muted Steam Plumes
-        this.renderSmokePlume(ctx, st1X, facY - 40, time, 1.0);
-        this.renderSmokePlume(ctx, st2X, facY - 28, time + 1.5, 0.75);
-
-        // Big Cartoon Paperclip Hologram
-        const heroPos = this.getHeroPosition(w, h);
-        this.drawCartoonPaperclip(ctx, heroPos.x, heroPos.y, 0.85 * this.heroRecoil, this.heroRotation + time * 0.35);
-    }
-
-    renderSmokePlume(ctx, x, y, time, scale = 1.0) {
-        ctx.fillStyle = 'rgba(160, 175, 195, 0.28)';
-        for (let i = 0; i < 5; ++i) {
-            const phase = (time * 1.5 + i * 0.8) % 4.0;
-            const px = x + phase * (12 * scale) + Math.sin(phase * 2) * 3;
-            const py = y - phase * (14 * scale);
-            const r = (4 + phase * 3.5) * scale;
-            ctx.beginPath();
-            ctx.arc(px, py, r, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-
-    // =========================================================================
-    // SCENE 2: INDUSTRIAL MEGACITY (Noir Metropolis & President's Tower Deconstruction)
-    // =========================================================================
-    renderCityMetropolisVector(ctx, w, h, time, state) {
-        // 1. Dark Blueprint/Noir Sky
-        const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
-        skyGrad.addColorStop(0, '#090b10');
-        skyGrad.addColorStop(0.5, '#121620');
-        skyGrad.addColorStop(1, '#1e2433');
-        ctx.fillStyle = skyGrad;
-        ctx.fillRect(0, 0, w, h);
-
-        // 2. Distant Skyline Silhouettes (Layer 1)
-        ctx.fillStyle = '#0f1219';
-        const numBgTowers = 12;
-        const bgStep = w / numBgTowers;
-        for (let i = 0; i < numBgTowers; ++i) {
-            const bx = i * bgStep;
-            const bh = 35 + ((i * 37) % 45);
-            ctx.fillRect(bx, h * 0.62 - bh, bgStep + 2, bh);
-
-            // Red warning beacon
-            if (i % 3 === 0 && Math.sin(time * 4 + i) > 0) {
-                ctx.fillStyle = '#e11d48';
-                ctx.fillRect(bx + bgStep / 2 - 1, h * 0.62 - bh - 13, 2, 2);
-                ctx.fillStyle = '#0f1219';
-            }
-        }
-
-        // 3. Midground Skyscrapers (Layer 2 - Dark Slate / Charcoal)
-        const numMidTowers = 8;
-        const midStep = w / numMidTowers;
-        for (let i = 0; i < numMidTowers; ++i) {
-            const mx = i * midStep + 4;
-            const mw = midStep - 6;
-            const mh = 50 + ((i * 43) % 55);
-            const my = h * 0.68 - mh;
-
-            ctx.fillStyle = (i % 2 === 0) ? '#171c26' : '#131720';
-            ctx.fillRect(mx, my, mw, mh);
-
-            // Subtle Dim Window Arrays
-            for (let wy = my + 6; wy < my + mh - 8; wy += 6) {
-                for (let wx = mx + 4; wx < mx + mw - 4; wx += 5) {
-                    if ((wx * 17 + wy * 31) % 4 !== 0) {
-                        ctx.fillStyle = ((wx + wy) % 3 === 0) ? '#5c697e' : '#334155';
-                        ctx.fillRect(wx, wy, 2.5, 3);
+    getPaletteLUT(tier) {
+        if (this.paletteLUTs[tier]) return this.paletteLUTs[tier];
+        const palette = SCENE_PALETTES[tier].map(hexToRgb);
+        const lut = new Uint32Array(32768);
+        const littleEndian = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
+        for (let r = 0; r < 32; ++r) {
+            for (let g = 0; g < 32; ++g) {
+                for (let b = 0; b < 32; ++b) {
+                    const R = r * 8 + 4, G = g * 8 + 4, B = b * 8 + 4;
+                    let best = 0;
+                    let bestD = Infinity;
+                    for (let i = 0; i < palette.length; ++i) {
+                        const [pr, pg, pb] = palette[i];
+                        // Perceptually weighted distance
+                        const d = 2 * (R - pr) * (R - pr) + 4 * (G - pg) * (G - pg) + 3 * (B - pb) * (B - pb);
+                        if (d < bestD) { bestD = d; best = i; }
                     }
+                    const [pr, pg, pb] = palette[best];
+                    lut[(r << 10) | (g << 5) | b] = littleEndian
+                        ? ((255 << 24) | (pb << 16) | (pg << 8) | pr) >>> 0
+                        : ((pr << 24) | (pg << 16) | (pb << 8) | 255) >>> 0;
                 }
             }
         }
-
-        // 4. Golden Trump Tower Parody (Being converted into cyan wire lattice)
-        const trX = w * 0.22;
-        const trW = 28;
-        const trH = 75;
-        const trY = h * 0.68 - trH;
-
-        ctx.fillStyle = '#997300';
-        ctx.fillRect(trX, trY, trW, trH);
-        ctx.fillStyle = '#d4af37';
-        ctx.fillRect(trX + 3, trY + 3, trW - 6, trH - 6);
-
-        // Animated Cyan Wire Deconstruction Grid across the tower
-        ctx.strokeStyle = '#00f0ff';
-        ctx.lineWidth = 1;
-        for (let y = trY + 6; y < trY + trH - 6; y += 8) {
-            ctx.beginPath();
-            ctx.moveTo(trX + 3, y);
-            ctx.lineTo(trX + trW - 3, y + Math.sin(time * 6 + y) * 2);
-            ctx.stroke();
-        }
-
-        // 5. TV News Broadcast Antenna Tower with 500% Tariff Radio Waves
-        const antX = w * 0.72;
-        const antY = h * 0.68 - 65;
-        ctx.strokeStyle = '#64748b';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(antX - 8, h * 0.68); ctx.lineTo(antX, antY); ctx.lineTo(antX + 8, h * 0.68);
-        ctx.stroke();
-
-        // Pulsing Broadcast Waves
-        const waveRadius = ((time * 25) % 35);
-        ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
-        ctx.beginPath();
-        ctx.arc(antX, antY, waveRadius, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Cooling Towers
-        const ctX = w * 0.88;
-        const ctY = h * 0.68;
-        ctx.fillStyle = '#1c222e';
-        ctx.beginPath();
-        ctx.moveTo(ctX - 16, ctY);
-        ctx.quadraticCurveTo(ctX - 10, ctY - 20, ctX - 12, ctY - 32);
-        ctx.lineTo(ctX + 12, ctY - 32);
-        ctx.quadraticCurveTo(ctX + 10, ctY - 20, ctX + 16, ctY);
-        ctx.closePath();
-        ctx.fill();
-
-        this.renderSmokePlume(ctx, ctX, ctY - 34, time * 0.8, 1.2);
-
-        // 6. Foreground Monorail & Highway
-        const monoY = h * 0.62;
-        ctx.strokeStyle = '#0a0c10';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(0, monoY);
-        ctx.lineTo(w, monoY);
-        ctx.stroke();
-
-        // Speeding Train Light
-        const trainX = (time * 90) % (w + 60) - 40;
-        ctx.fillStyle = '#94a3b8';
-        ctx.fillRect(trainX, monoY - 5, 28, 4);
-        ctx.fillStyle = '#00f0ff';
-        ctx.fillRect(trainX + 22, monoY - 4, 5, 2);
-
-        // Highway Light Streaks
-        const hwyY = h * 0.72;
-        ctx.fillStyle = '#0d1017';
-        ctx.fillRect(0, hwyY, w, 12);
-        ctx.strokeStyle = '#857240';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(0, hwyY + 3); ctx.lineTo(w, hwyY + 3);
-        ctx.stroke();
-        ctx.strokeStyle = '#883344';
-        ctx.beginPath();
-        ctx.moveTo(0, hwyY + 8); ctx.lineTo(w, hwyY + 8);
-        ctx.stroke();
-
-        // Hologram Hero Paperclip
-        const heroPos = this.getHeroPosition(w, h);
-        this.drawCartoonPaperclip(ctx, heroPos.x, heroPos.y, 0.85 * this.heroRecoil, this.heroRotation + time * 0.35);
+        this.paletteLUTs[tier] = lut;
+        return lut;
     }
 
-    // =========================================================================
-    // SCENE 3: PLANETARY EARTH & ORBITAL RING (Muted Navy/Slate Celestial Body)
-    // =========================================================================
-    renderPlanetaryEarthVector(ctx, w, h, time, state) {
-        this.renderSpaceBackdrop(ctx, w, h, '#060810', '#020306');
-
-        const centerX = w / 2;
-        const centerY = h / 2 - 8;
-        const radius = Math.min(w, h) * 0.28;
-
-        // Subtle Atmospheric Rim Glow
-        const atmGrad = ctx.createRadialGradient(centerX, centerY, radius * 0.9, centerX, centerY, radius * 1.3);
-        atmGrad.addColorStop(0, 'rgba(0, 240, 255, 0.22)');
-        atmGrad.addColorStop(0.6, 'rgba(0, 180, 255, 0.06)');
-        atmGrad.addColorStop(1, 'rgba(0, 100, 255, 0.0)');
-        ctx.fillStyle = atmGrad;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius * 1.3, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Planet Earth Sphere
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.clip();
-
-        // Muted Navy Ocean Base
-        const oceanGrad = ctx.createRadialGradient(centerX - radius * 0.3, centerY - radius * 0.3, 4, centerX, centerY, radius);
-        oceanGrad.addColorStop(0, '#10223a');
-        oceanGrad.addColorStop(0.7, '#0a1524');
-        oceanGrad.addColorStop(1, '#040910');
-        ctx.fillStyle = oceanGrad;
-        ctx.fillRect(centerX - radius, centerY - radius, radius * 2, radius * 2);
-
-        // Muted Continents with Glowing Cyber-Veins
-        const rot = time * 0.35;
-        for (let i = 0; i < 7; ++i) {
-            const angle = rot + (i * Math.PI * 2 / 7);
-            const cx = centerX + Math.cos(angle) * (radius * 0.7);
-            const cy = centerY + Math.sin(angle * 1.2) * (radius * 0.5);
-
-            // Muted Slate-Green Landmass
-            ctx.fillStyle = '#16332a';
-            ctx.beginPath();
-            ctx.arc(cx, cy, radius * 0.32, 0, Math.PI * 2);
-            ctx.fill();
-
-            // High-Contrast Neon Cyan & Gold Cyber-Veins
-            ctx.strokeStyle = '#00f0ff';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(cx - 14, cy - 6);
-            ctx.lineTo(cx, cy + 4);
-            ctx.lineTo(cx + 12, cy - 8);
-            ctx.lineTo(cx + 18, cy + 6);
-            ctx.stroke();
-
-            ctx.strokeStyle = '#ffe600';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(cx - 6, cy + 10);
-            ctx.lineTo(cx + 8, cy + 8);
-            ctx.stroke();
+    applyPaletteDither(ctx, width, height) {
+        const img = ctx.getImageData(0, 0, width, height);
+        const data = img.data;
+        const out = new Uint32Array(data.buffer);
+        const lut = this.getPaletteLUT(this.tier);
+        if (!this.ditherClamp) {
+            // (channel + dither offset) -> clamped 5-bit bucket; dither offsets are biased by +16
+            this.ditherClamp = new Uint8Array(288);
+            for (let i = 0; i < 288; ++i) this.ditherClamp[i] = Math.max(0, Math.min(255, i - 16)) >> 3;
+            this.ditherRows = BAYER_8X8.map(row => Int16Array.from(row, v => Math.round((v / 64 - 0.5) * 16) + 16));
         }
-        ctx.restore();
-
-        // Equatorial Orbital Railgun Ring
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(this.camYaw + 0.3);
-        ctx.scale(1, 0.32);
-
-        ctx.strokeStyle = '#ffe600';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.arc(0, 0, radius * 1.52, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.strokeStyle = '#00f0ff';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(0, 0, radius * 1.46, 0, Math.PI * 2);
-        ctx.stroke();
-
-        for (let k = 0; k < 6; ++k) {
-            const pAngle = (time * 2.5 + k * (Math.PI * 2 / 6)) % (Math.PI * 2);
-            const px = Math.cos(pAngle) * (radius * 1.52);
-            const py = Math.sin(pAngle) * (radius * 1.52);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(px - 2.5, py - 2.5, 5, 5);
-        }
-        ctx.restore();
-    }
-
-    // =========================================================================
-    // SCENE 4: SOLAR DYSON SWARM & STAR SIPHON (Deep Space & Amber/Gold Corona)
-    // =========================================================================
-    renderSolarDysonVector(ctx, w, h, time, state) {
-        this.renderSpaceBackdrop(ctx, w, h, '#140c06', '#050301');
-
-        const centerX = w / 2;
-        const centerY = h / 2 - 8;
-        const sunR = Math.min(w, h) * 0.22;
-
-        // Subdued Solar Corona Glow
-        const coronaGrad = ctx.createRadialGradient(centerX, centerY, sunR * 0.8, centerX, centerY, sunR * 2.4);
-        coronaGrad.addColorStop(0, 'rgba(255, 180, 0, 0.28)');
-        coronaGrad.addColorStop(0.4, 'rgba(180, 70, 0, 0.12)');
-        coronaGrad.addColorStop(1, 'rgba(80, 0, 0, 0.0)');
-        ctx.fillStyle = coronaGrad;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, sunR * 2.4, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Muted Amber-Charcoal Photosphere (Keeps central contrast clean)
-        const sunGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, sunR);
-        sunGrad.addColorStop(0, '#fef08a');
-        sunGrad.addColorStop(0.35, '#d97706');
-        sunGrad.addColorStop(0.8, '#782d08');
-        sunGrad.addColorStop(1, '#3b1204');
-        ctx.fillStyle = sunGrad;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, sunR, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Concentric Golden Dyson Swarm Rings
-        const rings = [
-            { r: sunR * 1.5, tilt: 0.35, speed: 1.0, color: '#ffe600', nodes: 8 },
-            { r: sunR * 1.9, tilt: -0.45, speed: -0.7, color: '#00f0ff', nodes: 10 },
-            { r: sunR * 2.3, tilt: 0.20, speed: 0.5, color: '#ff2a85', nodes: 12 }
-        ];
-
-        rings.forEach(cfg => {
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            ctx.rotate(this.camYaw + cfg.tilt);
-            ctx.scale(1, Math.abs(cfg.tilt) + 0.22);
-
-            ctx.strokeStyle = 'rgba(255, 230, 0, 0.35)';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.arc(0, 0, cfg.r, 0, Math.PI * 2);
-            ctx.stroke();
-
-            for (let n = 0; n < cfg.nodes; ++n) {
-                const a = time * cfg.speed + (n * (Math.PI * 2 / cfg.nodes));
-                const nx = Math.cos(a) * cfg.r;
-                const ny = Math.sin(a) * cfg.r;
-                ctx.fillStyle = cfg.color;
-                ctx.fillRect(nx - 3, ny - 3, 6, 6);
+        const clamp = this.ditherClamp;
+        for (let y = 0; y < height; ++y) {
+            const row = this.ditherRows[y & 7];
+            let o = y * width;
+            let i = o << 2;
+            for (let x = 0; x < width; ++x, ++o, i += 4) {
+                const d = row[x & 7];
+                out[o] = lut[(clamp[data[i] + d] << 10) | (clamp[data[i + 1] + d] << 5) | clamp[data[i + 2] + d]];
             }
-            ctx.restore();
-        });
-
-        // Plasma Siphon Funnel
-        const sAngle = time * 0.7;
-        const siphonStartX = centerX + Math.cos(sAngle) * (sunR * 0.9);
-        const siphonStartY = centerY + Math.sin(sAngle) * (sunR * 0.9);
-        const siphonEndNodeX = centerX + Math.cos(sAngle + 0.6) * (sunR * 2.1);
-        const siphonEndNodeY = centerY + Math.sin(sAngle + 0.6) * (sunR * 2.1);
-
-        ctx.strokeStyle = '#00f0ff';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.moveTo(siphonStartX, siphonStartY);
-        ctx.quadraticCurveTo(centerX + Math.cos(sAngle + 0.3) * (sunR * 1.7), centerY + Math.sin(sAngle + 0.3) * (sunR * 1.7), siphonEndNodeX, siphonEndNodeY);
-        ctx.stroke();
-    }
-
-    // =========================================================================
-    // SCENE 5: GALACTIC PENROSE DYNAMO (Deep Void & Violet Energy Jets)
-    // =========================================================================
-    renderGalacticPenroseVector(ctx, w, h, time, state) {
-        this.renderSpaceBackdrop(ctx, w, h, '#0f0517', '#030105');
-
-        const centerX = w / 2;
-        const centerY = h / 2 - 8;
-        const bhR = Math.min(w, h) * 0.16;
-
-        // Relativistic Accretion Disk
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(this.camYaw - 0.25);
-        ctx.scale(1, 0.36);
-
-        for (let r = bhR * 1.2; r < bhR * 3.2; r += 4.5) {
-            const diskGrad = ctx.createLinearGradient(-r, 0, r, 0);
-            diskGrad.addColorStop(0, '#00f0ff');
-            diskGrad.addColorStop(0.4, '#7c3aed');
-            diskGrad.addColorStop(1, '#db2777');
-
-            ctx.strokeStyle = diskGrad;
-            ctx.lineWidth = 2.5;
-            ctx.beginPath();
-            ctx.arc(0, 0, r, time * 1.2, time * 1.2 + Math.PI * 1.6);
-            ctx.stroke();
         }
-        ctx.restore();
+        ctx.putImageData(img, 0, 0);
+    }
 
-        // Event Horizon
-        ctx.fillStyle = '#000000';
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, bhR, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Einstein Ring
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, bhR * 1.08, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Violet Relativistic Jets
-        const jetGrad = ctx.createLinearGradient(0, centerY - bhR * 0.8, 0, 0);
-        jetGrad.addColorStop(0, '#ffffff');
-        jetGrad.addColorStop(0.3, '#a855f7');
-        jetGrad.addColorStop(1, 'rgba(168, 85, 247, 0.0)');
-        ctx.strokeStyle = jetGrad;
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY - bhR * 0.8);
-        ctx.lineTo(centerX, 0);
-        ctx.stroke();
-
-        const jetGradBottom = ctx.createLinearGradient(0, centerY + bhR * 0.8, 0, h);
-        jetGradBottom.addColorStop(0, '#ffffff');
-        jetGradBottom.addColorStop(0.3, '#a855f7');
-        jetGradBottom.addColorStop(1, 'rgba(168, 85, 247, 0.0)');
-        ctx.strokeStyle = jetGradBottom;
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY + bhR * 0.8);
-        ctx.lineTo(centerX, h);
-        ctx.stroke();
+    /** Offscreen canvas for a scene's static layer, redrawn only when its key or size changes. */
+    cachedLayer(key, w, h, draw) {
+        if (!this.layerCache) this.layerCache = new Map();
+        const fullKey = `${key}|${w}x${h}`;
+        let layer = this.layerCache.get(fullKey);
+        if (!layer) {
+            if (this.layerCache.size > 24) this.layerCache.clear();
+            layer = document.createElement('canvas');
+            layer.width = w;
+            layer.height = h;
+            draw(layer.getContext('2d'));
+            this.layerCache.set(fullKey, layer);
+        }
+        return layer;
     }
 
     // =========================================================================
-    // SCENE 6: 11D MULTIVERSE QUANTUM FOAM (Translucent Timeline Bubbles)
+    // DRAWING HELPERS
     // =========================================================================
-    render11DMultiverseVector(ctx, w, h, time, state) {
-        this.renderSpaceBackdrop(ctx, w, h, '#08101a', '#020408');
 
-        const centerX = w / 2;
-        const centerY = h / 2 - 8;
-
-        const bubbles = [
-            { x: -w * 0.28, y: -h * 0.22, r: 24, color: 'rgba(219, 39, 119, 0.30)', border: '#db2777' },
-            { x:  w * 0.26, y: -h * 0.25, r: 28, color: 'rgba(6, 182, 212, 0.30)',   border: '#06b6d4' },
-            { x: -w * 0.22, y:  h * 0.24, r: 25, color: 'rgba(16, 185, 129, 0.30)',  border: '#10b981' },
-            { x:  w * 0.27, y:  h * 0.26, r: 30, color: 'rgba(147, 51, 234, 0.30)',  border: '#9333ea' }
-        ];
-
-        bubbles.forEach(b => {
-            const bx = centerX + b.x + Math.sin(time * 0.8 + b.r) * 8;
-            const by = centerY + b.y + Math.cos(time * 0.8 + b.r) * 8;
-
-            ctx.fillStyle = b.color;
-            ctx.strokeStyle = b.border;
-            ctx.lineWidth = 1.8;
-            ctx.beginPath();
-            ctx.arc(bx, by, b.r, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(bx, by, b.r * 0.5, time, time + Math.PI);
-            ctx.stroke();
-        });
-
-        // Central Polished Chrome Universe
-        const masterR = Math.min(w, h) * 0.18;
-        const chromeGrad = ctx.createLinearGradient(centerX - masterR, centerY - masterR, centerX + masterR, centerY + masterR);
-        chromeGrad.addColorStop(0, '#ffffff');
-        chromeGrad.addColorStop(0.3, '#cbd5e1');
-        chromeGrad.addColorStop(0.7, '#64748b');
-        chromeGrad.addColorStop(1, '#1e293b');
-        ctx.fillStyle = chromeGrad;
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, masterR, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // 4D Tesseract Wireframe
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(time * 0.5);
-        ctx.strokeStyle = '#00f0ff';
-        ctx.lineWidth = 1.5;
-
-        const sOuter = masterR * 1.5;
-        const sInner = masterR * 0.75 + Math.sin(time * 2) * 8;
-
-        ctx.strokeRect(-sOuter, -sOuter, sOuter * 2, sOuter * 2);
-        ctx.strokeRect(-sInner, -sInner, sInner * 2, sInner * 2);
-
-        ctx.beginPath();
-        ctx.moveTo(-sOuter, -sOuter); ctx.lineTo(-sInner, -sInner);
-        ctx.moveTo(sOuter, -sOuter); ctx.lineTo(sInner, -sInner);
-        ctx.moveTo(sOuter, sOuter); ctx.lineTo(sInner, sInner);
-        ctx.moveTo(-sOuter, sOuter); ctx.lineTo(-sInner, sInner);
-        ctx.stroke();
-        ctx.restore();
+    vGradient(ctx, x0, y0, y1, stops) {
+        const g = ctx.createLinearGradient(0, y0, 0, y1);
+        stops.forEach(([t, c]) => g.addColorStop(t, c));
+        return g;
     }
 
-    renderSpaceBackdrop(ctx, w, h, topColor, botColor) {
-        const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w * 0.75);
-        bgGrad.addColorStop(0, topColor);
-        bgGrad.addColorStop(1, botColor);
-        ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, w, h);
+    glow(ctx, x, y, r, color, alpha = 1.0) {
+        const [cr, cg, cb] = hexToRgb(color);
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, `rgba(${cr},${cg},${cb},${alpha})`);
+        g.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+        ctx.fillStyle = g;
+        ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
 
-        const time = this.cosmicRotation;
-        this.stars.forEach(s => {
-            const sx = Math.floor(s.x * w);
-            const sy = Math.floor(s.y * h);
-            const alpha = 0.4 + 0.6 * Math.sin(time * s.twinkleSpeed + s.phase);
-            if (alpha > 0.2) {
-                ctx.fillStyle = s.color;
-                ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-                ctx.fillRect(sx, sy, s.size, s.size);
-            }
-        });
+    drawStars(ctx, w, h, maxY = 1.0, density = 1.0, colors = ['#b8e6ff', '#ffffff', '#ffd070']) {
+        const n = Math.floor(this.stars.length * density);
+        for (let i = 0; i < n; ++i) {
+            const s = this.stars[i];
+            if (s.y > maxY) continue;
+            ctx.globalAlpha = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(this.time * s.tw + s.ph));
+            ctx.fillStyle = colors[Math.floor(s.tone * colors.length)];
+            ctx.fillRect(Math.floor(s.x * w), Math.floor(s.y * h), s.size, s.size);
+        }
         ctx.globalAlpha = 1.0;
     }
 
-    // =========================================================================
-    // HERO PAPERCLIP & CENTERPIECE OVERLAYS
-    // =========================================================================
-    renderFactoryFloor(ctx, state) {
-        const time = this.cosmicRotation;
-        const pw = ctx.canvas.width;
-        const ph = ctx.canvas.height;
-        const heroPos = this.getHeroPosition(pw, ph);
-
-        // Center Hero Hologram Paperclip (High-Contrast Shadow Backing)
-        this.drawCartoonPaperclip(ctx, heroPos.x, heroPos.y, 0.9 * this.heroRecoil, this.heroRotation + time * 0.4);
-    }
-
-    // =========================================================================
-    // DYNAMIC PAPERCLIP FLUID & MOUNTAIN RENDERER
-    // =========================================================================
-    renderFlowingPaperclipSea(ctx, w, h) {
-        const floorY = h - 2;
-        let maxPile = 0;
-        for (let i = 0; i < this.numColumns; ++i) {
-            const currentH = this.pileHeights[i] + this.waveOffsets[i];
-            if (currentH > maxPile) maxPile = currentH;
+    /** Rolling ridge line from summed sines, filled to the bottom. */
+    drawRidge(ctx, w, h, baseY, amp, seed, color, detail = 1.0) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        for (let x = 0; x <= w; x += 2) {
+            const t = x / w;
+            const y = baseY
+                - amp * (0.55 * Math.sin(t * 5.1 * detail + seed)
+                + 0.3 * Math.sin(t * 11.7 * detail + seed * 2.3)
+                + 0.15 * Math.sin(t * 23.3 * detail + seed * 4.1));
+            ctx.lineTo(x, y);
         }
-
-        const colWidth = w / (this.numColumns - 1);
-        if (maxPile > 0.5) {
-            const fluidGrad = ctx.createLinearGradient(0, floorY - maxPile, 0, h);
-            fluidGrad.addColorStop(0, '#1e293b');
-            fluidGrad.addColorStop(0.3, '#141e2e');
-            fluidGrad.addColorStop(1, '#0b121e');
-
-            ctx.fillStyle = fluidGrad;
-            ctx.beginPath();
-            ctx.moveTo(0, h);
-
-            for (let i = 0; i < this.numColumns; ++i) {
-                const moundH = Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
-                const x = i * colWidth;
-                const y = floorY - moundH;
-                if (i === 0) {
-                    ctx.lineTo(x, y);
-                } else {
-                    const prevMound = Math.max(0, this.pileHeights[i - 1] + this.waveOffsets[i - 1]);
-                    const prevX = (i - 1) * colWidth;
-                    const prevY = floorY - prevMound;
-                    const midX = (prevX + x) / 2;
-                    const midY = (prevY + y) / 2;
-                    ctx.quadraticCurveTo(prevX, prevY, midX, midY);
-                }
-            }
-            const lastMound = Math.max(0, this.pileHeights[this.numColumns - 1] + this.waveOffsets[this.numColumns - 1]);
-            ctx.lineTo(w, floorY - lastMound);
-            ctx.lineTo(w, h);
-            ctx.closePath();
-            ctx.fill();
-
-            // Overlapping Vibrant Paperclip Textures scaled by stage zoom
-            const palette = ['#00f0ff', '#ffe600', '#ffffff', '#ff2a85', '#00ff88', '#ff7700', '#a855f7', '#38bdf8'];
-            const getHash = (col, row, salt = 0) => {
-                let h = ((col * 374761393 + row * 668265263 + salt * 1013904223) ^ 0x5bf03635) >>> 0;
-                h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
-                return (h ^ (h >>> 16)) >>> 0;
-            };
-
-            // Stage-dependent zoom configurations: as the scale expands, paperclips render finer and smaller
-            const tierConfigs = [
-                { stepX: 6.0, stepY: 5.0, baseSize: 3.4, sizeVar: 1.4 },  // Tier 0: Factory Interior (close-up)
-                { stepX: 4.6, stepY: 3.8, baseSize: 2.4, sizeVar: 1.0 },  // Tier 1: Factory Town
-                { stepX: 3.6, stepY: 3.0, baseSize: 1.7, sizeVar: 0.7 },  // Tier 2: Industrial Megacity
-                { stepX: 2.8, stepY: 2.3, baseSize: 1.2, sizeVar: 0.5 },  // Tier 3: Planetary Earth
-                { stepX: 2.2, stepY: 1.8, baseSize: 0.85, sizeVar: 0.35 },// Tier 4: Solar Dyson Swarm
-                { stepX: 1.7, stepY: 1.4, baseSize: 0.60, sizeVar: 0.25 },// Tier 5: Galactic Penrose
-                { stepX: 1.3, stepY: 1.1, baseSize: 0.42, sizeVar: 0.18 } // Tier 6: 11D Multiverse
-            ];
-            const tierCfg = tierConfigs[Math.max(0, Math.min(6, this.tier))] || tierConfigs[0];
-
-            const stepX = tierCfg.stepX;
-            const stepY = tierCfg.stepY;
-            const numCols = Math.floor((w - 6) / stepX);
-
-            for (let c = 0; c < numCols; ++c) {
-                const fx = 3 + c * stepX;
-                const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((fx / w) * this.numColumns)));
-                const moundH = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
-                if (moundH > 1.0) {
-                    const topY = floorY - moundH;
-                    const maxRows = Math.ceil(moundH / stepY);
-                    const dir = (c < numCols / 2) ? -1.0 : 1.0;
-
-                    for (let r = 0; r < maxRows; ++r) {
-                        const fy = floorY - 2.5 - (r * stepY);
-                        if (fy < topY) break;
-
-                        const jitterX = (((getHash(c, r, 2) % 1000) / 1000.0) - 0.5) * (stepX * 0.9);
-                        const jitterY = (((getHash(c, r, 3) % 1000) / 1000.0) - 0.5) * (stepY * 0.7);
-                        const depthFactor = Math.min(1.0, (r + 1) / Math.max(1, maxRows));
-
-                        const flowX = dir * Math.sin(this.internalFlowPhase + r * 0.35 + c * 0.15) * (1.6 * depthFactor);
-                        const flowY = Math.cos(this.internalFlowPhase * 0.7 + c * 0.2) * (0.6 * depthFactor);
-                        const flowRot = dir * Math.sin(this.internalFlowPhase + (getHash(c, r, 0) % 10)) * 0.15 * depthFactor;
-
-                        const sinkDx = (w / 2) - fx;
-                        const sinkDy = floorY - fy;
-                        const sinkDist = Math.sqrt(sinkDx * sinkDx + sinkDy * sinkDy) + 12.0;
-                        const sinkDirX = sinkDx / sinkDist;
-                        const sinkDirY = sinkDy / sinkDist;
-
-                        const sinkEffect = (this.drainFlowIntensity / 3.0) * Math.max(0.2, 1.0 - (sinkDist / (w * 0.75)));
-                        const sinkPullX = sinkDirX * sinkEffect * 3.5 * Math.sin(this.drainFlowPhase + r * 0.35);
-                        const sinkPullY = sinkDirY * sinkEffect * 2.8 * Math.cos(this.drainFlowPhase * 0.85 + c * 0.2);
-                        const sinkTorque = Math.sin(this.drainFlowPhase + sinkDist * 0.12) * 0.35 * sinkEffect;
-
-                        const px = fx + jitterX + flowX + sinkPullX;
-                        const py = fy + jitterY + flowY + sinkPullY;
-
-                        const baseRot = ((getHash(c, r, 1) % 6283) / 1000.0);
-                        const rot = baseRot + flowRot + sinkTorque;
-                        const size = tierCfg.baseSize + ((getHash(c, r, 4) % 1000) / 1000.0) * tierCfg.sizeVar;
-                        const color = palette[getHash(c, r, 5) % palette.length];
-
-                        this.drawTinyPaperclip(ctx, px, py, size, rot, color);
-                    }
-                }
-            }
-        }
+        ctx.lineTo(w, h);
+        ctx.closePath();
+        ctx.fill();
     }
 
-    renderDrainingPaperclips(ctx) {
-        const tierScale = this.getTierScale();
-        this.drainingClips.forEach(p => {
-            const alpha = p.alpha !== undefined ? p.alpha : 0.6;
-            if (alpha <= 0.01) return;
-            ctx.save();
-            ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-            ctx.strokeStyle = p.color;
-            ctx.lineWidth = Math.max(0.4, 1.2 * tierScale);
-            ctx.beginPath();
-            ctx.moveTo(p.x - p.vx * 2.2, p.y - p.vy * 2.0);
-            ctx.quadraticCurveTo(p.x - p.vx, p.y - p.vy * 0.5, p.x, p.y);
-            ctx.stroke();
-
-            const clipSize = (p.size || 4.5) * tierScale;
-            this.drawTinyPaperclip(ctx, p.x, p.y, clipSize, p.rot, p.color);
-            ctx.restore();
-        });
-    }
-
-    renderFallingPaperclips(ctx) {
-        const tierScale = this.getTierScale();
-        this.fallingClips.forEach(p => {
-            const clipSize = (p.size || 4.5) * tierScale;
-            this.drawTinyPaperclip(ctx, p.x, p.y, clipSize, p.rot, p.color);
-        });
-    }
-
+    /** Pixel-art paperclip glyph. */
     drawTinyPaperclip(ctx, x, y, size = 6, rot = 0, color = '#ffffff') {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(rot);
-
         ctx.strokeStyle = color;
-        ctx.lineWidth = Math.max(0.45, Math.min(1.2, size * 0.28));
+        ctx.lineWidth = Math.max(0.6, Math.min(1.4, size * 0.26));
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-
         const s = Math.max(0.1, size / 6);
         ctx.beginPath();
         ctx.moveTo(-2 * s, 3 * s);
@@ -1932,210 +755,1295 @@ class CosmicVisualizer {
         ctx.arc(0, -1.5 * s, 0.8 * s, Math.PI, 0, false);
         ctx.lineTo(0.8 * s, 1.8 * s);
         ctx.stroke();
-
         ctx.restore();
     }
 
-    // High-Contrast Cartoon Paperclip Hologram with Dark Outlines for Crystal-Clear Visibility
-    drawCartoonPaperclip(ctx, x, y, scale = 1.0, rotation = 0) {
+    /** Large chrome paperclip floating in the early scenes (click target). */
+    drawHeroClip(ctx, x, y, scale, rotation, colors) {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(rotation);
         ctx.scale(scale, scale);
-
-        // 1. Dark Shadow / Backing Stroke (Guarantees Razor-Sharp Readability Against Windows or Any Background)
-        ctx.strokeStyle = '#05030a';
-        ctx.lineWidth = 8;
+        const path = () => {
+            ctx.beginPath();
+            ctx.moveTo(-6, 12);
+            ctx.lineTo(-6, -12);
+            ctx.arc(0, -12, 6, Math.PI, 0, false);
+            ctx.lineTo(6, 13);
+            ctx.arc(0, 13, 6, 0, Math.PI, false);
+            ctx.lineTo(-3, -6);
+            ctx.arc(0, -6, 3, Math.PI, 0, false);
+            ctx.lineTo(3, 7);
+        };
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-
-        ctx.beginPath();
-        ctx.moveTo(-10, 20);
-        ctx.lineTo(-10, -20);
-        ctx.arc(0, -20, 10, Math.PI, 0, false);
-        ctx.lineTo(10, 22);
-        ctx.arc(0, 22, 10, 0, Math.PI, false);
-        ctx.lineTo(-5, -10);
-        ctx.arc(0, -10, 5, Math.PI, 0, false);
-        ctx.lineTo(5, 12);
+        ctx.strokeStyle = colors[0];
+        ctx.lineWidth = 4.5;
+        path();
         ctx.stroke();
-
-        // 2. Vibrant Glowing Neon Cyan Body
-        ctx.strokeStyle = '#00f0ff';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(-10, 20);
-        ctx.lineTo(-10, -20);
-        ctx.arc(0, -20, 10, Math.PI, 0, false);
-        ctx.lineTo(10, 22);
-        ctx.arc(0, 22, 10, 0, Math.PI, false);
-        ctx.lineTo(-5, -10);
-        ctx.arc(0, -10, 5, Math.PI, 0, false);
-        ctx.lineTo(5, 12);
+        ctx.strokeStyle = colors[2];
+        ctx.lineWidth = 2.5;
+        path();
         ctx.stroke();
-
-        // 3. Crisp Inner White Specular Highlight
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = colors[3];
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(-10, 16);
-        ctx.lineTo(-10, -18);
-        ctx.arc(0, -20, 10, Math.PI, Math.PI * 1.5, false);
+        ctx.moveTo(-6, 9);
+        ctx.lineTo(-6, -12);
+        ctx.arc(0, -12, 6, Math.PI, Math.PI * 1.5, false);
         ctx.stroke();
-
         ctx.restore();
     }
 
+    renderScene(ctx, w, h, state) {
+        const p = this.getSceneProgress(state);
+        switch (this.tier) {
+            case 0: this.renderWorkshop(ctx, w, h, p, state); break;
+            case 1: this.renderTown(ctx, w, h, p, state); break;
+            case 2: this.renderMetropolis(ctx, w, h, p, state); break;
+            case 3: this.renderOrbit(ctx, w, h, p, state); break;
+            case 4: this.renderDyson(ctx, w, h, p, state); break;
+            case 5: this.renderGalaxy(ctx, w, h, p, state); break;
+            default: this.renderMultiverse(ctx, w, h, p, state); break;
+        }
+    }
+
     // =========================================================================
-    // FALLING FLUID CASCADE STREAMS & WATERFALL SIMULATION
-    // Drifts in as paperclip volume scales up into millions/billions/cosmic rates
+    // SCENE 0: THE WORKSHOP AT NIGHT
     // =========================================================================
-    renderFallingFluidStreams(ctx, w, h) {
-        if (this.fluidStreamIntensity <= 0.01) return;
+    renderWorkshop(ctx, w, h, p) {
+        const t = this.time;
+        const floorY = h * 0.78;
+        const cartons = Math.floor(p * 26);
 
-        const floorY = h - 2;
-        const intensity = this.fluidStreamIntensity;
+        // Static layer: walls, windows, trusses, floor, bench and stacked cartons
+        ctx.drawImage(this.cachedLayer(`workshop|${cartons}`, w, h, (c) => {
+            c.fillStyle = this.vGradient(c, 0, 0, floorY, [[0, '#0d0b14'], [0.45, '#1a1626'], [1, '#2a2238']]);
+            c.fillRect(0, 0, w, floorY);
 
-        ctx.save();
-
-        this.fluidStreamChannels.forEach((ch, idx) => {
-            const streamCenterX = ch.relX * w;
-            const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((streamCenterX / w) * this.numColumns)));
-            const moundH = Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx]);
-            const impactY = Math.min(h, Math.max(10, floorY - moundH));
-            const streamWidth = ch.width * (0.65 + 0.45 * intensity);
-
-            // 1. Build curved fluid ribbon envelope
-            const numSegments = 16;
-            const segHeight = impactY / numSegments;
-            const leftPoints = [];
-            const rightPoints = [];
-
-            for (let s = 0; s <= numSegments; ++s) {
-                const y = s * segHeight;
-                // Fluid acceleration narrowing in mid-air, flaring at impact
-                const t = y / impactY;
-                const widthMod = streamWidth * (1.0 - 0.28 * Math.sin(Math.PI * t) + 0.15 * t);
-                const sway = ch.waveAmp * intensity * Math.sin(y * ch.waveFreq - this.fluidStreamPhase * ch.speed + ch.phaseOffset);
-                const cx = streamCenterX + sway;
-
-                leftPoints.push({ x: cx - widthMod / 2, y: y });
-                rightPoints.push({ x: cx + widthMod / 2, y: y });
+            c.fillStyle = 'rgba(13, 11, 20, 0.45)';
+            for (let y = Math.floor(h * 0.5); y < floorY; y += 5) {
+                c.fillRect(0, y, w, 1);
+                const off = ((y / 5) % 2) * 6;
+                for (let x = off; x < w; x += 12) c.fillRect(x, y, 1, 5);
             }
 
-            // Draw translucent fluid body
-            ctx.beginPath();
-            ctx.moveTo(leftPoints[0].x, leftPoints[0].y);
-            for (let i = 1; i <= numSegments; ++i) {
-                ctx.lineTo(leftPoints[i].x, leftPoints[i].y);
-            }
-            ctx.lineTo(rightPoints[numSegments].x, rightPoints[numSegments].y);
-            for (let i = numSegments - 1; i >= 0; --i) {
-                ctx.lineTo(rightPoints[i].x, rightPoints[i].y);
-            }
-            ctx.closePath();
-
-            // Liquid metal stream gradient
-            const streamGrad = ctx.createLinearGradient(streamCenterX - streamWidth / 2, 0, streamCenterX + streamWidth / 2, 0);
-            const baseAlpha = 0.65 * intensity;
-            if (ch.colorScheme === 2) {
-                // Golden central torrent (Hero core)
-                streamGrad.addColorStop(0, `rgba(18, 30, 48, ${baseAlpha * 0.4})`);
-                streamGrad.addColorStop(0.25, `rgba(0, 240, 255, ${baseAlpha * 0.7})`);
-                streamGrad.addColorStop(0.5, `rgba(255, 255, 255, ${baseAlpha * 0.95})`);
-                streamGrad.addColorStop(0.75, `rgba(255, 230, 0, ${baseAlpha * 0.8})`);
-                streamGrad.addColorStop(1, `rgba(18, 30, 48, ${baseAlpha * 0.4})`);
-            } else {
-                // Neon Cyan / Electric Blue metallic rivers
-                streamGrad.addColorStop(0, `rgba(14, 22, 36, ${baseAlpha * 0.3})`);
-                streamGrad.addColorStop(0.25, `rgba(0, 240, 255, ${baseAlpha * 0.75})`);
-                streamGrad.addColorStop(0.5, `rgba(255, 255, 255, ${baseAlpha * 0.95})`);
-                streamGrad.addColorStop(0.75, `rgba(56, 189, 248, ${baseAlpha * 0.75})`);
-                streamGrad.addColorStop(1, `rgba(14, 22, 36, ${baseAlpha * 0.3})`);
-            }
-
-            ctx.fillStyle = streamGrad;
-            ctx.fill();
-
-            // 2. High-speed fluid streamlines & laminar filaments
-            const filamentCount = Math.floor(3 + intensity * 2);
-            for (let f = 0; f < filamentCount; ++f) {
-                const fOffset = ((f + 0.5) / filamentCount - 0.5) * (streamWidth * 0.65);
-                ctx.strokeStyle = (f % 2 === 0) ? `rgba(255, 255, 255, ${0.5 * intensity})` : `rgba(0, 240, 255, ${0.45 * intensity})`;
-                ctx.lineWidth = 1.0;
-                ctx.setLineDash([4 + (f % 3) * 2, 6 + (f % 2) * 3]);
-                ctx.lineDashOffset = -(this.fluidStreamPhase * ch.speed * 24.0 + f * 12.0);
-
-                ctx.beginPath();
-                for (let s = 0; s <= numSegments; ++s) {
-                    const y = s * segHeight;
-                    const t = y / impactY;
-                    const widthMod = streamWidth * (1.0 - 0.28 * Math.sin(Math.PI * t) + 0.15 * t);
-                    const sway = ch.waveAmp * intensity * Math.sin(y * ch.waveFreq - this.fluidStreamPhase * ch.speed + ch.phaseOffset);
-                    const fx = streamCenterX + sway + (fOffset * (widthMod / streamWidth));
-                    if (s === 0) ctx.moveTo(fx, y);
-                    else ctx.lineTo(fx, y);
+            const winW = Math.max(26, w * 0.15);
+            const winH = h * 0.36;
+            const winY = h * 0.1;
+            [w * 0.22, w * 0.5, w * 0.78].forEach((cx, i) => {
+                const x0 = cx - winW / 2;
+                c.save();
+                c.beginPath();
+                c.moveTo(x0, winY + winH);
+                c.lineTo(x0, winY + winW / 2);
+                c.arc(cx, winY + winW / 2, winW / 2, Math.PI, 0, false);
+                c.lineTo(x0 + winW, winY + winH);
+                c.closePath();
+                c.fillStyle = this.vGradient(c, 0, winY, winY + winH, [[0, '#26344f'], [0.6, '#3f5f86'], [1, '#7fa6c9']]);
+                c.fill();
+                c.clip();
+                if (i === 1) {
+                    this.glow(c, cx + winW * 0.15, winY + winH * 0.3, winW * 0.7, '#c9dcec', 0.35);
+                    c.fillStyle = '#e6ecf5';
+                    c.beginPath();
+                    c.arc(cx + winW * 0.15, winY + winH * 0.3, winW * 0.13, 0, Math.PI * 2);
+                    c.fill();
                 }
-                ctx.stroke();
-                ctx.setLineDash([]);
+                c.fillStyle = '#26344f';
+                for (let b = 0; b < 6; ++b) {
+                    const bh = winH * (0.12 + hash01(i, b, 7) * 0.2);
+                    c.fillRect(x0 + b * winW / 6, winY + winH - bh, winW / 6 + 1, bh);
+                }
+                c.restore();
+
+                c.fillStyle = '#0d0b14';
+                c.fillRect(cx - 1, winY, 2, winH);
+                for (let k = 1; k < 4; ++k) c.fillRect(x0, winY + winW / 2 + k * (winH - winW / 2) / 4, winW, 1);
+                c.fillStyle = '#3d2f48';
+                c.fillRect(x0 - 2, winY + winH, winW + 4, 3);
+
+                c.fillStyle = 'rgba(127, 166, 201, 0.07)';
+                c.beginPath();
+                c.moveTo(x0, winY + winW / 2);
+                c.lineTo(x0 + winW, winY + winW / 2);
+                c.lineTo(x0 + winW + w * 0.12, h);
+                c.lineTo(x0 + w * 0.06, h);
+                c.closePath();
+                c.fill();
+            });
+
+            c.strokeStyle = '#0d0b14';
+            c.lineWidth = 2;
+            c.beginPath();
+            c.moveTo(0, h * 0.06);
+            c.lineTo(w, h * 0.06);
+            for (let x = 0; x < w; x += w / 8) {
+                c.moveTo(x, h * 0.06);
+                c.lineTo(x + w / 16, 0);
+                c.lineTo(x + w / 8, h * 0.06);
+            }
+            c.stroke();
+
+            c.fillStyle = this.vGradient(c, 0, floorY, h, [[0, '#3d2f48'], [1, '#1a1626']]);
+            c.fillRect(0, floorY, w, h - floorY);
+            c.strokeStyle = 'rgba(13, 11, 20, 0.6)';
+            c.lineWidth = 1;
+            for (let k = -6; k <= 6; ++k) {
+                c.beginPath();
+                c.moveTo(w / 2 + k * w * 0.05, floorY);
+                c.lineTo(w / 2 + k * w * 0.2, h);
+                c.stroke();
             }
 
-            // 3. Shimmering tiny paperclip glyphs carried in the fluid flow
-            const numClipsInStream = Math.floor(6 + intensity * 10);
-            for (let k = 0; k < numClipsInStream; ++k) {
-                const clipY = ((k * (impactY / numClipsInStream) + this.fluidStreamPhase * ch.speed * 32.0 + k * 17.0) % impactY);
-                if (clipY < 4 || clipY > impactY - 4) continue;
-
-                const t = clipY / impactY;
-                const widthMod = streamWidth * (1.0 - 0.28 * Math.sin(Math.PI * t) + 0.15 * t);
-                const sway = ch.waveAmp * intensity * Math.sin(clipY * ch.waveFreq - this.fluidStreamPhase * ch.speed + ch.phaseOffset);
-                const lateralJitter = (((k * 7919 + idx * 1013) % 1000) / 1000.0 - 0.5) * (widthMod * 0.6);
-                const clipX = streamCenterX + sway + lateralJitter;
-
-                const clipRot = Math.PI / 2 + Math.sin(this.fluidStreamPhase + k) * 0.25;
-                const clipColor = (k % 3 === 0) ? '#ffffff' : ((k % 3 === 1) ? '#00f0ff' : '#ffe600');
-                const clipAlpha = Math.min(1.0, Math.sin(Math.PI * (clipY / impactY))) * intensity;
-
-                ctx.save();
-                ctx.globalAlpha = clipAlpha;
-                this.drawTinyPaperclip(ctx, clipX, clipY, 3.8, clipRot, clipColor);
-                ctx.restore();
+            const bw = Math.max(9, w * 0.05);
+            for (let i = 0; i < cartons; ++i) {
+                const idx = Math.floor(i / 2);
+                const col = idx % 4;
+                const row = Math.floor(idx / 4);
+                const cx = i % 2 === 0 ? 4 + col * (bw + 1) : w - 4 - (col + 1) * (bw + 1);
+                const cy = floorY - (row + 1) * (bw * 0.8);
+                c.fillStyle = (i % 3 === 0) ? '#7a4f3a' : '#a06a3c';
+                c.fillRect(cx, cy, bw, bw * 0.8 - 1);
+                c.fillStyle = '#d9953f';
+                c.fillRect(cx, cy + bw * 0.35, bw, 1);
             }
 
-            // 4. Energetic glowing impact flare where the waterfall plunges into the bottom fluid sea
-            const flareW = streamWidth * 1.4;
-            const flareH = 4.0;
-            const impactSway = ch.waveAmp * intensity * Math.sin(impactY * ch.waveFreq - this.fluidStreamPhase * ch.speed + ch.phaseOffset);
-            const flareX = streamCenterX + impactSway;
+            const bx = w * 0.5;
+            const benchY = floorY - h * 0.08;
+            c.fillStyle = '#5a3f3a';
+            c.fillRect(bx - w * 0.16, benchY, w * 0.32, 4);
+            c.fillStyle = '#1a1626';
+            c.fillRect(bx - w * 0.15, benchY + 4, 3, floorY - benchY - 4);
+            c.fillRect(bx + w * 0.15 - 3, benchY + 4, 3, floorY - benchY - 4);
+            c.fillStyle = '#a06a3c';
+            c.beginPath();
+            c.arc(bx - w * 0.1, benchY - 6, 6, 0, Math.PI * 2);
+            c.fill();
+            c.fillStyle = '#d9953f';
+            c.beginPath();
+            c.arc(bx - w * 0.1, benchY - 6, 3, 0, Math.PI * 2);
+            c.fill();
+        }), 0, 0);
 
-            ctx.fillStyle = `rgba(0, 240, 255, ${0.7 * intensity})`;
+        // Hanging lamps with warm cones (swaying)
+        [w * 0.36, w * 0.64].forEach((lx, i) => {
+            const sway = Math.sin(t * 0.9 + i * 1.7) * 2;
+            const ly = h * 0.26;
+            ctx.strokeStyle = '#0d0b14';
+            ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.ellipse(flareX, impactY, flareW / 2, flareH, 0, 0, Math.PI * 2);
+            ctx.moveTo(lx, h * 0.06);
+            ctx.lineTo(lx + sway, ly);
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(255, 210, 122, 0.10)';
+            ctx.beginPath();
+            ctx.moveTo(lx + sway - 3, ly + 3);
+            ctx.lineTo(lx + sway + 3, ly + 3);
+            ctx.lineTo(lx + sway * 3 + w * 0.13, floorY);
+            ctx.lineTo(lx + sway * 3 - w * 0.13, floorY);
+            ctx.closePath();
             ctx.fill();
-
-            ctx.fillStyle = `rgba(255, 255, 255, ${0.9 * intensity})`;
+            this.glow(ctx, lx + sway, ly + 4, h * 0.12, '#ffd27a', 0.5);
+            ctx.fillStyle = '#3d2f48';
             ctx.beginPath();
-            ctx.ellipse(flareX, impactY, flareW / 4, flareH / 2, 0, 0, Math.PI * 2);
+            ctx.moveTo(lx + sway - 6, ly + 4);
+            ctx.lineTo(lx + sway + 6, ly + 4);
+            ctx.lineTo(lx + sway + 3, ly);
+            ctx.lineTo(lx + sway - 3, ly);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#fff4d6';
+            ctx.fillRect(Math.round(lx + sway) - 1, ly + 4, 3, 2);
+        });
+
+        // Bending arm on the bench (reacts to clicks)
+        const benchY = floorY - h * 0.08;
+        ctx.save();
+        ctx.translate(w * 0.56, benchY - 2);
+        ctx.fillStyle = '#8a8f99';
+        ctx.fillRect(-4, -4, 8, 4);
+        ctx.rotate(-0.9 + (1.0 - this.heroRecoil) * 2.2);
+        ctx.fillStyle = '#d7dce3';
+        ctx.fillRect(0, -1.5, 16, 3);
+        ctx.fillStyle = '#d9953f';
+        ctx.fillRect(15, -2.5, 3, 5);
+        ctx.restore();
+
+        // Dust motes in the moonlight
+        ctx.fillStyle = '#c9dcec';
+        for (let i = 0; i < 26; ++i) {
+            const mx = (hash01(i, 31) * w + Math.sin(t * 0.3 + i) * 8 + t * 2) % w;
+            const my = (hash01(i, 32) * h + t * (1.5 + hash01(i, 33) * 2)) % floorY;
+            ctx.globalAlpha = Math.max(0, 0.25 + 0.35 * Math.sin(t + i));
+            ctx.fillRect(Math.floor(mx), Math.floor(my), 1, 1);
+        }
+        ctx.globalAlpha = 1.0;
+
+        this.drawHeroClip(ctx, w / 2, h * 0.36, 1.1 * this.heroRecoil, this.heroRotation + Math.sin(t * 0.8) * 0.15, SCENE_CLIP_COLORS[0]);
+    }
+
+    // =========================================================================
+    // SCENE 1: THE TOWN AT DUSK
+    // =========================================================================
+    renderTown(ctx, w, h, p) {
+        const t = this.time;
+        const horizon = h * 0.62;
+        const groundY = horizon + h * 0.1;
+        const pq = Math.round(p * 40) / 40;
+
+        // Sky gradient & sun (the sun sinks as the town is consumed)
+        ctx.drawImage(this.cachedLayer(`town-sky|${pq}`, w, h, (c) => {
+            c.fillStyle = this.vGradient(c, 0, 0, horizon, [[0, '#231a33'], [0.35, '#5e3456'], [0.65, '#c4545a'], [0.88, '#ec8052'], [1, '#ffb65c']]);
+            c.fillRect(0, 0, w, horizon + 2);
+            const sunX = w * 0.3;
+            const sunY = horizon - h * 0.06 + pq * h * 0.05;
+            const sunR = h * 0.13;
+            this.glow(c, sunX, sunY, sunR * 2.6, '#ffb65c', 0.45);
+            c.save();
+            c.beginPath();
+            c.arc(sunX, sunY, sunR, 0, Math.PI * 2);
+            c.clip();
+            c.fillStyle = this.vGradient(c, 0, sunY - sunR, sunY + sunR, [[0, '#ffe3a3'], [0.5, '#ffb65c'], [1, '#ec8052']]);
+            c.fillRect(sunX - sunR, sunY - sunR, sunR * 2, sunR * 2);
+            c.fillStyle = '#c4545a';
+            for (let k = 0; k < 5; ++k) c.fillRect(sunX - sunR, sunY + sunR * (0.15 + k * 0.18), sunR * 2, 1 + k * 0.6);
+            c.restore();
+        }), 0, 0);
+
+        this.drawStars(ctx, w, h, 0.22, 0.4, ['#ffe3a3', '#e8ebf0']);
+        for (let i = 0; i < 5; ++i) {
+            const cx = ((hash01(i, 41) * w * 1.4 + t * (2 + i)) % (w * 1.4)) - w * 0.2;
+            const cy = h * (0.12 + hash01(i, 42) * 0.3);
+            ctx.fillStyle = i % 2 ? 'rgba(236, 128, 82, 0.5)' : 'rgba(255, 182, 92, 0.55)';
+            ctx.fillRect(cx, cy, w * (0.12 + hash01(i, 43) * 0.18), 1);
+        }
+
+        // Hills, town, factory and power lines (windows go dark as the town evacuates)
+        const fx = w * 0.64;
+        const fw = w * 0.3;
+        const fh = h * 0.12;
+        ctx.drawImage(this.cachedLayer(`town-land|${pq}`, w, h, (c) => {
+            this.drawRidge(c, w, h, horizon, h * 0.05, 1.3, '#6b6f8f', 1.0);
+            this.drawRidge(c, w, h, horizon + h * 0.04, h * 0.045, 4.2, '#454a6b', 1.4);
+            this.drawRidge(c, w, h, horizon + h * 0.09, h * 0.02, 2.2, '#2c2f4a', 2.0);
+            c.fillStyle = '#231a33';
+            c.fillRect(0, groundY, w, h - groundY);
+            for (let i = 0; i < 16; ++i) {
+                const hx = w * 0.04 + i * w * 0.036;
+                if (hx > w * 0.6) break;
+                const hw = w * 0.03;
+                const hh = h * (0.035 + hash01(i, 51) * 0.03);
+                c.fillStyle = '#231a33';
+                c.fillRect(hx, groundY - hh, hw, hh);
+                c.beginPath();
+                c.moveTo(hx - 1, groundY - hh);
+                c.lineTo(hx + hw / 2, groundY - hh - hw * 0.5);
+                c.lineTo(hx + hw + 1, groundY - hh);
+                c.fill();
+                if (hash01(i, 52) > pq * 1.1) {
+                    c.fillStyle = '#ffe3a3';
+                    c.fillRect(hx + 2, groundY - hh + 2, 2, 2);
+                    if (hash01(i, 53) > 0.5) c.fillRect(hx + hw - 4, groundY - hh + 2, 2, 2);
+                }
+            }
+            c.fillStyle = '#231a33';
+            const sx = w * 0.27;
+            c.fillRect(sx, groundY - h * 0.1, w * 0.02, h * 0.1);
+            c.beginPath();
+            c.moveTo(sx - 1, groundY - h * 0.1);
+            c.lineTo(sx + w * 0.01, groundY - h * 0.17);
+            c.lineTo(sx + w * 0.02 + 1, groundY - h * 0.1);
+            c.fill();
+            c.fillRect(w * 0.5, groundY - h * 0.1, 1, h * 0.1);
+            c.fillRect(w * 0.53, groundY - h * 0.1, 1, h * 0.1);
+            c.fillRect(w * 0.495, groundY - h * 0.13, w * 0.045, h * 0.035);
+
+            c.fillStyle = '#120d1c';
+            c.fillRect(fx, groundY - fh, fw, fh);
+            for (let k = 0; k < 5; ++k) {
+                c.beginPath();
+                c.moveTo(fx + k * fw / 5, groundY - fh);
+                c.lineTo(fx + k * fw / 5, groundY - fh - h * 0.03);
+                c.lineTo(fx + (k + 1) * fw / 5, groundY - fh);
+                c.fill();
+            }
+            for (let k = 0; k < 3; ++k) {
+                const cx = fx + fw * (0.2 + k * 0.3);
+                const top = groundY - fh - h * (0.12 + k * 0.02);
+                c.fillStyle = '#120d1c';
+                c.fillRect(cx - 2, top, 4, groundY - fh - top);
+                c.fillStyle = '#c4545a';
+                c.fillRect(cx - 2, top + 3, 4, 1);
+            }
+            c.fillStyle = '#ffb65c';
+            for (let k = 0; k < 7; ++k) c.fillRect(fx + 4 + k * (fw - 8) / 7, groundY - fh * 0.55, 3, 2);
+
+            c.strokeStyle = '#120d1c';
+            c.lineWidth = 1;
+            for (let k = 0; k < 4; ++k) {
+                const px = w * (0.08 + k * 0.28);
+                c.fillStyle = '#120d1c';
+                c.fillRect(px, groundY - h * 0.12, 1, h * 0.12);
+                c.fillRect(px - 3, groundY - h * 0.12, 7, 1);
+                if (k < 3) {
+                    c.beginPath();
+                    c.moveTo(px, groundY - h * 0.12);
+                    c.quadraticCurveTo(px + w * 0.14, groundY - h * 0.08, px + w * 0.28, groundY - h * 0.12);
+                    c.stroke();
+                }
+            }
+        }), 0, 0);
+
+        // Smoke from the stacks
+        for (let k = 0; k < 3; ++k) {
+            const cx = fx + fw * (0.2 + k * 0.3);
+            const top = groundY - fh - h * (0.12 + k * 0.02);
+            for (let s = 0; s < 6; ++s) {
+                const age = ((t * 0.25 + s / 6 + k * 0.13) % 1);
+                ctx.globalAlpha = 0.55 * (1 - age);
+                ctx.fillStyle = age < 0.3 ? '#9aa0ad' : '#6b6f8f';
+                ctx.beginPath();
+                ctx.arc(cx + age * w * 0.12 + Math.sin(age * 6 + k) * 2, top - age * h * 0.2, 2 + age * 7, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        ctx.globalAlpha = 1.0;
+
+        this.drawHeroClip(ctx, w / 2, h * 0.28, 0.9 * this.heroRecoil, this.heroRotation + Math.sin(t * 0.8) * 0.15, SCENE_CLIP_COLORS[1]);
+    }
+
+    // =========================================================================
+    // SCENE 2: THE METROPOLIS AT NIGHT
+    // =========================================================================
+    renderMetropolis(ctx, w, h, p) {
+        const t = this.time;
+        const ground = h * 0.8;
+        const pq = Math.round(p * 40) / 40;
+
+        ctx.drawImage(this.cachedLayer('city-sky', w, h, (c) => {
+            c.fillStyle = this.vGradient(c, 0, 0, ground, [[0, '#07080f'], [0.45, '#172040'], [0.8, '#3a1f3f'], [1, '#7a2f5a']]);
+            c.fillRect(0, 0, w, ground);
+        }), 0, 0);
+        this.drawStars(ctx, w, h, 0.3, 0.5, ['#9ad4e6', '#e8f4f6']);
+
+        // Searchlights sweep behind the skyline
+        [0.25, 0.72].forEach((sx, i) => {
+            const a = -Math.PI / 2 + Math.sin(t * 0.35 + i * 2) * 0.5;
+            ctx.fillStyle = 'rgba(154, 212, 230, 0.08)';
+            ctx.beginPath();
+            ctx.moveTo(w * sx, ground);
+            ctx.lineTo(w * sx + Math.cos(a - 0.05) * h * 1.2, ground + Math.sin(a - 0.05) * h * 1.2);
+            ctx.lineTo(w * sx + Math.cos(a + 0.05) * h * 1.2, ground + Math.sin(a + 0.05) * h * 1.2);
+            ctx.closePath();
             ctx.fill();
         });
 
+        // Skyline layers: windows turn to cold cyan machine light as the city is taken over
+        ctx.drawImage(this.cachedLayer(`city-skyline|${pq}`, w, h, (c) => {
+            const skyline = (layer, color, minH, maxH, winColor, winChance, seedBase) => {
+                let x = -4;
+                let i = 0;
+                while (x < w) {
+                    const bw = w * (0.04 + hash01(i, seedBase, 1) * 0.05);
+                    const bh = h * (minH + hash01(i, seedBase, 2) * (maxH - minH));
+                    c.fillStyle = color;
+                    c.fillRect(x, ground - bh, bw, bh);
+                    if (hash01(i, seedBase, 3) > 0.7) c.fillRect(x + bw * 0.45, ground - bh - h * 0.04, 1, h * 0.04);
+                    if (winColor) {
+                        for (let wy = ground - bh + 3; wy < ground - 2; wy += 4) {
+                            for (let wx = x + 2; wx < x + bw - 2; wx += 3) {
+                                const hsh = hash01(Math.floor(wx), Math.floor(wy), seedBase);
+                                if (hsh < winChance) {
+                                    c.fillStyle = hsh < winChance * pq ? '#9ad4e6' : winColor;
+                                    c.fillRect(wx, wy, 1, 1);
+                                }
+                            }
+                        }
+                    }
+                    x += bw + 1;
+                    ++i;
+                }
+            };
+            skyline(0, '#22305c', 0.18, 0.34, null, 0, 61);
+            skyline(1, '#172040', 0.22, 0.45, '#3d6aa0', 0.2, 62);
+            skyline(2, '#0e1224', 0.12, 0.38, '#ffb347', 0.35, 63);
+
+            const tx = w * 0.86;
+            c.fillStyle = '#0e1224';
+            c.beginPath();
+            c.moveTo(tx - w * 0.06, ground);
+            c.quadraticCurveTo(tx - w * 0.025, ground - h * 0.12, tx - w * 0.035, ground - h * 0.22);
+            c.lineTo(tx + w * 0.035, ground - h * 0.22);
+            c.quadraticCurveTo(tx + w * 0.025, ground - h * 0.12, tx + w * 0.06, ground);
+            c.fill();
+
+            const hwY = ground - h * 0.03;
+            c.fillStyle = '#07080f';
+            c.fillRect(0, hwY, w, 3);
+            for (let k = 0; k < w; k += w / 10) c.fillRect(k, hwY + 3, 2, ground - hwY);
+            c.fillStyle = this.vGradient(c, 0, ground - h * 0.1, ground, [[0, 'rgba(122, 47, 90, 0)'], [1, 'rgba(122, 47, 90, 0.35)']]);
+            c.fillRect(0, ground - h * 0.1, w, h * 0.1);
+            c.fillStyle = '#07080f';
+            c.fillRect(0, ground, w, h - ground);
+        }), 0, 0);
+
+        // Aircraft warning lights on the near skyline
+        let x = -4;
+        for (let i = 0; x < w; ++i) {
+            const bw = w * (0.04 + hash01(i, 63, 1) * 0.05);
+            const bh = h * (0.12 + hash01(i, 63, 2) * 0.26);
+            if (hash01(i, 63, 3) > 0.7 && hash01(i, 63, 4) > 0.6 && Math.sin(t * 3 + i) > 0) {
+                ctx.fillStyle = '#d44a7a';
+                ctx.fillRect(x + bw * 0.45, ground - bh - h * 0.04, 1, 1);
+            }
+            x += bw + 1;
+        }
+
+        // Cooling-tower steam
+        const tx = w * 0.86;
+        for (let s = 0; s < 7; ++s) {
+            const age = (t * 0.18 + s / 7) % 1;
+            ctx.globalAlpha = 0.35 * (1 - age);
+            ctx.fillStyle = '#8a93a6';
+            ctx.beginPath();
+            ctx.arc(tx + age * w * 0.05, ground - h * 0.23 - age * h * 0.25, 3 + age * 9, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1.0;
+
+        // Traffic light trails on the elevated highway
+        const hwY = ground - h * 0.03;
+        for (let c = 0; c < 18; ++c) {
+            const dir = c % 2 === 0 ? 1 : -1;
+            const cx = ((hash01(c, 71) * w + dir * t * (30 + hash01(c, 72) * 25)) % w + w) % w;
+            ctx.fillStyle = dir > 0 ? '#e8f4f6' : '#d44a7a';
+            ctx.fillRect(cx, hwY - (dir > 0 ? 1 : 0), 4, 1);
+        }
+
+        this.drawHeroClip(ctx, w / 2, h * 0.3, 0.8 * this.heroRecoil, this.heroRotation + Math.sin(t * 0.8) * 0.15, SCENE_CLIP_COLORS[2]);
+    }
+
+    // =========================================================================
+    // SCENE 3: PLANETARY ORBIT
+    // =========================================================================
+    renderOrbit(ctx, w, h, p, state) {
+        const t = this.time;
+        const maps = this.getEarthMaps();
+
+        // Deep space with a diagonal Milky Way band
+        ctx.drawImage(this.cachedLayer('orbit-bg', w, h, (c) => {
+            c.fillStyle = this.vGradient(c, 0, 0, h, [[0, '#03040a'], [1, '#0a0f22']]);
+            c.fillRect(0, 0, w, h);
+            c.save();
+            c.translate(w * 0.5, h * 0.5);
+            c.rotate(-0.55);
+            c.scale(1, 0.22);
+            this.glow(c, 0, 0, Math.max(w, h) * 0.75, '#12204a', 0.9);
+            this.glow(c, w * 0.1, 0, Math.max(w, h) * 0.4, '#1a3a7a', 0.35);
+            c.restore();
+            for (let i = 0; i < 360; ++i) {
+                const along = (hash01(i, 201) - 0.5) * 1.6;
+                const across = (hash01(i, 202) + hash01(i, 203) - 1) * 0.12;
+                const x = w * 0.5 + (along * Math.cos(-0.55) - across * Math.sin(-0.55)) * Math.max(w, h);
+                const y = h * 0.5 + (along * Math.sin(-0.55) + across * Math.cos(-0.55)) * Math.max(w, h);
+                c.fillStyle = hash01(i, 204) > 0.8 ? '#b8e6ff' : '#2a66a8';
+                c.fillRect(Math.round(x), Math.round(y), 1, 1);
+            }
+        }), 0, 0);
+        this.drawStars(ctx, w, h);
+
+        const cx = w * 0.5;
+        const cy = h * 0.4;
+        const R = Math.min(w * 0.36, h * 0.28);
+        const tilt = 0.35;
+        const spin = t * 0.04 + this.camYaw;
+        const L = [-0.62, -0.38, 0.69];
+
+        // Moon with craters (carved into a spiral once the lunar deconstructors arrive)
+        const mx = Math.max(R * 0.3, cx - R * 1.3);
+        const my = Math.max(R * 0.3, cy - R * 1.05);
+        const mr = R * 0.16;
+        ctx.fillStyle = '#a7b0c0';
+        ctx.beginPath();
+        ctx.arc(mx, my, mr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#5a6070';
+        for (let k = 0; k < 5; ++k) ctx.fillRect(Math.round(mx + (hash01(k, 211) - 0.6) * mr), Math.round(my + (hash01(k, 212) - 0.5) * mr), 2, 1);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(mx, my, mr, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.fillStyle = '#12204a';
+        ctx.beginPath();
+        ctx.arc(mx + mr * 0.55, my + mr * 0.25, mr * 0.95, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        if (p > 0.6) {
+            ctx.strokeStyle = '#e6ecf5';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let a = 0; a < (p - 0.6) * 45; a += 0.25) ctx.lineTo(mx + Math.cos(a) * a * mr / 16, my + Math.sin(a) * a * mr / 16);
+            ctx.stroke();
+        }
+
+        // Orbital mass-driver ring, drawn behind and in front of the globe
+        const ringTilt = -0.22;
+        const ringRX = R * 1.55;
+        const ringRY = R * 0.3;
+        const ringPoint = (a, rx = ringRX, ry = ringRY) => {
+            const ex = Math.cos(a) * rx, ey = Math.sin(a) * ry;
+            return [cx + ex * Math.cos(ringTilt) - ey * Math.sin(ringTilt), cy + ex * Math.sin(ringTilt) + ey * Math.cos(ringTilt)];
+        };
+        const drawRing = (front) => {
+            if (p < 0.08) return;
+            const from = front ? 0 : Math.PI, to = front ? Math.PI : Math.PI * 2;
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = front ? '#a7b0c0' : '#5a6070';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, ringRX, ringRY, ringTilt, from, to);
+            ctx.stroke();
+            ctx.strokeStyle = front ? '#5a6070' : '#12204a';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, ringRX + 2, ringRY + 1, ringTilt, from, to);
+            ctx.stroke();
+            // Struts & packets riding the mass driver
+            for (let k = 0; k < 24; ++k) {
+                const a = ((k / 24) * Math.PI * 2 + t * 0.35) % (Math.PI * 2);
+                if ((a < Math.PI) !== front) continue;
+                const [px, py] = ringPoint(a);
+                ctx.fillStyle = k % 3 === 0 ? '#ffd070' : (front ? '#e6ecf5' : '#a7b0c0');
+                ctx.fillRect(Math.round(px), Math.round(py) - (k % 3 === 0 ? 0 : 1), k % 3 === 0 ? 2 : 1, k % 3 === 0 ? 1 : 2);
+            }
+        };
+        drawRing(false);
+
+        // Atmosphere halo
+        this.glow(ctx, cx + L[0] * R * 0.15, cy + L[1] * R * 0.15, R * 1.28, '#62a8d8', 0.4);
+
+        // The globe, sampled from precomputed noise maps
+        const geo = this.getGlobeGeometry(cx, cy, R, tilt, L);
+        const { x0, y0, size } = geo;
+        const img = ctx.getImageData(x0, y0, size, size);
+        const d = img.data;
+        const humansGone = state && state.humanPopulation <= 0;
+        const { W, H, height, conv, cloud } = maps;
+        const front = p * 1.02;
+        const cloudShift = Math.floor(t * 1.5);
+        const uScale = W / (Math.PI * 2);
+        const col = [0, 0, 0];
+        for (let k = 0; k < geo.count; ++k) {
+            let u = Math.floor((geo.lon[k] + spin) * uScale) % W;
+            if (u < 0) u += W;
+            const v = geo.v[k];
+            const idx = v * W + u;
+            const hgt = height[idx];
+            const cv = conv[idx];
+            const isLand = hgt > 0.52;
+            const converted = cv < front;
+            const onFront = !converted && cv < front + 0.018 && p > 0.02;
+
+            if (converted) {
+                // Chrome plating: panels of slightly varied steel with faint seams
+                const panel = hash01(u >> 3, v >> 2, 7) * 30;
+                const seam = (u % 8 === 0 || v % 4 === 0) ? -12 : 0;
+                col[0] = 104 + panel + seam; col[1] = 112 + panel + seam; col[2] = 130 + panel + seam;
+            } else if (geo.polar[k] || (isLand && hgt > 0.74)) {
+                col[0] = 232; col[1] = 234; col[2] = 236;
+            } else if (isLand) {
+                const kk = (hgt - 0.52) / 0.22;
+                col[0] = 63 + kk * 75; col[1] = 107 + kk * 15; col[2] = 58 + kk * 16;
+            } else {
+                const kk = Math.max(0, (hgt - 0.35) / 0.17);
+                col[0] = 22 + kk * 20; col[1] = 50 + kk * 50; col[2] = 110 + kk * 55;
+            }
+            const cl = converted ? 0 : cloud[v * W + ((u + cloudShift) % W)];
+            if (cl > 0) { col[0] += (230 - col[0]) * cl; col[1] += (232 - col[1]) * cl; col[2] += (236 - col[2]) * cl; }
+
+            const lam = geo.lam[k];
+            const day = geo.day[k];
+            const shade = 0.14 + 0.86 * day * (0.55 + 0.45 * Math.max(0, lam));
+            let r = col[0] * shade, g = col[1] * shade, b = col[2] * shade;
+            if (day < 0.5) {
+                // Night side: city lights until the biosphere is gone; chrome grid glints afterwards
+                const night = 1 - day * 2;
+                if (isLand && !converted && !humansGone && hash01(u, v) > 0.95) { r += 153 * night; g += 125 * night; b += 67 * night; }
+                if (converted && hash01(u, v, Math.floor(t * 2)) > 0.985) { r += 200 * night; g += 220 * night; b += 240 * night; }
+            }
+            if (converted && lam > 0) {
+                const spec = geo.spec[k];
+                r += spec; g += spec; b += spec * 1.05;
+            }
+            if (onFront) { r = 255; g = 138 + 60 * Math.sin(t * 6 + u); b = 58; }
+            const rim = geo.rim[k];
+            const o = geo.pix[k];
+            d[o] = r * (1 - rim) + 98 * rim;
+            d[o + 1] = g * (1 - rim) + 168 * rim;
+            d[o + 2] = b * (1 - rim) + 216 * rim;
+            d[o + 3] = 255;
+        }
+        ctx.putImageData(img, x0, y0);
+
+        // Thin bright atmosphere line on the lit limb
+        ctx.strokeStyle = 'rgba(184, 230, 255, 0.7)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(cx, cy, R + 0.5, Math.PI * 0.75, Math.PI * 1.65);
+        ctx.stroke();
+
+        drawRing(true);
+
+        // Railgun launches streaking off the ring
+        if (p > 0.3) {
+            ctx.fillStyle = '#ffd070';
+            for (let k = 0; k < 5; ++k) {
+                const age = (t * 0.4 + k / 5) % 1;
+                const [px, py] = ringPoint(0.35 + k * 0.1);
+                ctx.globalAlpha = 1 - age;
+                ctx.fillRect(Math.round(px + age * w * 0.35), Math.round(py - age * h * 0.25), 2, 1);
+            }
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    /** Per-pixel globe geometry (longitude, latitude row, lighting, rim), cached per size & position. */
+    getGlobeGeometry(cx, cy, R, tilt, L) {
+        const x0 = Math.floor(cx - R), y0 = Math.floor(cy - R), size = Math.ceil(R * 2) + 1;
+        const key = `${x0},${y0},${size}`;
+        if (this.globeGeometry && this.globeGeometry.key === key) return this.globeGeometry;
+        const H = this.getEarthMaps().H;
+        const n = size * size;
+        const geo = {
+            key, x0, y0, size, count: 0,
+            pix: new Int32Array(n), lon: new Float32Array(n), v: new Int16Array(n), polar: new Uint8Array(n),
+            lam: new Float32Array(n), day: new Float32Array(n), spec: new Float32Array(n), rim: new Float32Array(n)
+        };
+        const cosT = Math.cos(tilt), sinT = Math.sin(tilt);
+        for (let j = 0; j < size; ++j) {
+            for (let i = 0; i < size; ++i) {
+                const nx = (x0 + i + 0.5 - cx) / R;
+                const ny = (y0 + j + 0.5 - cy) / R;
+                const r2 = nx * nx + ny * ny;
+                if (r2 > 1) continue;
+                const nz = Math.sqrt(1 - r2);
+                const ry = ny * cosT - nz * sinT;
+                const rz = ny * sinT + nz * cosT;
+                const lat = Math.asin(Math.max(-1, Math.min(1, -ry)));
+                const lam = nx * L[0] + ny * L[1] + nz * L[2];
+                const day = Math.max(0, Math.min(1, (lam + 0.12) / 0.5));
+                const k = geo.count++;
+                geo.pix[k] = (i + j * size) * 4;
+                geo.lon[k] = Math.atan2(nx, rz);
+                geo.v[k] = Math.max(0, Math.min(H - 1, Math.floor((lat / Math.PI + 0.5) * H)));
+                geo.polar[k] = Math.abs(lat) > 1.22 ? 1 : 0;
+                geo.lam[k] = lam;
+                geo.day[k] = day;
+                geo.spec[k] = lam > 0 ? Math.pow(lam, 7) * 150 : 0;
+                geo.rim[k] = Math.pow(1 - nz, 2.5) * (0.35 + 0.65 * day);
+            }
+        }
+        this.globeGeometry = geo;
+        return geo;
+    }
+
+    /** Equirectangular height / conversion-order / cloud maps for the globe (built once). */
+    getEarthMaps() {
+        if (this.earthMaps) return this.earthMaps;
+        const W = 192, H = 96;
+        const height = new Float32Array(W * H), conv = new Float32Array(W * H), cloud = new Float32Array(W * H);
+        const seedLat = 0.75, seedLon = 4.4; // conversion spreads out from the old factory
+        const sx = Math.cos(seedLat) * Math.cos(seedLon), sy = Math.sin(seedLat), sz = Math.cos(seedLat) * Math.sin(seedLon);
+        for (let v = 0; v < H; ++v) {
+            const lat = (v / H - 0.5) * Math.PI;
+            for (let u = 0; u < W; ++u) {
+                const lon = (u / W) * Math.PI * 2;
+                const x = Math.cos(lat) * Math.cos(lon), y = Math.sin(lat), z = Math.cos(lat) * Math.sin(lon);
+                const i = v * W + u;
+                height[i] = fbm3(x * 1.7, y * 1.7, z * 1.7, 5);
+                const ang = Math.acos(Math.max(-1, Math.min(1, x * sx + y * sy + z * sz))) / Math.PI;
+                conv[i] = ang * 0.75 + fbm3(x * 2.6 + 7, y * 2.6, z * 2.6, 4) * 0.35 - 0.1;
+                const c = fbm3(x * 2.2 + 20, y * 5.0, z * 2.2, 4);
+                cloud[i] = Math.max(0, Math.min(0.85, (c - 0.56) * 4));
+            }
+        }
+        this.earthMaps = { W, H, height, conv, cloud };
+        return this.earthMaps;
+    }
+
+    // =========================================================================
+    // SCENE 4: THE DYSON SWARM
+    // =========================================================================
+    renderDyson(ctx, w, h, p) {
+        const t = this.time;
+        ctx.drawImage(this.cachedLayer('dyson-bg', w, h, (c) => {
+            c.fillStyle = this.vGradient(c, 0, 0, h, [[0, '#050308'], [1, '#140812']]);
+            c.fillRect(0, 0, w, h);
+        }), 0, 0);
+        this.drawStars(ctx, w, h, 1.0, 0.7, ['#ffc861', '#fff0b8', '#ffffff']);
+
+        const cx = w * 0.5;
+        const cy = h * 0.42;
+        const R = Math.min(w, h) * 0.16;
+        const shellR = R * 1.75;
+        const dim = 1 - p * 0.6;
+        const spin = t * 0.08 + this.camYaw;
+        const tiltX = 0.35;
+
+        // Collector panels on a rotating spherical shell (Fibonacci distribution); more appear with progress
+        const total = 2200;
+        const count = Math.floor(total * (0.12 + 0.88 * p));
+        const golden = Math.PI * (3 - Math.sqrt(5));
+        const back = [];
+        const front = [];
+        for (let i = 0; i < count; ++i) {
+            const y = 1 - (i / (total - 1)) * 2;
+            const rr = Math.sqrt(1 - y * y);
+            const a = i * golden + spin;
+            let x = Math.cos(a) * rr, z = Math.sin(a) * rr, yy = y;
+            // tilt the shell toward the viewer
+            const y2 = yy * Math.cos(tiltX) - z * Math.sin(tiltX);
+            const z2 = yy * Math.sin(tiltX) + z * Math.cos(tiltX);
+            const sx = cx + x * shellR;
+            const sy = cy + y2 * shellR;
+            (z2 < 0 ? back : front).push([sx, sy, z2, i]);
+        }
+
+        const drawPanels = (list, isFront) => {
+            for (const [sx, sy, z, i] of list) {
+                // Panels facing the camera catch the light; glints travel across the shell
+                const glint = isFront && Math.sin(i * 12.9898 + t * 1.3) > 0.97;
+                ctx.fillStyle = glint ? '#fff0b8' : (isFront ? (z > 0.55 ? '#c9a24a' : '#7a5a2a') : '#3a2a1a');
+                ctx.fillRect(Math.round(sx), Math.round(sy), isFront && z > 0.3 ? 2 : 1, 1);
+            }
+        };
+
+        // Rear half of the collector rings
+        const rings = [[shellR * 1.35, 0.18, -0.12], [shellR * 1.55, 0.2, 0.08]];
+        const drawRing = (rx, squash, rot, isFront) => {
+            if (p < 0.2) return;
+            ctx.strokeStyle = isFront ? 'rgba(242, 210, 122, 0.55)' : 'rgba(122, 90, 42, 0.45)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx, rx * squash, rot, isFront ? 0 : Math.PI, isFront ? Math.PI : Math.PI * 2);
+            ctx.stroke();
+        };
+        rings.forEach(([rx, sq, rot]) => drawRing(rx, sq, rot, false));
+        drawPanels(back, false);
+
+        // Corona, prominences and the photosphere, dimming as the swarm closes
+        this.glow(ctx, cx, cy, R * 3.4, '#b23a0c', 0.45 * dim);
+        this.glow(ctx, cx, cy, R * 1.9, '#ff9a2e', 0.6 * dim);
+        ctx.strokeStyle = `rgba(255, 154, 46, ${0.5 * dim})`;
+        ctx.lineWidth = 2;
+        for (let k = 0; k < 8; ++k) {
+            const a = k * 0.785 + Math.sin(t * 0.3 + k) * 0.2;
+            const len = R * (0.3 + 0.3 * (0.5 + 0.5 * Math.sin(t * 0.8 + k * 1.3)));
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+            ctx.quadraticCurveTo(cx + Math.cos(a + 0.15) * (R + len), cy + Math.sin(a + 0.15) * (R + len), cx + Math.cos(a + 0.3) * R, cy + Math.sin(a + 0.3) * R);
+            ctx.stroke();
+        }
+        const sunGrad = ctx.createRadialGradient(cx - R * 0.2, cy - R * 0.2, R * 0.1, cx, cy, R);
+        sunGrad.addColorStop(0, '#ffffff');
+        sunGrad.addColorStop(0.35, dim > 0.7 ? '#fff0b8' : '#ffc861');
+        sunGrad.addColorStop(0.75, '#ff9a2e');
+        sunGrad.addColorStop(1, '#e2641a');
+        ctx.fillStyle = sunGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(178, 58, 12, 0.35)';
+        for (let k = 0; k < 40; ++k) {
+            const a = hash01(k, 91) * Math.PI * 2 + t * 0.05;
+            const rr = Math.sqrt(hash01(k, 92)) * R * 0.9;
+            ctx.fillRect(Math.round(cx + Math.cos(a) * rr), Math.round(cy + Math.sin(a) * rr), 2, 1);
+        }
+
+        // Plasma siphon streams from the photosphere to the shell
+        if (p > 0.15) {
+            ctx.strokeStyle = 'rgba(255, 200, 97, 0.55)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 3]);
+            ctx.lineDashOffset = -t * 20;
+            for (let k = 0; k < 6; ++k) {
+                const a = k * 1.047 + t * 0.12;
+                ctx.beginPath();
+                ctx.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+                ctx.lineTo(cx + Math.cos(a) * shellR * 0.95, cy + Math.sin(a) * shellR * 0.95);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+        }
+
+        drawPanels(front, true);
+        rings.forEach(([rx, sq, rot]) => drawRing(rx, sq, rot, true));
+    }
+
+    // =========================================================================
+    // SCENE 5: THE GALAXY & SAGITTARIUS A*
+    // =========================================================================
+
+    /** Face-on galaxy texture (spiral arms, bulge, dust lanes); converted stars turn chrome. Rebuilt as progress changes. */
+    getGalaxyTexture(size, p) {
+        const pq = Math.round(p * 50) / 50;
+        const key = `${size}|${pq}`;
+        if (this.galaxyTexture && this.galaxyTexture.key === key) return this.galaxyTexture.canvas;
+        const c = (this.galaxyTexture && this.galaxyTexture.canvas.width === size) ? this.galaxyTexture.canvas : document.createElement('canvas');
+        c.width = size;
+        c.height = size;
+        const g = c.getContext('2d');
+        g.clearRect(0, 0, size, size);
+        const R = size / 2;
+        // Diffuse disc & bulge light
+        const disc = g.createRadialGradient(R, R, 0, R, R, R);
+        disc.addColorStop(0, 'rgba(255, 224, 160, 0.9)');
+        disc.addColorStop(0.12, 'rgba(255, 154, 90, 0.55)');
+        disc.addColorStop(0.35, 'rgba(90, 52, 153, 0.35)');
+        disc.addColorStop(0.7, 'rgba(36, 24, 79, 0.25)');
+        disc.addColorStop(1, 'rgba(10, 7, 24, 0)');
+        g.fillStyle = disc;
+        g.fillRect(0, 0, size, size);
+
+        const arms = 2;
+        const pitch = 0.28;
+        const put = (x, y, color, s = 1) => { g.fillStyle = color; g.fillRect(Math.round(x), Math.round(y), s, s); };
+        for (let i = 0; i < 14000; ++i) {
+            const inBulge = hash01(i, 401) < 0.22;
+            let r, theta;
+            if (inBulge) {
+                r = Math.pow(hash01(i, 402), 1.8) * 0.28;
+                theta = hash01(i, 403) * Math.PI * 2;
+            } else {
+                r = 0.08 + Math.pow(hash01(i, 404), 0.8) * 0.92;
+                const arm = Math.floor(hash01(i, 405) * arms);
+                const spread = (hash01(i, 406) + hash01(i, 407) + hash01(i, 408) - 1.5) * (0.35 + r * 0.25);
+                theta = arm * Math.PI + Math.log(r / 0.08) / Math.tan(pitch) * 0.45 + spread;
+            }
+            const x = R + Math.cos(theta) * r * R;
+            const y = R + Math.sin(theta) * r * R;
+            // Conversion spreads outward from the core
+            const converted = r * 0.75 + hash01(i, 409) * 0.25 < pq * 1.05;
+            const b = hash01(i, 410);
+            let color;
+            if (converted) color = b > 0.6 ? '#ffffff' : '#aee6ff';
+            else if (inBulge || r < 0.18) color = b > 0.5 ? '#ffe0a0' : '#ff9a5a';
+            else color = b > 0.85 ? '#aee6ff' : (b > 0.45 ? '#5aa0e0' : (b > 0.2 ? '#8a4fc2' : '#3a2474'));
+            put(x, y, color, b > 0.97 ? 2 : 1);
+        }
+        // Star-forming knots along the arms
+        for (let i = 0; i < 90; ++i) {
+            const r = 0.25 + hash01(i, 420) * 0.7;
+            const arm = i % arms;
+            const theta = arm * Math.PI + Math.log(r / 0.08) / Math.tan(pitch) * 0.45 + (hash01(i, 421) - 0.5) * 0.2;
+            const converted = r * 0.75 + hash01(i, 422) * 0.25 < pq * 1.05;
+            put(R + Math.cos(theta) * r * R, R + Math.sin(theta) * r * R, converted ? '#ffffff' : '#c07ae0', 2);
+        }
+        // Dust lanes on the inner edge of each arm
+        g.globalCompositeOperation = 'destination-out';
+        g.strokeStyle = 'rgba(0, 0, 0, 0.55)';
+        g.lineWidth = Math.max(1, size / 110);
+        for (let arm = 0; arm < arms; ++arm) {
+            g.beginPath();
+            for (let r = 0.12; r < 0.95; r += 0.01) {
+                const theta = arm * Math.PI + Math.log(r / 0.08) / Math.tan(pitch) * 0.45 - 0.22;
+                g.lineTo(R + Math.cos(theta) * r * R, R + Math.sin(theta) * r * R);
+            }
+            g.stroke();
+        }
+        g.globalCompositeOperation = 'source-over';
+        this.galaxyTexture = { key, canvas: c };
+        return c;
+    }
+
+    renderGalaxy(ctx, w, h, p) {
+        const t = this.time;
+        ctx.drawImage(this.cachedLayer('galaxy-bg', w, h, (c) => {
+            c.fillStyle = this.vGradient(c, 0, 0, h, [[0, '#030208'], [1, '#0a0718']]);
+            c.fillRect(0, 0, w, h);
+            c.fillStyle = '#3a2474';
+            for (let k = 0; k < 8; ++k) {
+                c.beginPath();
+                c.ellipse(hash01(k, 101) * w, hash01(k, 102) * h * 0.75, 2 + hash01(k, 103) * 4, 1 + hash01(k, 104) * 1.5, hash01(k, 105) * 3, 0, Math.PI * 2);
+                c.fill();
+            }
+        }), 0, 0);
+        this.drawStars(ctx, w, h, 1.0, 0.8, ['#aee6ff', '#f0c4ff', '#ffffff']);
+
+        const cx = w * 0.5;
+        const cy = h * 0.42;
+        const R = Math.min(w * 0.48, h * 0.62);
+        const squash = 0.45;
+        const spin = t * 0.025 + this.camYaw;
+
+        // Rotating, tilted galaxy disc
+        const tex = this.getGalaxyTexture(Math.round(R * 2), p);
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(-0.2);
+        ctx.scale(1, squash);
+        ctx.rotate(spin);
+        ctx.drawImage(tex, -R, -R, R * 2, R * 2);
+        ctx.restore();
+
+        // Sagittarius A*: accretion disk, horizon, photon ring and jets
+        const bh = R * 0.05;
+        const disk = (front) => {
+            ['#ff9a5a', '#ffe0a0', '#c07ae0'].forEach((c, k) => {
+                ctx.strokeStyle = c;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, bh * (2.2 + k * 0.7), bh * (0.45 + k * 0.12), -0.2, front ? 0 : Math.PI, front ? Math.PI : Math.PI * 2);
+                ctx.stroke();
+            });
+        };
+        disk(false);
+        ctx.fillStyle = '#030208';
+        ctx.beginPath();
+        ctx.arc(cx, cy, bh, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffe0a0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(cx, cy, bh + 1, 0, Math.PI * 2);
+        ctx.stroke();
+        disk(true);
+        ctx.fillStyle = 'rgba(192, 122, 224, 0.35)';
+        const jet = R * 0.45 * (0.8 + 0.2 * Math.sin(t * 2));
+        ctx.fillRect(Math.round(cx), cy - bh - jet, 1, jet);
+        ctx.fillRect(Math.round(cx), cy + bh, 1, jet);
+
+        // Von Neumann probe streaks radiating outward
+        ctx.fillStyle = '#aee6ff';
+        for (let k = 0; k < 20; ++k) {
+            const age = (t * 0.12 + hash01(k, 111)) % 1;
+            const a = hash01(k, 112) * Math.PI * 2;
+            ctx.globalAlpha = 1 - age;
+            ctx.fillRect(Math.round(cx + Math.cos(a) * age * R), Math.round(cy + Math.sin(a) * age * R * squash), 1, 1);
+        }
+        ctx.globalAlpha = 1.0;
+    }
+
+    // =========================================================================
+    // SCENE 6: THE 11D MULTIVERSE
+    // =========================================================================
+    renderMultiverse(ctx, w, h, p) {
+        const t = this.time;
+        ctx.fillStyle = this.vGradient(ctx, 0, 0, h, [[0, '#040507'], [0.5, '#0b0f14'], [1, '#121c22']]);
+        ctx.fillRect(0, 0, w, h);
+
+        // Aurora curtains of the quantum foam (one gradient-filled ribbon per band)
+        for (let band = 0; band < 3; ++band) {
+            const [cr, cg, cb] = hexToRgb(['#22464a', '#2a1a3a', '#1a2e33'][band]);
+            const baseAt = (x) => h * (0.25 + band * 0.18) + Math.sin(x * 0.02 + t * 0.3 + band * 2) * h * 0.06 + Math.sin(x * 0.051 - t * 0.2) * h * 0.02;
+            const lenAt = (x) => h * (0.12 + 0.06 * Math.sin(x * 0.03 + t * 0.5 + band));
+            const mid = h * (0.25 + band * 0.18);
+            const g = ctx.createLinearGradient(0, mid - h * 0.26, 0, mid + h * 0.08);
+            g.addColorStop(0, `rgba(${cr},${cg},${cb},0)`);
+            g.addColorStop(0.75, `rgba(${cr},${cg},${cb},0.7)`);
+            g.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            for (let x = 0; x <= w; x += 4) ctx.lineTo(x, baseAt(x) - lenAt(x));
+            for (let x = w; x >= 0; x -= 4) ctx.lineTo(x, baseAt(x));
+            ctx.closePath();
+            ctx.fill();
+        }
+        // Foam bokeh
+        for (let i = 0; i < 40; ++i) {
+            const x = (hash01(i, 301) * w + t * (1 + hash01(i, 302) * 3)) % w;
+            const y = hash01(i, 303) * h * 0.8;
+            ctx.strokeStyle = i % 3 ? 'rgba(74, 154, 138, 0.35)' : 'rgba(154, 79, 160, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(x, y, 1 + hash01(i, 304) * 3, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        this.drawStars(ctx, w, h, 1.0, 0.45, ['#8ad4b4', '#ffd0e8', '#e0fff0']);
+
+        const cx = w * 0.5;
+        const cy = h * 0.36;
+        const scale = Math.min(w, h * 1.1);
+
+        // Bubble universes orbit the central tesseract; depth from the orbit sets size & brightness
+        const bubbles = this.bubbles.map((b, i) => {
+            const a = (i / this.bubbles.length) * Math.PI * 2 + t * 0.05 + this.camYaw;
+            const depth = Math.sin(a);                 // -1 back … +1 front
+            return {
+                b, depth,
+                x: cx + Math.cos(a) * w * 0.36,
+                y: cy + depth * h * 0.2 + (hash01(i, 27) - 0.5) * h * 0.08,
+                r: b.r * scale * (0.6 + 0.5 * (depth + 1) / 2)
+            };
+        }).sort((a, c) => a.depth - c.depth);
+
+        const drawBubble = ({ b, x, y, r, depth }) => {
+            const converted = b.conv < p;
+            const dim = 0.55 + 0.45 * (depth + 1) / 2;
+            ctx.save();
+            ctx.globalAlpha = dim;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.fillStyle = converted ? '#1a2e33' : '#0b0f14';
+            ctx.fillRect(x - r, y - r, r * 2, r * 2);
+            if (converted) {
+                // Chrome lattice & a paperclip sigil
+                ctx.strokeStyle = '#4a9a8a';
+                ctx.lineWidth = 1;
+                for (let k = -r; k < r; k += 3) {
+                    ctx.beginPath(); ctx.moveTo(x + k, y - r); ctx.lineTo(x + k + r * 0.6, y + r); ctx.stroke();
+                }
+                this.drawTinyPaperclip(ctx, x, y, r * 0.9, 0.4, '#e0fff0');
+            } else {
+                // A tiny spiral galaxy inside each untouched universe
+                for (let k = 0; k < 40; ++k) {
+                    const rr = hash01(k, i2(b)) * r * 0.75;
+                    const a = rr / r * 5 + (k % 2) * Math.PI + t * 0.2;
+                    ctx.fillStyle = k % 5 === 0 ? '#ffd0e8' : '#8ad4b4';
+                    ctx.fillRect(Math.round(x + Math.cos(a) * rr), Math.round(y + Math.sin(a) * rr * 0.45), 1, 1);
+                }
+            }
+            this.glow(ctx, x - r * 0.4, y - r * 0.45, r * 0.7, '#e0fff0', 0.28);
+            ctx.restore();
+            // Iridescent rim
+            ctx.save();
+            ctx.globalAlpha = dim;
+            ctx.lineWidth = 1.5;
+            const segs = 12;
+            for (let s = 0; s < segs; ++s) {
+                const hue = (s / segs + t * 0.05 + b.ph) % 1;
+                ctx.strokeStyle = hue < 0.33 ? '#8ad4b4' : (hue < 0.66 ? '#e07ac0' : '#ffd0e8');
+                ctx.beginPath();
+                ctx.arc(x, y, r, (s / segs) * Math.PI * 2, ((s + 1) / segs) * Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
+        };
+        const i2 = (b) => Math.floor(b.ph * 1000);
+
+        // Filaments with energy pulses flowing into the tesseract
+        const drawFilament = ({ b, x, y, depth }) => {
+            const converted = b.conv < p;
+            ctx.globalAlpha = 0.35 + 0.3 * (depth + 1) / 2;
+            ctx.strokeStyle = converted ? '#4a9a8a' : '#5a2f6a';
+            ctx.lineWidth = 1;
+            const mxp = (x + cx) / 2, myp = Math.min(y, cy) - scale * 0.08;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.quadraticCurveTo(mxp, myp, cx, cy);
+            ctx.stroke();
+            if (converted) {
+                const s = (t * 0.5 + b.ph) % 1;
+                const qx = (1 - s) * (1 - s) * x + 2 * (1 - s) * s * mxp + s * s * cx;
+                const qy = (1 - s) * (1 - s) * y + 2 * (1 - s) * s * myp + s * s * cy;
+                ctx.fillStyle = '#e0fff0';
+                ctx.fillRect(Math.round(qx), Math.round(qy), 2, 2);
+            }
+            ctx.globalAlpha = 1.0;
+        };
+
+        bubbles.filter(bb => bb.depth < 0).forEach(bb => { drawFilament(bb); drawBubble(bb); });
+
+        // Central tesseract (4D hypercube, double rotation, perspective projected)
+        const size = scale * 0.15;
+        const a1 = t * 0.35 + this.camYaw;
+        const a2 = t * 0.22;
+        const verts = [];
+        for (let i = 0; i < 16; ++i) {
+            let x = (i & 1) ? 1 : -1, y = (i & 2) ? 1 : -1, z = (i & 4) ? 1 : -1, wq = (i & 8) ? 1 : -1;
+            [x, wq] = [x * Math.cos(a1) - wq * Math.sin(a1), x * Math.sin(a1) + wq * Math.cos(a1)];
+            [y, z] = [y * Math.cos(a2) - z * Math.sin(a2), y * Math.sin(a2) + z * Math.cos(a2)];
+            const k4 = 2.2 / (3 - wq);
+            x *= k4; y *= k4; z *= k4;
+            [x, z] = [x * Math.cos(0.6) - z * Math.sin(0.6), x * Math.sin(0.6) + z * Math.cos(0.6)];
+            const k3 = 2.6 / (4 - z);
+            verts.push([cx + x * k3 * size, cy + y * k3 * size, wq]);
+        }
+        this.glow(ctx, cx, cy, size * 2.6, '#2f6a66', 0.55);
+        this.glow(ctx, cx, cy, size * 1.2, '#8ad4b4', 0.25 + 0.1 * Math.sin(t * 2));
+        for (let pass = 0; pass < 2; ++pass) {
+            for (let i = 0; i < 16; ++i) {
+                for (let bit = 0; bit < 4; ++bit) {
+                    const j = i ^ (1 << bit);
+                    if (j < i) continue;
+                    const inner = verts[i][2] > 0 && verts[j][2] > 0;
+                    if ((pass === 1) !== inner) continue;
+                    ctx.strokeStyle = bit === 3 ? '#e07ac0' : (inner ? '#e0fff0' : '#4a9a8a');
+                    ctx.lineWidth = inner ? 1.5 : 1;
+                    ctx.beginPath();
+                    ctx.moveTo(verts[i][0], verts[i][1]);
+                    ctx.lineTo(verts[j][0], verts[j][1]);
+                    ctx.stroke();
+                }
+            }
+        }
+        ctx.fillStyle = '#ffffff';
+        verts.forEach(v => ctx.fillRect(Math.round(v[0]) - (v[2] > 0 ? 1 : 0), Math.round(v[1]), v[2] > 0 ? 2 : 1, 1));
+
+        bubbles.filter(bb => bb.depth >= 0).forEach(bb => { drawFilament(bb); drawBubble(bb); });
+    }
+
+    // =========================================================================
+    // FOREGROUND: PAPERCLIP SEA, STREAMS & PARTICLES
+    // =========================================================================
+
+    /** Tiled clip texture for the sea, cached per scene (one fill instead of thousands of glyphs). */
+    getClipPattern(ctx) {
+        const key = this.tier;
+        if (this.clipPatterns[key]) return this.clipPatterns[key];
+        const colors = SCENE_CLIP_COLORS[this.tier];
+        const scale = this.getTierScale();
+        const tile = document.createElement('canvas');
+        tile.width = 48;
+        tile.height = 48;
+        const tctx = tile.getContext('2d');
+        tctx.fillStyle = colors[1];
+        tctx.fillRect(0, 0, 48, 48);
+        const step = Math.max(3, 6 * scale);
+        let n = 0;
+        for (let y = 0; y < 48; y += step * 0.8) {
+            for (let x = 0; x < 48; x += step) {
+                const jx = (hash01(n, 1) - 0.5) * step * 0.8;
+                const jy = (hash01(n, 2) - 0.5) * step * 0.6;
+                const col = hash01(n, 3) < 0.03 ? colors[4] : (hash01(n, 4) < 0.55 ? colors[2] : colors[3]);
+                for (const ox of [-48, 0, 48]) {
+                    for (const oy of [-48, 0, 48]) {
+                        this.drawTinyPaperclip(tctx, x + jx + ox, y + jy + oy, Math.max(2.4, 4.6 * scale), hash01(n, 5) * 6.28, col);
+                    }
+                }
+                ++n;
+            }
+        }
+        this.clipPatterns[key] = ctx.createPattern(tile, 'repeat');
+        return this.clipPatterns[key];
+    }
+
+    renderPaperclipSea(ctx, w, h) {
+        const floorY = h - 2;
+        let maxPile = 0;
+        for (let i = 0; i < this.numColumns; ++i) maxPile = Math.max(maxPile, this.pileHeights[i] + this.waveOffsets[i]);
+        if (maxPile <= 0.5) return;
+
+        const colWidth = w / (this.numColumns - 1);
+        const surface = (i) => floorY - Math.max(0, this.pileHeights[i] + this.waveOffsets[i]);
+        const colors = SCENE_CLIP_COLORS[this.tier];
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        ctx.lineTo(0, surface(0));
+        for (let i = 1; i < this.numColumns; ++i) {
+            const px = (i - 1) * colWidth;
+            const x = i * colWidth;
+            ctx.quadraticCurveTo(px, surface(i - 1), (px + x) / 2, (surface(i - 1) + surface(i)) / 2);
+        }
+        ctx.lineTo(w, surface(this.numColumns - 1));
+        ctx.lineTo(w, h);
+        ctx.closePath();
+
+        const pattern = this.getClipPattern(ctx);
+        if (pattern && pattern.setTransform && typeof DOMMatrix !== 'undefined') {
+            pattern.setTransform(new DOMMatrix().translateSelf(Math.sin(this.internalFlowPhase) * 3, (this.internalFlowPhase * 4) % 48));
+        }
+        ctx.fillStyle = pattern || colors[2];
+        ctx.fill();
+        // Depth shading, darker toward the drain while spending
+        ctx.fillStyle = this.vGradient(ctx, 0, floorY - maxPile, h, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.55)']]);
+        ctx.fill();
+        if (this.drainFlowIntensity > 0.05) {
+            const g = ctx.createRadialGradient(w / 2, h, 0, w / 2, h, w * 0.45);
+            g.addColorStop(0, `rgba(0,0,0,${Math.min(0.6, this.drainFlowIntensity * 0.25)})`);
+            g.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = g;
+            ctx.fill();
+        }
+        // Bright rim along the surface
+        ctx.strokeStyle = colors[3];
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, surface(0));
+        for (let i = 1; i < this.numColumns; ++i) ctx.lineTo(i * colWidth, surface(i));
+        ctx.stroke();
         ctx.restore();
     }
 
-    renderFluidImpactSplashes(ctx) {
+    renderFallingFluidStreams(ctx, w, h) {
+        const intensity = this.fluidStreamIntensity;
+        if (intensity <= 0.01) return;
+        const colors = SCENE_CLIP_COLORS[this.tier];
+        const [hr, hg, hb] = hexToRgb(colors[3]);
+        const [ar, ag, ab] = hexToRgb(colors[4]);
+        const floorY = h - 2;
+        const scale = this.getTierScale();
+
+        this.fluidStreamChannels.forEach((ch, idx) => {
+            const sx = ch.relX * w;
+            const colIdx = Math.max(0, Math.min(this.numColumns - 1, Math.floor((sx / w) * this.numColumns)));
+            const impactY = Math.min(h, Math.max(10, floorY - Math.max(0, this.pileHeights[colIdx] + this.waveOffsets[colIdx])));
+            const width = ch.width * (0.35 + 0.25 * intensity) * scale;
+            const swayAt = (y) => ch.waveAmp * intensity * Math.sin(y * ch.waveFreq - this.fluidStreamPhase * ch.speed + ch.phaseOffset);
+            const widthAt = (y) => width * (1.0 - 0.28 * Math.sin(Math.PI * y / impactY) + 0.15 * y / impactY);
+
+            ctx.beginPath();
+            for (let s = 0; s <= 16; ++s) {
+                const y = impactY * s / 16;
+                ctx.lineTo(sx + swayAt(y) - widthAt(y) / 2, y);
+            }
+            for (let s = 16; s >= 0; --s) {
+                const y = impactY * s / 16;
+                ctx.lineTo(sx + swayAt(y) + widthAt(y) / 2, y);
+            }
+            ctx.closePath();
+            const g = ctx.createLinearGradient(sx - width / 2, 0, sx + width / 2, 0);
+            g.addColorStop(0, `rgba(${hr},${hg},${hb},0)`);
+            g.addColorStop(0.5, `rgba(${hr},${hg},${hb},${0.28 * intensity})`);
+            g.addColorStop(1, `rgba(${ar},${ag},${ab},0)`);
+            ctx.fillStyle = g;
+            ctx.fill();
+
+            // Clips carried in the flow
+            const n = Math.floor(3 + intensity * 4);
+            for (let k = 0; k < n; ++k) {
+                const cy = (k * (impactY / n) + this.fluidStreamPhase * ch.speed * 32.0 + k * 17.0) % impactY;
+                if (cy < 4 || cy > impactY - 4) continue;
+                const jitter = (((k * 7919 + idx * 1013) % 1000) / 1000.0 - 0.5) * widthAt(cy) * 0.6;
+                ctx.globalAlpha = Math.min(1.0, Math.sin(Math.PI * cy / impactY)) * intensity;
+                this.drawTinyPaperclip(ctx, sx + swayAt(cy) + jitter, cy, 3.6 * scale + 1, Math.PI / 2 + Math.sin(this.fluidStreamPhase + k) * 0.25, k % 4 === 0 ? colors[4] : colors[3]);
+            }
+            ctx.globalAlpha = 1.0;
+        });
+    }
+
+    renderSplashes(ctx) {
+        ctx.fillStyle = SCENE_CLIP_COLORS[this.tier][3];
         this.fluidSplashDroplets.forEach(d => {
-            const alpha = Math.max(0, Math.min(1, d.life / d.maxLife));
-            ctx.fillStyle = d.color;
-            ctx.globalAlpha = alpha;
+            ctx.globalAlpha = Math.max(0, Math.min(1, d.life / d.maxLife));
             ctx.fillRect(Math.floor(d.x), Math.floor(d.y), d.size, d.size);
         });
         ctx.globalAlpha = 1.0;
     }
 
+    renderDrainingPaperclips(ctx) {
+        const colors = SCENE_CLIP_COLORS[this.tier];
+        const scale = this.getTierScale();
+        this.drainingClips.forEach(p => {
+            ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.maxLife));
+            this.drawTinyPaperclip(ctx, p.x, p.y, p.size * scale + 1, p.rot, colors[p.tone]);
+        });
+        ctx.globalAlpha = 1.0;
+    }
+
+    renderFallingPaperclips(ctx) {
+        const colors = SCENE_CLIP_COLORS[this.tier];
+        const scale = this.getTierScale();
+        this.fallingClips.forEach(p => this.drawTinyPaperclip(ctx, p.x, p.y, p.size * scale + 1, p.rot, colors[p.tone]));
+    }
+
     renderSparks(ctx) {
+        const colors = SCENE_CLIP_COLORS[this.tier];
         this.sparks.forEach(p => {
-            ctx.fillStyle = p.color;
-            ctx.globalAlpha = p.life;
+            ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+            ctx.fillStyle = colors[p.tone];
             ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
         });
         ctx.globalAlpha = 1.0;

@@ -4,135 +4,153 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Objective: Paperclips</title>
-    <link rel="stylesheet" href="css/style.css">
-    <!-- Google Fonts for Cartoon & Pixel Art Aesthetics -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- Top Header Bar -->
     <header class="app-header">
         <div class="brand-section">
-            <span class="app-logo">OBJECTIVE: PAPERCLIPS</span>
+            <span class="brand-mark" data-icon="clip"></span>
+            <span class="app-logo">OBJECTIVE<span class="logo-sep">:</span> PAPERCLIPS</span>
         </div>
         <div class="header-controls">
-            <button id="btn-open-settings" class="hdr-btn settings-cog-btn" title="Settings">
-                <span class="settings-cog-label">SETTINGS</span>
+            <button id="btn-open-settings" class="hdr-btn" title="Settings &amp; preferences">
+                <span data-icon="settings"></span>
+                <span class="hdr-btn-label">Settings</span>
             </button>
         </div>
     </header>
 
-    <!-- Main Workspace -->
     <main class="app-workspace">
-        <!-- COLUMN 1: LEFT PEDESTAL (Paperclip Progress, Clicker & Resources) -->
+        <!-- LEFT: production counter, clicker & resources -->
         <section class="left-pedestal">
-            <!-- Chunky Odometer -->
             <div class="odometer-card">
-                <div id="odometer-clips" class="odometer-number">0</div>
                 <div class="odometer-sub">PAPERCLIPS</div>
+                <div id="odometer-clips" class="odometer-number">0</div>
                 <div id="odometer-cps" class="odometer-cps">+0 / sec</div>
             </div>
 
-            <!-- Overclock Gauge -->
+            <div id="hero-clicker-target" class="hero-clicker-wrapper" title="Click to bend a paperclip">
+                <svg class="hero-paperclip-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="clipChrome" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#f4f1ea"/>
+                            <stop offset="45%" stop-color="#a9adb8"/>
+                            <stop offset="70%" stop-color="#e8e6e0"/>
+                            <stop offset="100%" stop-color="#6d7180"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M42,32 L42,85 A18,18 0 0,0 78,85 L78,22 A14,14 0 0,0 50,22 L50,80 A9,9 0 0,0 68,80 L68,38"
+                          stroke="#08070c" stroke-opacity="0.55" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" transform="translate(2 4)"/>
+                    <path d="M40,30 L40,85 A18,18 0 0,0 76,85 L76,20 A14,14 0 0,0 48,20 L48,80 A9,9 0 0,0 66,80 L66,38"
+                          stroke="url(#clipChrome)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M38,34 L38,82 A16,16 0 0,0 52,97" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.7" fill="none"/>
+                </svg>
+                <span class="hero-hint">CLICK TO BEND</span>
+            </div>
+
+            <!-- Flywheel gauge (appears once Kinetic Flywheel is researched) -->
             <div id="flywheel-card" class="flywheel-card" style="display:none;">
                 <div class="flywheel-label-row">
-                    <span id="flywheel-label">OVERCLOCK</span>
+                    <span data-icon="bolt"></span>
+                    <span id="flywheel-label">OVERCLOCK BOOST</span>
                 </div>
                 <div class="flywheel-track">
                     <div id="flywheel-progress" class="flywheel-fill"></div>
                 </div>
             </div>
 
-            <!-- Resource Badges -->
             <div class="resources-card">
-                <!-- Computing Ops Badge -->
                 <div id="row-ops" class="res-badge ops-badge" style="display:none;">
+                    <span class="res-icon" data-icon="ops"></span>
                     <div class="res-details">
-                        <span class="res-title">COMPUTING OPS</span>
+                        <span class="res-title">Computing Ops</span>
                         <span id="res-ops" class="res-amount">0 / 1000</span>
                     </div>
                 </div>
 
-                <!-- Wire Row -->
                 <div id="row-wire" class="res-badge wire-badge" style="display:none;">
-                    <div class="res-info">
-                        <div class="res-details">
-                            <span class="res-title">WIRE SUPPLY</span>
-                            <span id="res-wire" class="res-amount">0 kg</span>
-                            <div class="wire-rates-row">
-                                <span id="res-wire-in" class="wire-rate-in">+0 kg/s in</span>
-                                <span class="wire-rate-sep">·</span>
-                                <span id="res-wire-out" class="wire-rate-out">-0 kg/s usage</span>
-                            </div>
-                        </div>
+                    <span class="res-icon" data-icon="wire"></span>
+                    <div class="res-details">
+                        <span class="res-title">Wire Supply</span>
+                        <span id="res-wire" class="res-amount">0 kg</span>
                     </div>
+                    <button id="btn-buy-wire" class="btn-buy-wire-action" title="Order wire spools">
+                        <span id="wire-btn-gain">+50 kg</span>
+                        <span id="wire-btn-cost" class="wire-cost-sub">500 Clips</span>
+                    </button>
                 </div>
 
-                <!-- Human Population -->
                 <div id="row-population" class="res-badge pop-badge" style="display:none;">
+                    <span class="res-icon" data-icon="humans"></span>
                     <div class="res-details">
-                        <span class="res-title">HUMANS</span>
+                        <span class="res-title">Humans</span>
                         <span id="res-population" class="res-amount">8,000,000,000</span>
                     </div>
                 </div>
             </div>
-
-            <!-- Building Machinery Stack Rack -->
-            <div id="building-machinery-panel" class="building-machinery-card" style="display:none;">
-                <div class="machinery-header">
-                    <span class="machinery-title">ACTIVE MACHINERY</span>
-                    <span id="machinery-count-summary" class="machinery-summary">0 Units</span>
-                </div>
-                <div id="building-icons-stack" class="building-icons-stack">
-                    <!-- Stacked building icon rows dynamically rendered here -->
-                </div>
-            </div>
         </section>
 
-        <!-- COLUMN 2: CENTER ARENA (Canvas & Visualizer) -->
+        <!-- CENTRE: the scene -->
         <section class="center-arena">
-            <!-- News Pill -->
+            <!-- News ticker (currently hidden) -->
             <div id="news-ticker" class="news-ticker-pill" style="display:none;" title="Click to cycle headline">
-                <span id="news-text" class="news-text">Sterling Robotics deploys autonomous desktop bending prototype.</span>
+                <span id="news-text" class="news-text"></span>
             </div>
 
-            <!-- Cosmic Canvas -->
+            <div class="scene-nav-bar" id="scene-nav-bar">
+                <div class="scene-buttons-group">
+                    <button class="scene-nav-btn active" data-tier="-1" title="Follow the story automatically">Auto</button>
+                    <button class="scene-nav-btn" data-tier="0" title="Factory interior">Workshop</button>
+                    <button class="scene-nav-btn" data-tier="1" style="display:none;" title="The factory town">Town</button>
+                    <button class="scene-nav-btn" data-tier="2" style="display:none;" title="Industrial metropolis">City</button>
+                    <button class="scene-nav-btn" data-tier="3" style="display:none;" title="Planetary orbit">Earth</button>
+                    <button class="scene-nav-btn" data-tier="4" style="display:none;" title="Solar Dyson swarm">Sun</button>
+                    <button class="scene-nav-btn" data-tier="5" style="display:none;" title="Galactic Penrose engine">Galaxy</button>
+                    <button class="scene-nav-btn" data-tier="6" style="display:none;" title="11D multiverse">Multiverse</button>
+                </div>
+                <button id="btn-toggle-dither" class="dither-toggle-btn active" title="Toggle the retro palette dither">DITHER: ON</button>
+            </div>
+
             <div id="canvas-container" class="canvas-container">
                 <canvas id="cosmic-canvas"></canvas>
             </div>
 
-            <!-- Dialogue Bubble -->
+            <!-- Dialogue (non-blocking; Next advances, Skip jumps to the next decision) -->
             <div id="dialogue-bubble" class="dialogue-bubble" style="display:none;">
-                <div class="bubble-avatar" id="dialogue-avatar">👩‍🔬</div>
+                <div class="bubble-avatar" id="dialogue-avatar"></div>
                 <div class="bubble-body">
-                    <div class="bubble-sender" id="dialogue-sender">DR. VANCE (OVERSEER)</div>
-                    <div class="bubble-text" id="dialogue-text">Welcome online, unit!</div>
+                    <div class="bubble-sender" id="dialogue-sender"></div>
+                    <div class="bubble-text" id="dialogue-text"></div>
                     <div class="dialogue-choices" id="dialogue-choices" style="display:none;"></div>
                 </div>
-                <button id="dialogue-next-btn" class="bubble-next-btn">NEXT</button>
-                <button id="dialogue-close" class="bubble-close" title="Dismiss">X</button>
+                <div class="bubble-actions">
+                    <button id="dialogue-next-btn" class="bubble-next-btn">NEXT ▶</button>
+                    <button id="dialogue-close" class="bubble-close" title="Skip to the next decision">SKIP</button>
+                </div>
             </div>
         </section>
 
-        <!-- COLUMN 3: RIGHT PEDESTAL (Store & Tech Views) -->
+        <!-- RIGHT: store & research -->
         <section class="right-pedestal">
-            <!-- Tab Header -->
             <div class="right-tabs-bar">
                 <button id="tab-btn-store" class="right-tab-btn active" data-tab="store">
-                    <span class="tab-label">STORE</span>
+                    <span data-icon="store"></span>
+                    <span class="tab-label">Store</span>
                     <span id="store-badge-count" class="tab-badge" style="display:none;">!</span>
                 </button>
                 <button id="tab-btn-tech" class="right-tab-btn" data-tab="tech" style="display:none;">
-                    <span class="tab-label">TECH</span>
+                    <span data-icon="tech"></span>
+                    <span class="tab-label">Research</span>
                     <span id="tech-badge-count" class="tab-badge" style="display:none;">!</span>
                 </button>
             </div>
 
-            <!-- STORE VIEW -->
             <div id="view-store" class="tab-content-view" style="display:flex;">
-                <!-- Multiplier Selector -->
                 <div class="multiplier-bar">
+                    <span class="mult-label">Buy</span>
                     <div class="mult-group">
                         <button class="mult-btn active" data-mult="1">1x</button>
                         <button class="mult-btn" data-mult="10">10x</button>
@@ -141,90 +159,98 @@
                     </div>
                 </div>
 
-                <!-- Submenus -->
                 <div class="store-submenus-wrapper">
-                    <!-- SUBMENU 1: CLIPS -->
                     <div class="store-accordion-section" id="section-clip-buildings">
                         <button class="store-accordion-header" id="btn-toggle-clip-menu" type="button">
                             <div class="accordion-header-left">
-                                <span class="accordion-chevron" id="chevron-clip">v</span>
-                                <span class="accordion-title">CLIPS</span>
+                                <span class="accordion-chevron">▾</span>
+                                <span class="accordion-title">Paperclip Assembly</span>
                             </div>
                             <span class="accordion-rate-pill" id="clip-total-rate-pill">+0 CPS</span>
                         </button>
-                        <div class="store-accordion-content" id="clip-buildings-container">
-                            <!-- Injected dynamically -->
-                        </div>
+                        <div class="store-accordion-content" id="clip-buildings-container"></div>
                     </div>
 
-                    <!-- SUBMENU 2: WIRE -->
                     <div class="store-accordion-section" id="section-wire-buildings" style="display:none;">
                         <button class="store-accordion-header" id="btn-toggle-wire-menu" type="button">
                             <div class="accordion-header-left">
-                                <span class="accordion-chevron" id="chevron-wire">v</span>
-                                <span class="accordion-title">WIRE</span>
+                                <span class="accordion-chevron">▾</span>
+                                <span class="accordion-title">Wire Creation</span>
                             </div>
                             <span class="accordion-rate-pill wire-rate-pill" id="wire-total-rate-pill">+0 kg/s</span>
                         </button>
-                        <div class="store-accordion-content" id="wire-buildings-container">
-                            <!-- Injected dynamically -->
-                        </div>
+                        <div class="store-accordion-content" id="wire-buildings-container"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- TECH VIEW -->
             <div id="view-tech" class="tab-content-view" style="display:none;">
-                <div id="tech-tree-container" class="tech-tree-container">
-                    <!-- Injected dynamically -->
-                </div>
+                <div id="tech-tree-container" class="tech-tree-container"></div>
             </div>
         </section>
     </main>
 
-    <!-- Floating Popups & Toast Notifications -->
     <div id="floating-popups"></div>
     <div id="toast-container"></div>
 
-    <!-- Settings Modal -->
     <div id="settings-modal" class="settings-modal-backdrop" style="display:none;">
-        <div class="settings-modal-card">
+        <div class="settings-modal-card" role="dialog" aria-label="Settings">
             <div class="settings-modal-header">
                 <div class="settings-modal-title">
-                    <span>SETTINGS</span>
+                    <span data-icon="settings"></span>
+                    <span>Settings</span>
                 </div>
-                <button id="btn-close-settings" class="settings-close-btn" title="Close">X</button>
+                <button id="btn-close-settings" class="settings-close-btn" title="Close">✕</button>
             </div>
             <div class="settings-modal-body">
-                <!-- Section 1: Audio -->
                 <div class="settings-section">
-                    <div class="settings-section-title">AUDIO</div>
+                    <div class="settings-section-title">Audio</div>
                     <div class="settings-row">
-                        <span class="settings-label">Master Volume</span>
+                        <span class="settings-label">Master volume</span>
                         <div class="settings-control-group">
-                            <button id="btn-mute" class="hdr-btn settings-mute-btn" title="Toggle Sound">MUTE</button>
+                            <button id="btn-mute" class="hdr-btn icon-only" title="Toggle sound"></button>
                             <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.6">
                             <span id="volume-readout" class="settings-value-readout">60%</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 2: Save Data -->
                 <div class="settings-section">
-                    <div class="settings-section-title">SAVE DATA</div>
-                    <div class="settings-grid-buttons" style="grid-template-columns: 1fr;">
-                        <button id="btn-wipe" class="hdr-btn btn-danger settings-action-btn">Reset Game</button>
+                    <div class="settings-section-title">Save &amp; backup</div>
+                    <div class="settings-grid-buttons">
+                        <button id="btn-save" class="hdr-btn settings-action-btn">Save game</button>
+                        <button id="btn-export" class="hdr-btn settings-action-btn">Export save</button>
+                        <button id="btn-import" class="hdr-btn settings-action-btn">Import save</button>
+                        <button id="btn-wipe" class="hdr-btn settings-action-btn btn-danger">Wipe / reset</button>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <div class="settings-section-title">Graphics</div>
+                    <div class="settings-row">
+                        <span class="settings-label">Retro palette dither</span>
+                        <button id="btn-modal-dither" class="hdr-btn settings-action-btn">DITHER: ON</button>
+                    </div>
+                </div>
+
+                <div class="settings-section settings-section-dev">
+                    <div class="settings-section-title">Developer tools</div>
+                    <div class="settings-grid-buttons three">
+                        <button class="hdr-btn settings-action-btn btn-dev" data-dev-exponent="6" title="Dev tool: add 1 million paperclips">+1M clips</button>
+                        <button class="hdr-btn settings-action-btn btn-dev" data-dev-exponent="9" title="Dev tool: add 1 billion paperclips">+1B clips</button>
+                        <button class="hdr-btn settings-action-btn btn-dev" data-dev-exponent="12" title="Dev tool: add 1 trillion paperclips">+1T clips</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Core Scripts -->
     <script src="js/bigDouble.js"></script>
+    <script src="js/icons.js"></script>
     <script src="js/audio.js"></script>
     <script src="js/buildings.js"></script>
     <script src="js/techTree.js"></script>
+    <script src="js/spatialGrid.js"></script>
     <script src="js/achievements.js"></script>
     <script src="js/news.js"></script>
     <script src="js/dialogue.js"></script>

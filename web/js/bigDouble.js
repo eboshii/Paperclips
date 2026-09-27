@@ -156,6 +156,11 @@ class BigDouble {
         return new BigDouble(newMantissa, newExp);
     }
 
+    log10() {
+        if (this.mantissa <= 0) return -Infinity;
+        return Math.log10(this.mantissa) + this.exponent;
+    }
+
     lt(other) {
         other = (other instanceof BigDouble) ? other : BigDouble.fromNumber(other);
         if (this.mantissa === 0 && other.mantissa === 0) return false;
